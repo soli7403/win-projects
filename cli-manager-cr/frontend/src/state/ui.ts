@@ -51,6 +51,9 @@ interface UiState {
   /** 서버 목록 아래 절반의 스니펫 패널 열림. */
   snippetsOpen: boolean;
   setSnippetsOpen: (open: boolean) => void;
+  /** 모든 창 동시 입력(쇠사슬 아이콘). 켜지면 입력이 화면에 보이는 모든 창으로 간다. 시작할 때 항상 꺼짐 (behavior/terminal.md 동시 입력). */
+  linkInput: boolean;
+  toggleLinkInput: () => void;
   /** 미리보기 대화상자 대상(세션·경로). null 이면 닫힘(spec/ui/sftp-snippets.md §3). */
   preview: { sessionId: string; path: string } | null;
   openPreview: (sessionId: string, path: string) => void;
@@ -96,6 +99,8 @@ export const useUi = create<UiState>((set, get) => ({
   toggleSftp: (group) => set((s) => ({ sftpOpen: group === 0 ? [!s.sftpOpen[0], s.sftpOpen[1]] : [s.sftpOpen[0], !s.sftpOpen[1]] })),
   snippetsOpen: false,
   setSnippetsOpen: (open) => set({ snippetsOpen: open }),
+  linkInput: false,
+  toggleLinkInput: () => set((s) => ({ linkInput: !s.linkInput })),
   preview: null,
   openPreview: (sessionId, path) => set({ preview: { sessionId, path } }),
   closePreview: () => set({ preview: null }),

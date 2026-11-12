@@ -41,6 +41,8 @@ button { font: inherit; color: inherit; }
 }
 .icon-btn:hover:not(:disabled) { background: var(--hover); color: var(--fg); }
 .icon-btn.on { background: var(--accent-soft); color: var(--accent); }
+/* 모든 창 동시 입력 켜짐: 실수 방지를 위해 경고색으로 강조 */
+.icon-btn.link-input.on { background: var(--warn-soft); color: var(--warn); }
 /* 꺼진 아이콘은 명시적인 회색: 흐린 글자색 + 채도 제거 + 투명도 */
 .icon-btn:disabled { opacity: 0.35; color: var(--fg-3); filter: grayscale(1); cursor: not-allowed; }
 .icon-btn.small { width: 22px; height: 22px; border-radius: 5px; }

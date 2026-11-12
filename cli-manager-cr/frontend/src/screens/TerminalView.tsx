@@ -32,9 +32,27 @@ export const FIND_EVENT = 'termgo:find';
 /** 이 칸의 입력 대상: 동시 입력이면 탭의 연결된 모든 세션. */
 export function targetsFor(paneId: string, sessionId: string): string[] {
   const s = useWorkspace.getState();
+  // 모든 창 동시 입력(쇠사슬)이 켜져 있으면 화면에 보이는 모든 창으로 보낸다.
+  if (useUi.getState().linkInput) return visibleSessionIds(sessionId);
   const tab = s.tabs.find((t) => paneHas(t.root, paneId));
   if (!tab || !tab.broadcast) return [sessionId];
   return sessionsIn(tab.root).filter((sid) => !!s.sessions[sid]);
+}
+
+/**
+ * 지금 화면에 보이는 창의 세션들: 그룹마다 선택된 탭의 칸(크게 보기 중이면 그 칸만), 빈 칸 제외.
+ * 입력한 창(self)은 항상 포함하고 맨 앞에 둔다.
+ */
+export function visibleSessionIds(self: string): string[] {
+  const s = useWorkspace.getState();
+  const out = [self];
+  for (const tid of s.activeByGroup) {
+    const tab = tid ? s.tabs.find((t) => t.id === tid) : undefined;
+    if (!tab) continue;
+    const ids = tab.zoomed ? [findPane(tab.root, tab.zoomed)?.sessionId ?? ''] : sessionsIn(tab.root);
+    for (const sid of ids) if (sid && s.sessions[sid] && !out.includes(sid)) out.push(sid);
+  }
+  return out;
 }
 
 function paneHas(root: LayoutNode, paneId: string): boolean {

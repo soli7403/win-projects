@@ -1,6 +1,6 @@
 // 칸·분할 화면. 근거: spec/ui/panes.md §2, §4(크기 조절), §7(끌어 놓기), spec/ui/tokens.md §3(칸·분할선).
 import { useRef, type DragEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
-import { Rows2, Maximize2, Minimize2, RotateCw, X, Search, ZoomIn, Image as ImageIcon } from 'lucide-react';
+import { Link, Rows2, Maximize2, Minimize2, RotateCw, X, Search, ZoomIn, Image as ImageIcon } from 'lucide-react';
 import type { LayoutNode, PaneNode, SplitNode, Dir } from '../lib/layout';
 import { edgeToSplit, edgeZone, findPane, paneIds, type Edge } from '../lib/layout';
 import { groupOf, useWorkspace, type Tab } from "../state/workspace";
@@ -102,6 +102,8 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
   const swapPanes = useWorkspace((s) => s.swapPanes);
   const splitEmpty = useWorkspace((s) => s.splitEmpty);
   const openQuick = useUi((s) => s.openQuick);
+  // 모든 창 동시 입력 중이면 칸 머리에 쇠사슬 표시 (보이는 창은 모두 대상)
+  const linkInput = useUi((s) => s.linkInput);
   // 상하 분할 한도 (설정 maxVerticalSplits, 1~5)
   const maxSplits = useApp((s) => {
     const v = Number(s.store?.settings.maxVerticalSplits);
@@ -225,6 +227,7 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
         <span className={`dot ${entry ? entry.info.state : 'closed'}`} />
         {env && <span className="env-tag" style={{ background: ENV_INFO[env].color }}>{ENV_INFO[env].label}</span>}
         <span className="pane-title">{info?.title ?? '빈 칸'}</span>
+        {linkInput && hasSession && <Link size={12} color="var(--warn)" aria-label="동시 입력 중" className="pane-link" />}
         {info && <span className="faint small pane-target">{info.target}</span>}
         <span className="spacer" />
         {hasSession && entry?.info.state !== 'connected' && (

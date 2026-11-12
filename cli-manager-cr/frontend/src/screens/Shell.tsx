@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatDuration } from "../lib/format";
 import { findPane } from '../lib/layout';
-import { Code, Lock as LockIcon, LockOpen, PanelLeft, Settings } from 'lucide-react';
+import { Code, Link, Lock as LockIcon, LockOpen, PanelLeft, Settings, Unlink } from 'lucide-react';
 import { TabBar, TAB_MIME } from './TabBar';
 import { PaneTree } from './Panes';
 import { useWorkspace, isSplit } from '../state/workspace';
@@ -24,6 +24,11 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
   const vaultOpen = useApp((s) => !!s.vault?.unlocked);
   const snippetsOpen = useUi((s) => s.snippetsOpen);
   const pushToast = useApp((s) => s.pushToast);
+  const linkInput = useUi((s) => s.linkInput);
+  const toggleLink = () => {
+    useUi.getState().toggleLinkInput();
+    pushToast({ kind: 'info', text: linkInput ? '동시 입력을 껐습니다 — 창마다 따로 입력합니다' : '동시 입력을 켰습니다 — 보이는 모든 창에 같이 입력됩니다' });
+  };
   const lock = async () => {
     try {
       await getBackend().invoke('vault.lock');
@@ -57,6 +62,16 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
         }}
       >
         <Code size={16} />
+      </button>
+      {/* 모든 창 동시 입력: 이어진 쇠사슬 = 켜짐(보이는 모든 창에 같이 입력), 끊어진 쇠사슬 = 꺼짐 */}
+      <button
+        className={`icon-btn link-input${linkInput ? ' on' : ''}`}
+        title={linkInput ? '동시 입력 켜짐 — 보이는 모든 창에 같이 입력합니다 (누르면 끄기)' : '동시 입력 꺼짐 — 누르면 보이는 모든 창에 같이 입력합니다'}
+        aria-label="모든 창 동시 입력"
+        aria-pressed={linkInput}
+        onClick={toggleLink}
+      >
+        {linkInput ? <Link size={16} /> : <Unlink size={16} />}
       </button>
       {vaultOpen && (
         <button className="icon-btn" title="지금 잠그기" aria-label="지금 잠그기" onClick={lock}>
