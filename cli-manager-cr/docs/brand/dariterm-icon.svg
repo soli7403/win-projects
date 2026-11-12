@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- DariTerm 앱 아이콘 (최종, 시안 C 기반): 두 화면(PC·서버)을 아치 다리가 잇는다.
+       작은 크기(16~32px)에서도 보이도록 시안보다 선을 굵게 했다. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22417a"/>
+      <stop offset="1" stop-color="#0f1a33"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <!-- 다리 아치 -->
+  <path d="M72 118 Q128 34 184 118" fill="none" stroke="#4f8cff" stroke-width="18" stroke-linecap="round"/>
+  <!-- 왼쪽 화면 -->
+  <rect x="28" y="116" width="90" height="80" rx="16" fill="#0f1a33" stroke="#ffffff" stroke-width="13"/>
+  <path d="M50 140 L66 155 L50 170" fill="none" stroke="#7fb0ff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="76" y1="172" x2="98" y2="172" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <!-- 오른쪽 화면 -->
+  <rect x="138" y="116" width="90" height="80" rx="16" fill="#0f1a33" stroke="#ffffff" stroke-width="13"/>
+  <path d="M160 140 L176 155 L160 170" fill="none" stroke="#7fb0ff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="186" y1="172" x2="208" y2="172" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg>

@@ -42,7 +42,7 @@ var g_mapSettingsDefault = map[string]any{
 	},
 	"autoReconnect":     true,
 	"autoLockMinutes":   15,
-	"uploadDir":         "~/.termgo/uploads",
+	"uploadDir":         "~/.dariterm/uploads",
 	"uploadCleanupDays": 7,
 	"transferTempDir":   "",
 	"maxVerticalSplits": 3,

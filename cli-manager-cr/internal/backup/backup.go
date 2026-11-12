@@ -37,9 +37,9 @@ type File struct {
 	M_rawVault      json.RawMessage `json:"vault"`
 }
 
-// DefaultName 은 기본 파일 이름 termgo-backup-YYYY-MM-DD.tgbackup 을 만든다.
+// DefaultName 은 기본 파일 이름 dariterm-backup-YYYY-MM-DD.tgbackup 을 만든다 (파일 안 앱 식별자는 호환을 위해 termgo 유지).
 func DefaultName(tmNow time.Time) string {
-	return fmt.Sprintf("termgo-backup-%s.tgbackup", tmNow.Format("2006-01-02"))
+	return fmt.Sprintf("dariterm-backup-%s.tgbackup", tmNow.Format("2006-01-02"))
 }
 
 // NewFile 은 내보낼 파일 구조를 만든다. rawVault 가 nil 이면 볼트 없음으로 쓴다.

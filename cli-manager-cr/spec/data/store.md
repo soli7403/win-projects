@@ -83,10 +83,10 @@
 | dangerousPatterns | 아래 목록 | 정규식 문자열 배열 |
 | autoReconnect | true | |
 | autoLockMinutes | 15 | 0 이면 자동 잠금 없음 |
-| uploadDir | `~/.termgo/uploads` | 붙여넣기 이미지·파일 업로드 폴더 |
+| uploadDir | `~/.dariterm/uploads` (2026-11-12 전 기본값 `~/.termgo/uploads` — 이미 저장된 값은 그대로) | 붙여넣기 이미지·파일 업로드 폴더 |
 | uploadCleanupDays | 7 | |
 | maxVerticalSplits | 3 | 탭 하나의 최대 칸 수(상하 분할 한도), 1~5 ([../ui/panes.md](../ui/panes.md) §2) |
-| transferTempDir | `""` | 서버 ↔ 서버 복사 때 거쳐 가는 이 PC 임시 폴더. 빈 값 = OS 임시 폴더 아래 termgo-transfer ([../behavior/file-panel.md](../behavior/file-panel.md) §4) |
+| transferTempDir | `""` | 서버 ↔ 서버 복사 때 거쳐 가는 이 PC 임시 폴더. 빈 값 = OS 임시 폴더 아래 dariterm-transfer ([../behavior/file-panel.md](../behavior/file-panel.md) §4) |
 | insertPathQuote | true | 경로 삽입 시 따옴표 |
 | sessionLog | false | |
 | bell | false | |

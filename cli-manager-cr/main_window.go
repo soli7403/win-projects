@@ -97,7 +97,7 @@ func (pWin *lifecycleWindow) beforeClose(pService *app.Service) bool {
 	if app.NeedsCloseConfirm(len(slConnected)) {
 		szChoice, errDialog := runtime.MessageDialog(ctxApp, runtime.MessageDialogOptions{
 			Type:          runtime.QuestionDialog,
-			Title:         "TermGo",
+			Title:         "DariTerm",
 			Message:       app.CloseConfirmText(len(slConnected), app.CountKeepSessions(slConnected)),
 			Buttons:       []string{"종료", "취소"},
 			DefaultButton: "취소",

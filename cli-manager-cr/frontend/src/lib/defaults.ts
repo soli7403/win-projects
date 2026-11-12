@@ -32,7 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dangerousPatterns: [...DANGEROUS_PATTERNS],
   autoReconnect: true,
   autoLockMinutes: 15,
-  uploadDir: '~/.termgo/uploads',
+  uploadDir: '~/.dariterm/uploads',
   uploadCleanupDays: 7,
   transferTempDir: '',
   maxVerticalSplits: 3,

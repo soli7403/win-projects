@@ -46,7 +46,7 @@
     "transferTempDir": "",
     "updateCheck": true,
     "uploadCleanupDays": 7,
-    "uploadDir": "~/.termgo/uploads"
+    "uploadDir": "~/.dariterm/uploads"
   },
   "snippets": [],
   "version": 1

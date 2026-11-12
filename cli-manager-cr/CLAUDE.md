@@ -1,9 +1,9 @@
-# cli-manager-cr (임시 제품명 `TermGo`) — clean-room 재작성 프로젝트
+# cli-manager-cr (제품명 `DariTerm`, 옛 임시 이름 TermGo) — clean-room 재작성 프로젝트
 
 > 공통 규칙(WIP, Known Issues, Fix Protocol, 커밋, 코딩 표준)은 [../CLAUDE.md](../CLAUDE.md).
 > 이 프로젝트는 기존 `cli-manager`(BrightTerm v1.1.0 이식물)와 **코드를 공유하지 않는** 독자 구현이다.
 
-> **📌 작업 위치 (사용자 지시, 2026-11-12, 결정 D54)**: 앞으로 **소스 수정과 빌드는 무조건 이 폴더(`cli-manager-cr`)에서** 한다. `cli-manager` 는 고치지 않는다. 실행 파일은 `build/bin/termgo.exe` (`wails build`). 원본을 읽은 세션이 이 지시로 구현하는 경우는 [docs/clean-room-log.md](./docs/clean-room-log.md) 에 남긴다.
+> **📌 작업 위치 (사용자 지시, 2026-11-12, 결정 D54)**: 앞으로 **소스 수정과 빌드는 무조건 이 폴더(`cli-manager-cr`)에서** 한다. `cli-manager` 는 고치지 않는다. 실행 파일은 `build/bin/dariterm.exe` (`wails build`). 원본을 읽은 세션이 이 지시로 구현하는 경우는 [docs/clean-room-log.md](./docs/clean-room-log.md) 에 남긴다.
 
 ## ⛔ Clean-room 규칙 (이 폴더에서 일하는 모든 세션·에이전트에 적용, 최우선)
 
@@ -60,5 +60,5 @@
 go build ./...
 go test -race ./...
 (cd frontend && npx tsc --noEmit)
-wails build    # 프런트(npm run build)까지 함께 빌드 → build/bin/termgo.exe (wails.json frontend:build)
+wails build    # 프런트(npm run build)까지 함께 빌드 → build/bin/dariterm.exe (wails.json frontend:build)
 ```

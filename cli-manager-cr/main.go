@@ -88,7 +88,7 @@ func main() {
 	app.SetWindowControl(&wailsWindow{em: emitter})
 
 	errRun := wails.Run(&options.App{
-		Title:            "TermGo",
+		Title:            "DariTerm",
 		Width:            iWidth,
 		WindowStartState: startState,
 		Height:           iHeight,

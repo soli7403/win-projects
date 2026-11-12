@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- 시안 C: 두 화면(PC·서버)을 아치 다리가 잇는다. 파일 복사·동시 입력의 "연결" 강조 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22417a"/>
+      <stop offset="1" stop-color="#0f1a33"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <!-- 다리 아치 -->
+  <path d="M74 120 Q128 44 182 120" fill="none" stroke="#4f8cff" stroke-width="14" stroke-linecap="round"/>
+  <!-- 왼쪽 화면 -->
+  <rect x="32" y="120" width="84" height="72" rx="14" fill="#0f1a33" stroke="#ffffff" stroke-width="10"/>
+  <path d="M52 142 L66 154 L52 166" fill="none" stroke="#7fb0ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="74" y1="168" x2="96" y2="168" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+  <!-- 오른쪽 화면 -->
+  <rect x="140" y="120" width="84" height="72" rx="14" fill="#0f1a33" stroke="#ffffff" stroke-width="10"/>
+  <path d="M160 142 L174 154 L160 166" fill="none" stroke="#7fb0ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="182" y1="168" x2="204" y2="168" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+</svg>

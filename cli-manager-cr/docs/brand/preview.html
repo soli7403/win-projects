@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>DariTerm 아이콘 시안</title>
+<style>
+  body { margin: 0; padding: 24px; font-family: "Malgun Gothic", sans-serif; background: #f3f4f7; color: #1e2533; }
+  h1 { font-size: 18px; margin: 0 0 16px; }
+  .row { display: flex; gap: 24px; align-items: flex-end; padding: 16px; margin-bottom: 12px; border-radius: 10px; }
+  .dark { background: #0f1115; color: #d7dce5; }
+  .light { background: #ffffff; }
+  .label { width: 150px; font-weight: 600; font-size: 14px; align-self: center; }
+  figure { margin: 0; text-align: center; font-size: 11px; }
+  figure span { opacity: 0.6; }
+  img { display: block; margin: 0 auto 4px; }
+  .task { display: flex; gap: 8px; align-items: center; background: #1f1f1f; padding: 6px 10px; border-radius: 6px; color: #fff; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>DariTerm 아이콘 시안 — 256 / 64 / 32 / 16px, 어두운·밝은 배경</h1>
+<div id="rows"></div>
+<script>
+  const items = [
+    ['A 현수교 + >_', 'dariterm-a-bridge.svg'],
+    ['B 다리 커서 >⌒', 'dariterm-b-prompt-bridge.svg'],
+    ['최종 (C 굵게)', 'dariterm-icon.svg'],
+    ['C 두 화면 잇기', 'dariterm-c-two-screens.svg'],
+  ];
+  const sizes = [256, 64, 32, 16];
+  const root = document.getElementById('rows');
+  for (const theme of ['dark', 'light']) {
+    for (const [name, file] of items) {
+      const row = document.createElement('div');
+      row.className = 'row ' + theme;
+      row.innerHTML = `<div class="label">${name}</div>` +
+        sizes.map((s) => `<figure><img src="${file}" width="${s}" height="${s}"><span>${s}px</span></figure>`).join('') +
+        `<div class="task"><img src="${file}" width="16" height="16">DariTerm</div>`;
+      root.appendChild(row);
+    }
+  }
+</script>
+</body>
+</html>

@@ -25,14 +25,14 @@ type EditWatch struct {
 	mtxLast  time.Time
 }
 
-// StartEdit 은 원격 파일을 임시 폴더(<임시>/termgo-edit/<무작위>/<파일명>)에 받고, 기본 프로그램으로 여는 함수를 부른 뒤
+// StartEdit 은 원격 파일을 임시 폴더(<임시>/dariterm-edit/<무작위>/<파일명>)에 받고, 기본 프로그램으로 여는 함수를 부른 뒤
 // 수정 시각을 700ms 간격으로 확인한다. 저장되면 0.4초 뒤 서버로 다시 올린다.
 // fnOpen 은 로컬 파일을 연다(운영체제 기본 프로그램). fnToast 는 토스트를 보낸다 ({kind, text}).
 // 세션이 사라지거나 12시간이 지나면 감시를 끝낸다. 받은 로컬 경로를 돌려준다.
 func (pService *Service) StartEdit(szRemote string, fnOpen func(string) error, fnToast func(kind string, text string), fnSessionAlive func() bool) (string, error) {
 	bRand := make([]byte, 8)
 	_, _ = rand.Read(bRand)
-	szDir := filepath.Join(os.TempDir(), "termgo-edit", fmt.Sprintf("%x", bRand))
+	szDir := filepath.Join(os.TempDir(), "dariterm-edit", fmt.Sprintf("%x", bRand))
 	if errMkdir := os.MkdirAll(szDir, 0o700); errMkdir != nil {
 		return "", errMkdir
 	}

@@ -315,7 +315,7 @@ func (pSyncer *Syncer) writeAndPush(szRepoDir string, szBranch string, merged Da
 	if _, errDiff := gitRun(szRepoDir, "diff", "--cached", "--quiet"); errDiff == nil {
 		return nil
 	}
-	if _, errCommit := gitRun(szRepoDir, "-c", "user.name=TermGo", "-c", "user.email=termgo@localhost", "commit", "-m", "TermGo sync", "--only", G_cszSyncFileName); errCommit != nil {
+	if _, errCommit := gitRun(szRepoDir, "-c", "user.name=DariTerm", "-c", "user.email=termgo@localhost", "commit", "-m", "DariTerm sync", "--only", G_cszSyncFileName); errCommit != nil {
 		return errCommit
 	}
 	if _, errPush := gitRun(szRepoDir, "push", "origin", "HEAD:refs/heads/"+szBranch); errPush != nil {

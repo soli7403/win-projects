@@ -56,7 +56,7 @@ type CopyRequest struct {
 	// DstDir 이 비면 대상 세션의 시작 폴더.
 	DstDir    string
 	Overwrite bool
-	// TempDir 은 서버 → 서버 복사가 거쳐 가는 이 PC 폴더다 (비면 OS 임시 폴더 아래 termgo-transfer).
+	// TempDir 은 서버 → 서버 복사가 거쳐 가는 이 PC 폴더다 (비면 OS 임시 폴더 아래 dariterm-transfer).
 	TempDir string
 	Emit    EmitFunc
 }
@@ -237,7 +237,7 @@ func (pRun *copyRun) run(req CopyRequest, slTargets []string) error {
 func (pRun *copyRun) relay(req CopyRequest, szSrc string, szTarget string) error {
 	szBase := req.TempDir
 	if szBase == "" {
-		szBase = filepath.Join(os.TempDir(), "termgo-transfer")
+		szBase = filepath.Join(os.TempDir(), "dariterm-transfer")
 	}
 	if errMk := os.MkdirAll(szBase, 0o700); errMk != nil {
 		return fmt.Errorf("임시 폴더를 만들 수 없습니다 (%s): %w", szBase, errMk)

@@ -27,7 +27,7 @@ export function Welcome() {
     <div className="welcome">
       <div className="welcome-card">
         <LogoMark size={48} />
-        <h1>TermGo</h1>
+        <h1>DariTerm</h1>
         <p className="muted" style={{ margin: 0 }}>
           서버를 더블클릭하거나 <span className="kbd">Ctrl+K</span> 로 바로 접속하세요.
         </p>

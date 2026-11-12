@@ -8,7 +8,7 @@ import (
 
 // TestDefaultName 은 기본 이름 형식을 확인한다 (acceptance Y1).
 func TestDefaultName(t *testing.T) {
-	if DefaultName(time.Date(2026, 11, 10, 9, 0, 0, 0, time.Local)) != "termgo-backup-2026-11-10.tgbackup" {
+	if DefaultName(time.Date(2026, 11, 10, 9, 0, 0, 0, time.Local)) != "dariterm-backup-2026-11-10.tgbackup" {
 		t.Fatal("기본 이름 형식 불일치")
 	}
 }

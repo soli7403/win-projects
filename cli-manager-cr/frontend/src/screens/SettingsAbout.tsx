@@ -29,7 +29,7 @@ export function SettingsAbout() {
       <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
         <LogoMark size={44} />
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>TermGo {info.version ?? ''}</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>DariTerm {info.version ?? ''}</div>
           <div className="faint" style={{ fontSize: 12.5 }}>SSH · Telnet · Serial · 로컬 터미널</div>
         </div>
       </div>

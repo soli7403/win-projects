@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- 시안 B: 프롬프트 >_ 의 밑줄(커서)이 다리 모양. 가장 단순 — 16px 에서도 읽히도록 굵게 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22417a"/>
+      <stop offset="1" stop-color="#0f1a33"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <!-- > -->
+  <path d="M56 78 L114 128 L56 178" fill="none" stroke="#ffffff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 다리 커서: 상판 + 아치 -->
+  <path d="M140 182 Q172 118 204 182" fill="none" stroke="#4f8cff" stroke-width="16" stroke-linecap="round"/>
+  <line x1="130" y1="182" x2="214" y2="182" stroke="#4f8cff" stroke-width="18" stroke-linecap="round"/>
+</svg>

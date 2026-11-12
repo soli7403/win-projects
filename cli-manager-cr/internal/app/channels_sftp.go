@@ -342,7 +342,7 @@ func (pService *Service) uploadPrompt(svc *sftpfs.Service, origin sftpOrigin, sz
 
 // saveLocalForPrompt 는 로컬 세션용 저장이다: 파일은 원래 경로, 이미지·버퍼는 업로드 폴더에 tg- 이름으로 저장한다.
 func (pService *Service) saveLocalForPrompt(origin sftpOrigin) ([]string, error) {
-	szDir := expandHome(pService.settingString("uploadDir", "~/.termgo/uploads"))
+	szDir := expandHome(pService.settingString("uploadDir", "~/.dariterm/uploads"))
 	switch origin.Kind {
 	case "clipboardImage":
 		bPng, errPng := clipboard.ImagePNG()
@@ -376,7 +376,7 @@ func saveBytesLocal(szDir string, bData []byte, szGiven string, pService *Servic
 
 // remoteUploadDir 는 설정 uploadDir 를 원격 경로로 바꾼다 (~ 는 원격 홈). 없으면 만든다.
 func (pService *Service) remoteUploadDir(svc *sftpfs.Service) string {
-	szDir := pService.settingString("uploadDir", "~/.termgo/uploads")
+	szDir := pService.settingString("uploadDir", "~/.dariterm/uploads")
 	if strings.HasPrefix(szDir, "~/") {
 		if szHome, errHome := svc.Fs.Home(); errHome == nil {
 			return szHome + szDir[1:]

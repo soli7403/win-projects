@@ -52,7 +52,7 @@ export function SettingsFiles() {
         />
       </Field>
 
-      <Field label="오래된 업로드 자동 삭제 (일)" help="TermGo이 올린 파일(tg- 로 시작)만 삭제합니다. 0이면 삭제하지 않습니다.">
+      <Field label="오래된 업로드 자동 삭제 (일)" help="DariTerm이 올린 파일(tg- 로 시작)만 삭제합니다. 0이면 삭제하지 않습니다.">
         <NumberField label="오래된 업로드 자동 삭제 (일)" value={cleanup} min={0} max={36500} fallback={7} onCommit={(v) => void saveSettings({ uploadCleanupDays: v })} />
       </Field>
 
@@ -65,7 +65,7 @@ export function SettingsFiles() {
             className="input mono"
             style={{ flex: 1 }}
             aria-label="서버 ↔ 서버 복사 임시 폴더"
-            placeholder="(OS 임시 폴더)/termgo-transfer"
+            placeholder="(OS 임시 폴더)/dariterm-transfer"
             value={tempDraft}
             onChange={(e) => setTempDraft(e.target.value)}
             onBlur={() => {
