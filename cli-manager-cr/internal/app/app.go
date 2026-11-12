@@ -4,7 +4,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -31,22 +30,7 @@ type Service struct {
 	pLock     *lockState
 }
 
-// DataDir 은 데이터 폴더를 정한다. TERMGO_DATA 가 있으면 그 경로, 없으면 사용자 설정 폴더 아래 TermGo\data.
-// 폴더는 없으면 만들고 권한은 소유자 전용이다 (sync-backup.md §1).
-func DataDir() (string, error) {
-	szDir := os.Getenv("TERMGO_DATA")
-	if szDir == "" {
-		szConfig, errConfig := os.UserConfigDir()
-		if errConfig != nil {
-			return "", errConfig
-		}
-		szDir = filepath.Join(szConfig, "TermGo", "data")
-	}
-	if errMkdir := os.MkdirAll(szDir, 0o700); errMkdir != nil {
-		return "", errMkdir
-	}
-	return szDir, nil
-}
+// DataDir 은 datadir.go (DariTerm 폴더, 옛 TermGo 폴더에서 복사 이전).
 
 // NewService 는 데이터 폴더의 store.json·vault.json 을 열고 채널을 등록한다.
 // 실패하면 오류를 돌려준다 (앱은 이때 오류로 종료한다, lifecycle.md §1).
