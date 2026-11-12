@@ -1,0 +1,9 @@
+{
+  "changed": false,
+  "fingerprint": "SHA256:abc",
+  "hostPort": "example.test:22",
+  "keyType": "ssh-ed25519",
+  "kind": "hostkey",
+  "requestId": "\u003cid\u003e",
+  "sessionTitle": "ops@example.test"
+}

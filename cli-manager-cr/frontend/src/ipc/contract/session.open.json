@@ -1,0 +1,10 @@
+{
+  "canSftp": true,
+  "env": "none",
+  "hostId": null,
+  "id": "\u003cid\u003e",
+  "protocol": "ssh",
+  "state": "connecting",
+  "target": "ops@example.test:22",
+  "title": "ops@example.test"
+}

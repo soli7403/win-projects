@@ -1,0 +1,11 @@
+{
+  "bytes": 10,
+  "direction": "upload",
+  "id": "\u003cid\u003e",
+  "localPath": "C:\\a.txt",
+  "name": "a.txt",
+  "remotePath": "/home/x/a.txt",
+  "sessionId": "\u003cid\u003e",
+  "state": "done",
+  "total": 10
+}
