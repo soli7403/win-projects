@@ -28,7 +28,7 @@ button { font: inherit; color: inherit; }
   font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
 }
 .btn:hover:not(:disabled) { background: var(--hover); }
-.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:disabled { opacity: 0.5; color: var(--fg-3); filter: grayscale(1); cursor: not-allowed; }
 .btn.small-btn { height: 26px; padding: 0 10px; font-size: 12px; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.primary:hover:not(:disabled) { background: var(--accent-press); }
@@ -36,11 +36,13 @@ button { font: inherit; color: inherit; }
 .btn.link { border: none; background: none; color: var(--accent); padding: 0 4px; height: auto; }
 .icon-btn {
   width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent;
-  color: var(--fg-2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  /* 켜진 아이콘은 fg-2 보다 조금 밝게 (2026-11-12 사용자 요청) */
+  color: color-mix(in srgb, var(--fg) 55%, var(--fg-2)); display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
 }
-.icon-btn:hover:not(:disabled) { background: var(--hover); }
+.icon-btn:hover:not(:disabled) { background: var(--hover); color: var(--fg); }
 .icon-btn.on { background: var(--accent-soft); color: var(--accent); }
-.icon-btn:disabled { opacity: 0.35; cursor: default; }
+/* 꺼진 아이콘은 명시적인 회색: 흐린 글자색 + 채도 제거 + 투명도 */
+.icon-btn:disabled { opacity: 0.35; color: var(--fg-3); filter: grayscale(1); cursor: not-allowed; }
 .icon-btn.small { width: 22px; height: 22px; border-radius: 5px; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -122,7 +124,7 @@ button { font: inherit; color: inherit; }
 .ctx-item .kbd { margin-left: auto; }
 .ctx-item:hover:not(:disabled) { background: var(--accent); color: #fff; }
 .ctx-item.danger:hover:not(:disabled) { background: var(--danger); }
-.ctx-item:disabled { opacity: 0.4; cursor: default; }
+.ctx-item:disabled { opacity: 0.4; color: var(--fg-3); filter: grayscale(1); cursor: not-allowed; }
 .ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
 
 /* 토스트 */
@@ -271,6 +273,10 @@ button { font: inherit; color: inherit; }
 }
 .pane-head .icon-btn.small { opacity: 0.55; }
 .pane:hover .pane-head .icon-btn.small, .pane.focused .pane-head .icon-btn.small { opacity: 1; }
+/* 포커스·호버 칸에서도 꺼진 아이콘은 회색으로 남긴다 (위 opacity: 1 이 덮어쓰지 않게) */
+.pane-head .icon-btn.small:disabled,
+.pane:hover .pane-head .icon-btn.small:disabled,
+.pane.focused .pane-head .icon-btn.small:disabled { opacity: 0.3; color: var(--fg-3); filter: grayscale(1); }
 .pane-head .pane-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pane-head .pane-target { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .pane-head .spacer { flex: 1; }
@@ -317,4 +323,4 @@ button { font: inherit; color: inherit; }
 .loc-mini { height: 170px; display: flex; border-radius: 6px; background: var(--panel-2); padding: 3px; }
 .loc-pane { flex: 1; min-width: 0; min-height: 0; border-radius: 6px; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; }
 .loc-arrows { display: flex; gap: 2px; }
-.loc-arrows .icon-btn:hover { background: var(--accent); color: #fff; }
+.loc-arrows .icon-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
