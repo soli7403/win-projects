@@ -18,7 +18,7 @@ export function CopyJobs() {
   const running = jobs.filter(isActiveJob).length;
   const finished = jobs.length - running;
   return (
-    <div className="copyjobs" aria-label="복사 작업">
+    <div className="copyjobs" aria-label="전송 목록">
       <div className="cj-head">
         <Copy size={12} />
         <span>
@@ -91,7 +91,7 @@ function JobRow({ j, onRemove }: { j: CopyJob; onRemove: () => void }) {
           취소
         </button>
       ) : (
-        <button className="icon-btn small" title="목록에서 지우기" aria-label="목록에서 지우기" onClick={onRemove}>
+        <button className="icon-btn small" title="끝난 항목 지우기" aria-label="끝난 항목 지우기" onClick={onRemove}>
           <X size={12} />
         </button>
       )}

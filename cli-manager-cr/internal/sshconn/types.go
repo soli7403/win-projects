@@ -9,7 +9,7 @@ const (
 	G_iKeepaliveFailMax  = 4
 	G_iPassphraseMax     = 3
 	G_iPasswordMax       = 4
-	G_iJumpDepthMax      = 4 // 점프 호스트 4단계를 넘으면 오류 (대상 기준 깊이 5)
+	G_iJumpDepthMax      = 4 // 경유 서버 4단계를 넘으면 오류 (대상 기준 깊이 5)
 )
 
 // Prompter 는 사용자에게 묻는 질문 창구다 (spec/ipc.md §3 의 ui.request). 취소이면 bOk=false 다.
@@ -47,13 +47,13 @@ type Target struct {
 	Port         int
 	Username     string // 비면 Prompter.Username 으로 묻는다
 	AuthType     string // password | key | agent | ask
-	Password     string // 볼트에서 읽은 비밀번호 (없으면 "")
-	PrivateKey   []byte // 볼트에서 읽은 개인 키 (없으면 nil)
-	Passphrase   string // 볼트에서 읽은 키 암호 (없으면 "")
-	AllowSave    bool   // 비밀번호 요청에 "볼트에 저장" 을 허용할지
+	Password     string // 보관함에서 읽은 비밀번호 (없으면 "")
+	PrivateKey   []byte // 보관함에서 읽은 개인 키 (없으면 nil)
+	Passphrase   string // 보관함에서 읽은 키 암호 (없으면 "")
+	AllowSave    bool   // 비밀번호 요청에 "보관함에 저장" 을 허용할지
 	KeepaliveSec int
 	TermType     string
-	Jump         *Target // 점프 호스트 (없으면 nil)
+	Jump         *Target // 경유 서버 (없으면 nil)
 	Depth        int     // 점프 깊이 (내부용)
 }
 

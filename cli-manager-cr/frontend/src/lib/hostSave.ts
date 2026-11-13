@@ -94,7 +94,7 @@ export async function buildHostFromForm(i: SaveInput): Promise<Host> {
     if (secret) {
       jumpCred = await saveAccount(
         j.authType === 'key' ? 'key' : 'password',
-        `${i.alias} 베스천`,
+        `${i.alias} 경유 서버`,
         j.username.trim(),
         { password: j.password, privateKey: j.keyText.trim(), passphrase: j.passphrase },
         jumpCred ?? undefined,

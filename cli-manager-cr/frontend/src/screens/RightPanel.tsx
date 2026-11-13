@@ -58,8 +58,8 @@ export function SftpDock({ group }: { group: 0 | 1 }) {
   };
 
   return (
-    <aside className="rpanel" style={{ width }} aria-label="SFTP 패널">
-      <div className="rpanel-resize" onPointerDown={onResizeDown} role="separator" aria-orientation="vertical" aria-label="SFTP 패널 너비" />
+    <aside className="rpanel" style={{ width }} aria-label="SFTP 창">
+      <div className="rpanel-resize" onPointerDown={onResizeDown} role="separator" aria-orientation="vertical" aria-label="SFTP 창 너비" />
       {/* 제목 줄(제목·도구 버튼·닫기)은 SftpPanel 이 그린다 */}
       <div className="rpanel-body"><SftpPanel group={group} onClose={() => setOpen(group, false)} /></div>
     </aside>

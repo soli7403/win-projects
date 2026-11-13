@@ -41,7 +41,7 @@ export function SnippetsPanel() {
   const onDelete = async (s: Snippet, ev: MouseEvent) => {
     ev.stopPropagation();
     const ok = await confirm({
-      title: '스니펫 삭제',
+      title: '명령 삭제',
       body: `"${s.name}"을(를) 삭제할까요?`,
       okText: '삭제',
       danger: true,
@@ -61,13 +61,13 @@ export function SnippetsPanel() {
           <input
             className="input snip-search"
             style={{ paddingLeft: 26 }}
-            placeholder="스니펫 검색"
-            aria-label="스니펫 검색"
+            placeholder="명령 찾기"
+            aria-label="명령 찾기"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <button className="icon-btn small" title="새 스니펫" aria-label="새 스니펫" onClick={() => setEditing('new')}>
+        <button className="icon-btn small" title="새 명령" aria-label="새 명령" onClick={() => setEditing('new')}>
           <Plus size={15} />
         </button>
       </div>
@@ -75,7 +75,7 @@ export function SnippetsPanel() {
       {snippets.length === 0 ? (
         <div className="snip-empty">
           <div>자주 쓰는 명령을 저장해 두고 클릭 한 번으로 실행하세요.</div>
-          <div className="faint">동시 입력이 켜진 탭에서는 모든 패널에 입력됩니다.</div>
+          <div className="faint">일괄 입력이 켜진 탭에서는 모든 창에 입력됩니다.</div>
         </div>
       ) : (
         <div className="snip-list">
@@ -83,7 +83,7 @@ export function SnippetsPanel() {
             <div
               key={s.id}
               className="snip-item"
-              title="클릭하면 현재 세션에 입력합니다"
+              title="누르면 지금 창에 입력합니다"
               role="button"
               tabIndex={0}
               onClick={() => onRun(s)}
@@ -98,8 +98,8 @@ export function SnippetsPanel() {
               <div className="snip-actions">
                 <button
                   className="icon-btn small"
-                  title="편집"
-                  aria-label="편집"
+                  title="수정"
+                  aria-label="수정"
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditing(s);
@@ -149,7 +149,7 @@ function SnippetEditor({
   };
   return (
     <Modal
-      title={isNew ? '새 스니펫' : '스니펫 편집'}
+      title={isNew ? '새 명령' : '명령 수정'}
       size="sm"
       onClose={onCancel}
       foot={
@@ -177,7 +177,7 @@ function SnippetEditor({
           onChange={(e) => setBody(e.target.value)}
         />
       </Field>
-      <ToggleRow title="입력 후 Enter 실행" checked={sendEnter} onChange={setSendEnter} />
+      <ToggleRow title="입력하고 바로 실행" checked={sendEnter} onChange={setSendEnter} />
     </Modal>
   );
 }

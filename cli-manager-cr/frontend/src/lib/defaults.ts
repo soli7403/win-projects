@@ -52,11 +52,11 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export const ENV_INFO: Record<EnvKind, { label: string; color: string }> = {
   prod: { label: '운영', color: '#ef4444' },
-  stage: { label: '기능테스트', color: '#f59e0b' },
-  perf: { label: '성능테스트', color: '#a855f7' },
+  stage: { label: '검증', color: '#f59e0b' },
+  perf: { label: '부하 테스트', color: '#a855f7' },
   dev: { label: '개발', color: '#22c55e' },
-  device: { label: '장비', color: '#3b82f6' },
-  none: { label: '일반', color: '#64748b' },
+  device: { label: '네트워크 장비', color: '#3b82f6' },
+  none: { label: '기본', color: '#64748b' },
 };
 
 /** 색 선택 팔레트(14색, 순서 유지). 맨 앞의 "자동"은 색 값을 지운다. */

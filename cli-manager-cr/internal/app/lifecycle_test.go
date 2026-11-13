@@ -16,7 +16,7 @@ func TestAutoLockRules(t *testing.T) {
 		t.Fatal("A3: 자동 잠금 0 이면 잠기면 안 됨")
 	}
 	if ShouldAutoLock(1, false, false, true, 999999999) {
-		t.Fatal("이미 잠긴 볼트는 다시 잠그지 않음")
+		t.Fatal("이미 잠긴 보관함은 다시 잠그지 않음")
 	}
 	if !ShouldAutoLock(1, true, false, true, 60*1000) {
 		t.Fatal("A1: 1분 유휴면 잠가야 함")

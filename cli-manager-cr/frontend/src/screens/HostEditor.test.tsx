@@ -71,7 +71,7 @@ describe('서버 편집 화면 수용 시나리오', () => {
     useWorkspace.setState({ tabs: [], activeTabId: null, sessions: {}, writers: {} });
   });
 
-  it('H4: 볼트가 잠겨 있으면 비밀번호 저장을 막고 대화상자를 닫지 않는다', async () => {
+  it('H4: 보관함이 잠겨 있으면 비밀번호 저장을 막고 대화상자를 닫지 않는다', async () => {
     const t = testBackend(base([]), []);
     setBackend(t.backend);
     seedApp(base([]), false);
@@ -80,11 +80,11 @@ describe('서버 편집 화면 수용 시나리오', () => {
     render(<HostEditor hostId={null} groupId={null} />);
 
     fireEvent.change(screen.getByPlaceholderText(/10.0.0.11/), { target: { value: '10.0.0.1' } });
-    fireEvent.click(screen.getByRole('tab', { name: '인증' }));
+    fireEvent.click(screen.getByRole('tab', { name: '로그인' }));
     fireEvent.change(screen.getByPlaceholderText('비밀번호'), { target: { value: 'secret' } });
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
 
-    await waitFor(() => expect(screen.getByText('볼트가 잠겨 있어 비밀번호를 저장할 수 없습니다')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('보관함이 잠겨 있어 비밀번호를 저장할 수 없습니다')).toBeTruthy());
     expect(useUi.getState().editor).not.toBeNull();
     expect(t.calls.some((c) => c.channel === 'store.patch')).toBe(false);
     expect(t.calls.some((c) => c.channel === 'cred.save')).toBe(false);
@@ -101,8 +101,8 @@ describe('서버 편집 화면 수용 시나리오', () => {
     useUi.getState().openEditor({ kind: 'host', hostId: 'h-a', groupId: null });
     render(<HostEditor hostId="h-a" groupId={null} />);
 
-    await waitFor(() => expect(screen.getByRole('tab', { name: '인증' })).toBeTruthy());
-    fireEvent.click(screen.getByRole('tab', { name: '인증' }));
+    await waitFor(() => expect(screen.getByRole('tab', { name: '로그인' })).toBeTruthy());
+    fireEvent.click(screen.getByRole('tab', { name: '로그인' }));
     await waitFor(() => {
       const sel = screen.getByRole('combobox') as HTMLSelectElement;
       expect(sel.value).toBe('c-1');
@@ -124,7 +124,7 @@ describe('서버 편집 화면 수용 시나리오', () => {
     render(<HostEditor hostId={null} groupId={null} />);
 
     fireEvent.change(screen.getByPlaceholderText(/10.0.0.11/), { target: { value: '10.0.0.5' } });
-    fireEvent.click(screen.getByRole('button', { name: '저장 후 연결' }));
+    fireEvent.click(screen.getByRole('button', { name: '저장하고 연결' }));
 
     await waitFor(() => expect(useUi.getState().editor).toBeNull());
     expect(t.getStore().hosts.some((h) => h.host === '10.0.0.5')).toBe(true);

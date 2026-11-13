@@ -37,7 +37,7 @@ describe('폴더 계층 (spec/ui/sidebar.md §4)', () => {
   });
 });
 
-describe('사이드바 부제·접속 대상 (spec/ui/sidebar.md §5)', () => {
+describe('사이드바 부제·연결 대상 (spec/ui/sidebar.md §5)', () => {
   it('로컬은 시작 폴더 또는 ~, 시리얼은 장치 경로', () => {
     expect(sidebarSubtitle(h({ protocol: 'local', local: {} }))).toBe('로컬 · ~');
     expect(sidebarSubtitle(h({ protocol: 'local', local: { cwd: 'C:\\w' } }))).toBe('로컬 · C:\\w');

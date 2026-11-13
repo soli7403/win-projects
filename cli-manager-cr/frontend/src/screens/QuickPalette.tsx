@@ -37,13 +37,13 @@ export function QuickPalette() {
       const word = input.trimStart().slice(1).trim().toLowerCase();
       const cmds: Row[] = [
         { kind: 'cmd', key: 'c-local', label: '새 로컬 터미널', sub: '새 탭', run: () => runShortcut('newLocal') },
-        { kind: 'cmd', key: 'c-new-host', label: '새 서버 등록', run: () => openEditor({ kind: 'host', hostId: null, groupId: null }) },
+        { kind: 'cmd', key: 'c-new-host', label: '새 서버 추가', run: () => openEditor({ kind: 'host', hostId: null, groupId: null }) },
         { kind: 'cmd', key: 'c-new-folder', label: '새 폴더', run: () => openEditor({ kind: 'folder', folderId: null, parentId: null }) },
         { kind: 'cmd', key: 'c-import', label: 'PuTTY / SSH config 가져오기', run: () => useUi.getState().openImportDialog() },
         { kind: 'cmd', key: 'c-settings', label: '설정 열기', run: () => useUi.getState().openSettings() },
         { kind: 'cmd', key: 'c-theme', label: `테마 전환 (${store?.settings.theme === 'dark' ? '라이트' : '다크'})`, run: () => toggleTheme() },
-        { kind: 'cmd', key: 'c-grid', label: '모든 탭을 그리드로 모으기', run: () => useWorkspace.getState().gridTabs() },
-        { kind: 'cmd', key: 'c-lock', label: '볼트 잠그기', run: () => void getBackend().invoke('vault.lock').catch((e) => useApp.getState().pushToast({ kind: 'error', text: errorMessage(e) })) },
+        { kind: 'cmd', key: 'c-grid', label: '모든 탭을 바둑판으로', run: () => useWorkspace.getState().gridTabs() },
+        { kind: 'cmd', key: 'c-lock', label: '보관함 잠그기', run: () => void getBackend().invoke('vault.lock').catch((e) => useApp.getState().pushToast({ kind: 'error', text: errorMessage(e) })) },
       ];
       return cmds.filter((c) => c.kind === 'cmd' && c.label.toLowerCase().includes(word));
     }
@@ -53,8 +53,8 @@ export function QuickPalette() {
       out.push({
         kind: 'direct',
         key: 'direct',
-        label: `바로 접속: ${q}`,
-        sub: '저장하지 않고 연결합니다',
+        label: `바로 연결: ${q}`,
+        sub: '저장하지 않고 한 번만 연결',
         target: direct,
       });
     }
@@ -138,7 +138,7 @@ export function QuickPalette() {
 
   return (
     <div className="overlay quick-overlay" onMouseDown={(e) => e.target === e.currentTarget && close()}>
-      <div className="quick" role="dialog" aria-label="빠른 접속">
+      <div className="quick" role="dialog" aria-label="빠른 연결">
         <div className="quick-input">
           <Zap size={16} color="var(--accent)" />
           <input
@@ -146,14 +146,14 @@ export function QuickPalette() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKey}
-            placeholder="서버 이름, IP, user@host:port 입력  ·  > 명령"
-            aria-label="빠른 접속 입력"
+            placeholder="서버 이름·IP·user@host:port 를 입력 (> 로 명령)"
+            aria-label="빠른 연결 입력"
           />
         </div>
         <div className="quick-list" ref={listRef}>
           {rows.length === 0 && (
             <div className="faint small" style={{ padding: '10px 12px' }}>
-              {`일치하는 서버가 없습니다. user@host 형식으로 입력하면 바로 접속할 수 있습니다.`}
+              {`일치하는 서버가 없습니다. user@host 형식으로 입력하면 바로 연결할 수 있습니다.`}
             </div>
           )}
           {rows.map((r, i) => (
@@ -177,9 +177,9 @@ export function QuickPalette() {
           ))}
         </div>
         <div className="quick-foot faint small">
-          <span className="kbd">Enter</span> {quick.targetPane ? '이 칸에서 열기' : '새 탭'} &nbsp;
-          <span className="kbd">Ctrl+Enter</span> 오른쪽 분할 &nbsp;
-          <span className="kbd">Shift+Enter</span> 아래 분할 &nbsp;
+          <span className="kbd">Enter</span> {quick.targetPane ? '이 창에서 열기' : '새 탭'} &nbsp;
+          <span className="kbd">Ctrl+Enter</span> 오른쪽 나누기 &nbsp;
+          <span className="kbd">Shift+Enter</span> 아래 나누기 &nbsp;
           <span className="kbd">&gt;</span> 명령
         </div>
       </div>

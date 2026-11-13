@@ -38,10 +38,10 @@ export function SettingsFiles() {
         </div>
       </div>
 
-      <Field label="서버 업로드 폴더" help="~ 는 서버의 홈 디렉터리입니다. 폴더가 없으면 자동으로 만듭니다.">
+      <Field label="서버에 올릴 폴더" help="~ 는 서버의 홈 디렉터리입니다. 폴더가 없으면 자동으로 만듭니다.">
         <input
           className="input mono"
-          aria-label="서버 업로드 폴더"
+          aria-label="서버에 올릴 폴더"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => {
@@ -52,19 +52,19 @@ export function SettingsFiles() {
         />
       </Field>
 
-      <Field label="오래된 업로드 자동 삭제 (일)" help="DariTerm이 올린 파일(tg- 로 시작)만 삭제합니다. 0이면 삭제하지 않습니다.">
-        <NumberField label="오래된 업로드 자동 삭제 (일)" value={cleanup} min={0} max={36500} fallback={7} onCommit={(v) => void saveSettings({ uploadCleanupDays: v })} />
+      <Field label="올린 파일 자동 정리 (일)" help="DariTerm이 올린 파일(tg- 로 시작)만 삭제합니다. 0이면 삭제하지 않습니다.">
+        <NumberField label="올린 파일 자동 정리 (일)" value={cleanup} min={0} max={36500} fallback={7} onCommit={(v) => void saveSettings({ uploadCleanupDays: v })} />
       </Field>
 
       <Field
-        label="서버 ↔ 서버 복사 임시 폴더 (이 PC)"
-        help="파일 패널에서 다른 서버 탭으로 끌어 복사할 때 이 폴더에 먼저 받은 뒤 대상 서버로 올리고, 끝나면 임시 사본을 지웁니다. 비우면 OS 임시 폴더를 씁니다."
+        label="서버 간 복사용 임시 폴더 (이 PC)"
+        help="파일 창에서 다른 서버 탭으로 끌어 복사할 때 이 폴더에 먼저 받은 뒤 대상 서버로 올리고, 끝나면 임시 사본을 지웁니다. 비우면 OS 임시 폴더를 씁니다."
       >
         <div style={{ display: 'flex', gap: 6 }}>
           <input
             className="input mono"
             style={{ flex: 1 }}
-            aria-label="서버 ↔ 서버 복사 임시 폴더"
+            aria-label="서버 간 복사용 임시 폴더"
             placeholder="(OS 임시 폴더)/dariterm-transfer"
             value={tempDraft}
             onChange={(e) => setTempDraft(e.target.value)}

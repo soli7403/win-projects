@@ -363,14 +363,14 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     const t = tabOf(get(), tabId);
     if (!t) return;
     if (!t.broadcast && paneIds(t.root).length < 2) {
-      useApp.getState().pushToast({ kind: 'info', text: '칸이 2개 이상일 때만 동시 입력을 켤 수 있습니다' });
+      useApp.getState().pushToast({ kind: 'info', text: '창이 2개 이상일 때만 일괄 입력을 켤 수 있습니다' });
       return;
     }
     set((s) => ({ tabs: patchTab(s.tabs, tabId, (x) => ({ ...x, broadcast: !x.broadcast })) }));
     const on = !t.broadcast;
     useApp.getState().pushToast({
       kind: 'info',
-      text: on ? '동시 입력 켜짐 — 이 탭의 모든 패널에 입력됩니다' : '동시 입력 꺼짐',
+      text: on ? '일괄 입력 켜짐 — 이 탭의 모든 창에 입력됩니다' : '일괄 입력 꺼짐',
     });
   },
 

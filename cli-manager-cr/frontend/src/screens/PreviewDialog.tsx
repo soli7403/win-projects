@@ -68,7 +68,7 @@ export function PreviewDialog() {
         <div className="preview-foot">
           <span className="preview-path" title={target.path}>{target.path}</span>
           <button className="btn" onClick={onType}>경로를 터미널에 입력</button>
-          <button className="btn" onClick={() => void onEdit()}>로컬 앱으로 편집</button>
+          <button className="btn" onClick={() => void onEdit()}>이 PC 앱으로 편집</button>
           <button className="btn primary" onClick={onDownload}>다운로드</button>
         </div>
       }

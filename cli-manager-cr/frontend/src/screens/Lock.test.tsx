@@ -33,14 +33,14 @@ const submitOf = (container: HTMLElement) => container.querySelector('form') as 
 describe('잠금 화면 최초 설정 (L1~L4)', () => {
   beforeEach(() => setBackend(null));
 
-  it('L1: 볼트가 없으면 시작하기 카드와 첫 입력창 포커스', async () => {
+  it('L1: 보관함이 없으면 시작하기 카드와 첫 입력창 포커스', async () => {
     await setup(false);
-    expect(screen.getByText('TermGo 시작하기')).toBeTruthy();
+    expect(screen.getByText('DariTerm 처음 설정')).toBeTruthy();
     const pw = screen.getByPlaceholderText('마스터 비밀번호 (8자 이상)');
     expect(document.activeElement).toBe(pw);
   });
 
-  it('L2: 8자 미만이면 오류, 볼트는 만들어지지 않는다', async () => {
+  it('L2: 8자 미만이면 오류, 보관함은 만들어지지 않는다', async () => {
     const { container } = await setup(false);
     fireEvent.change(screen.getByPlaceholderText('마스터 비밀번호 (8자 이상)'), { target: { value: 'abc' } });
     fireEvent.submit(submitOf(container));

@@ -46,13 +46,13 @@ export function SettingsInput() {
     <>
       <Group>
         <ToggleRow
-          title="선택하면 자동 복사"
+          title="드래그하면 바로 복사"
           desc="PuTTY처럼 마우스로 드래그하면 바로 클립보드에 복사됩니다"
           checked={copyOnSelect}
           onChange={setCopyOnSelect}
         />
         <ToggleRow
-          title="오른쪽 클릭으로 붙여넣기"
+          title="마우스 오른쪽 버튼으로 붙여넣기"
           desc="끄면 오른쪽 클릭 시 메뉴가 나옵니다 (켜져 있어도 Shift+오른쪽 클릭은 메뉴)"
           checked={rightClickPaste}
           onChange={setRightClickPaste}
@@ -72,29 +72,29 @@ export function SettingsInput() {
           onChange={setShiftEnterNewline}
         />
         <ToggleRow
-          title="원격 복사 허용 (OSC 52)"
+          title="서버의 클립보드 쓰기 허용 (OSC 52)"
           desc="tmux·vim·Claude Code 등이 보내는 '클립보드에 쓰기' 요청을 이 PC 클립보드에 넣습니다. 클립보드를 읽으려는 요청은 항상 거절합니다"
           checked={osc52Copy}
           onChange={setOsc52Copy}
         />
         <ToggleRow
-          title="여러 줄 붙여넣기 확인"
+          title="여러 줄 붙여넣기 전에 묻기"
           desc="여러 줄을 붙여넣으면 실행 전에 한 번 확인합니다"
           checked={confirmMultilinePaste}
           onChange={setConfirmMultilinePaste}
         />
         <ToggleRow
-          title="운영 서버 위험 명령 확인"
+          title="운영 서버 위험 명령 경고"
           desc="'운영' 환경 서버에서 아래 패턴의 명령을 실행하거나 붙여넣을 때 확인 창을 띄웁니다"
           checked={guardDangerousOnProd}
           onChange={setGuardDangerousOnProd}
         />
       </Group>
 
-      <Field label="위험 명령 패턴 (정규식, 한 줄에 하나)">
+      <Field label="위험 명령 목록 (정규식, 한 줄에 하나)">
         <textarea
           className="input mono"
-          aria-label="위험 명령 패턴"
+          aria-label="위험 명령 목록"
           rows={7}
           style={{ height: 150, padding: '8px 10px', resize: 'vertical', fontSize: 12 }}
           value={text}

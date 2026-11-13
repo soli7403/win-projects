@@ -29,8 +29,8 @@ function RequestView({ req, onAnswer, onCancel }: { req: UiRequest; onAnswer: An
 function HostKeyView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { kind: 'hostkey' }>; onAnswer: Answer; onCancel: () => void }) {
   if (!req.changed) {
     return (
-      <Modal title="처음 접속하는 서버입니다" icon={ShieldQuestion} iconColor="var(--accent)" size="sm" onClose={onCancel}
-        foot={<><button className="btn" onClick={onCancel}>접속 취소</button><button className="btn primary" autoFocus onClick={() => onAnswer(true)}>신뢰하고 접속</button></>}>
+      <Modal title="처음 연결하는 서버입니다" icon={ShieldQuestion} iconColor="var(--accent)" size="sm" onClose={onCancel}
+        foot={<><button className="btn" onClick={onCancel}>연결 취소</button><button className="btn primary" autoFocus onClick={() => onAnswer(true)}>믿고 연결</button></>}>
         <div style={{ lineHeight: 1.7 }}>
           [{req.sessionTitle}] <b>{req.hostPort}</b> 서버의 신원을 아직 확인하지 않았습니다. 아래 지문이 서버 관리자가 알려준 값과 같은지 확인하세요.
         </div>
@@ -40,9 +40,9 @@ function HostKeyView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { ki
   }
   return (
     <Modal title="경고: 서버의 호스트 키가 바뀌었습니다" icon={ShieldAlert} iconColor="var(--danger)" size="sm" onClose={onCancel}
-      foot={<><button className="btn" onClick={onCancel}>접속 취소</button><button className="btn danger" onClick={() => onAnswer(true)}>위험을 알고 새 키 신뢰</button></>}>
+      foot={<><button className="btn" onClick={onCancel}>연결 취소</button><button className="btn danger" onClick={() => onAnswer(true)}>위험을 알고 새 키로 연결</button></>}>
       <div className="notice danger">
-        [{req.sessionTitle}] {req.hostPort}의 호스트 키가 이전에 저장한 키와 다릅니다. 서버를 재설치했거나 IP가 바뀐 경우가 아니라면 <b>중간자 공격</b>일 수 있습니다. 확실하지 않으면 접속하지 마세요.
+        [{req.sessionTitle}] {req.hostPort}의 호스트 키가 이전에 저장한 키와 다릅니다. 서버를 재설치했거나 IP가 바뀐 경우가 아니라면 <b>중간자 공격</b>일 수 있습니다. 확실하지 않으면 연결하지 마세요.
       </div>
       <Field label={`${req.keyType} 키 지문`}><div className="detail-box">{req.fingerprint}</div></Field>
       {req.oldFingerprint && <Field label="이전에 저장된 지문"><div className="detail-box faint">{req.oldFingerprint}</div></Field>}
@@ -70,7 +70,7 @@ function PasswordView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { k
         {req.allowSave && (
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', opacity: vaultOpen ? 1 : 0.5 }}>
             <input type="checkbox" disabled={!vaultOpen} checked={vaultOpen && save} onChange={(e) => setSave(e.target.checked)} />
-            볼트에 저장하고 다음부터 자동 로그인{vaultOpen ? '' : ' (볼트 잠김)'}
+            보관함에 저장하고 다음부터 자동 로그인{vaultOpen ? '' : ' (보관함 잠김)'}
           </label>
         )}
       </form>
@@ -108,12 +108,12 @@ function SingleView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { kin
     onAnswer(val);
   };
   return (
-    <Modal title={isUser ? '사용자 이름 입력' : '개인 키 암호 입력'} icon={isUser ? User : KeyRound} size="sm" onClose={onCancel}
+    <Modal title={isUser ? '사용자 이름 입력' : '키 암호 입력'} icon={isUser ? User : KeyRound} size="sm" onClose={onCancel}
       foot={<><button className="btn" type="button" onClick={onCancel}>취소</button><button className="btn primary" type="submit" form="single-form">확인</button></>}>
       <form id="single-form" onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="faint">[{req.sessionTitle}]</div>
         {!isUser && <div className="faint small">키 파일이 암호로 보호되어 있습니다</div>}
-        <Field label={isUser ? '접속할 계정' : undefined}>
+        <Field label={isUser ? '연결할 계정' : undefined}>
           <input className="input" type={isUser ? 'text' : 'password'} autoFocus value={val} onChange={(e) => setVal(e.target.value)} />
         </Field>
       </form>

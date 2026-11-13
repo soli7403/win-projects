@@ -79,7 +79,7 @@ describe('G3 위험 명령 패턴 편집', () => {
     seed();
     const m = mockBackend({ 'app.info': () => ({ platform: 'windows' }) });
     render(<SettingsInput />);
-    const ta = screen.getByLabelText('위험 명령 패턴') as HTMLTextAreaElement;
+    const ta = screen.getByLabelText('위험 명령 목록') as HTMLTextAreaElement;
     fireEvent.change(ta, { target: { value: '  rm\\s+-rf  \n\n\nreboot\n   \n' } });
     fireEvent.blur(ta);
     await waitFor(() => {
@@ -123,7 +123,7 @@ describe('G8 [원래 크기로]', () => {
     seed();
     const m = mockBackend();
     render(<SettingsAppearance />);
-    fireEvent.click(screen.getByRole('button', { name: '원래 크기로' }));
+    fireEvent.click(screen.getByRole('button', { name: '기본 크기로' }));
     await waitFor(() => expect(m.calls.some(([c]) => c === 'app.resetWindow')).toBe(true));
   });
 });
@@ -142,7 +142,7 @@ describe('G5 저장된 계정 삭제', () => {
     expect(dlg.kind).toBe('confirm');
     if (dlg.kind === 'confirm') {
       expect(dlg.opts.title).toBe('계정 삭제');
-      expect(dlg.opts.body).toBe('"배포 계정" 계정을 볼트에서 삭제할까요? 1개 서버가 접속할 때 비밀번호를 다시 묻게 됩니다.');
+      expect(dlg.opts.body).toBe('"배포 계정" 계정을 보관함에서 삭제할까요? 1개 서버가 연결할 때 비밀번호를 다시 묻게 됩니다.');
       expect(dlg.opts.okText).toBe('삭제');
       expect(dlg.opts.danger).toBe(true);
     }
@@ -188,7 +188,7 @@ describe('Y1 백업 내보내기', () => {
   });
 });
 
-describe('Y8 저장소 볼트 불일치 카드', () => {
+describe('Y8 저장소 보관함 불일치 카드', () => {
   it('카드를 보이고, 덮어쓰기는 확인을 거쳐 overwrite 모드로 실행한다', async () => {
     seed();
     const m = mockBackend({
@@ -198,9 +198,9 @@ describe('Y8 저장소 볼트 불일치 카드', () => {
     useApp.setState({ store: { ...useApp.getState().store!, settings: { ...DEFAULT_SETTINGS, syncRepo: 'git@example.test:me/sync.git' } } });
     render(<SettingsSync />);
     fireEvent.click(screen.getByRole('button', { name: /지금 동기화/ }));
-    expect(await screen.findByText('저장소의 볼트가 이 PC 의 볼트와 다릅니다')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '저장소 볼트 받기' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '이 PC 볼트로 덮어쓰기' }));
+    expect(await screen.findByText('저장소의 보관함이 이 PC 의 보관함과 다릅니다')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '저장소의 보관함 받기' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '이 PC 보관함으로 덮어쓰기' }));
     await waitFor(() => expect(useUi.getState().dialogs.length).toBe(1));
     const dlg = useUi.getState().dialogs[0];
     if (dlg.kind === 'confirm') expect(dlg.opts.okText).toBe('덮어쓰기');

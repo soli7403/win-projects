@@ -121,8 +121,8 @@ func TestConnectOutputAndClose(t *testing.T) {
 	waitUntil(t, func() bool { return rec.hasState(G_cszStateConnected) }, time.Second)
 	transport.chIn <- []byte("hello")
 	waitUntil(t, func() bool { return strings.Contains(rec.output(), "hello") }, time.Second)
-	if !strings.Contains(rec.output(), "접속 중...") {
-		t.Fatal("접속 시작 안내 줄이 나와야 함")
+	if !strings.Contains(rec.output(), "연결 중...") {
+		t.Fatal("연결 시작 안내 줄이 나와야 함")
 	}
 	pManager.Close(info.M_szId)
 	waitUntil(t, func() bool { return rec.hasState(G_cszStateClosed) }, time.Second)
@@ -148,16 +148,16 @@ func TestFirstConnectFailureIsErrorWithoutRetry(t *testing.T) {
 	}
 	waitUntil(t, func() bool { return rec.hasState(G_cszStateError) }, time.Second)
 	waitUntil(t, func() bool {
-		return strings.Contains(rec.output(), "서버가 접속을 거부했습니다 (포트 확인)")
+		return strings.Contains(rec.output(), "서버가 연결을 거부했습니다 (포트 확인)")
 	}, time.Second)
-	if !strings.Contains(rec.output(), "서버가 접속을 거부했습니다 (포트 확인)") {
+	if !strings.Contains(rec.output(), "서버가 연결을 거부했습니다 (포트 확인)") {
 		t.Fatalf("오류 문구 번역 누락: %q", rec.output())
 	}
 	time.Sleep(50 * time.Millisecond)
 	mtxCalls.Lock()
 	defer mtxCalls.Unlock()
 	if iCalls != 1 {
-		t.Fatalf("자동 재접속하면 안 됨, 호출 %d회", iCalls)
+		t.Fatalf("자동 재연결하면 안 됨, 호출 %d회", iCalls)
 	}
 }
 
@@ -225,13 +225,13 @@ func TestBackoffAndReconnectRules(t *testing.T) {
 		}
 	}
 	if CanAutoReconnect(true, false, false, 0) {
-		t.Fatal("처음 접속 실패는 자동 재접속 안 함")
+		t.Fatal("처음 연결 실패는 자동 재연결 안 함")
 	}
 	if !CanAutoReconnect(true, false, true, 0) {
-		t.Fatal("끊김 뒤에는 자동 재접속")
+		t.Fatal("끊김 뒤에는 자동 재연결")
 	}
 	if CanAutoReconnect(true, true, true, 0) {
-		t.Fatal("시리얼은 자동 재접속 안 함")
+		t.Fatal("시리얼은 자동 재연결 안 함")
 	}
 	if CanAutoReconnect(true, false, true, 8) {
 		t.Fatal("8회 넘으면 중단")

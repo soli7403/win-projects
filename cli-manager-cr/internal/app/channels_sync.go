@@ -107,7 +107,7 @@ func orderedMaps(mapItems gitsync.Collection, slOrder []string) ([]map[string]an
 func (pService *Service) askPassword() (string, bool) {
 	rawAnswer, bOk := pService.pRouter.Asker().Ask("password", map[string]any{
 		"sessionTitle": "git 동기화",
-		"prompt":       "저장소 볼트의 마스터 비밀번호",
+		"prompt":       "저장소 보관함의 마스터 비밀번호",
 		"username":     "",
 		"allowSave":    false,
 	})

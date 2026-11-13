@@ -65,7 +65,7 @@ func (pService *Service) sshDialer(record hostRecord) session.Dialer {
 // buildSSHTarget 는 저장 서버 기록으로 접속 대상을 만든다. 계정은 볼트에서 읽는다 (볼트가 잠겨 있으면 비밀 없이 진행).
 func (pService *Service) buildSSHTarget(record hostRecord, depth int) (*sshconn.Target, error) {
 	if depth > 5 {
-		return nil, errors.New("점프 호스트 체인이 너무 깁니다")
+		return nil, errors.New("경유 서버 체인이 너무 깁니다")
 	}
 	port := record.M_iPort
 	if port == 0 {
@@ -94,7 +94,7 @@ func (pService *Service) buildSSHTarget(record hostRecord, depth int) (*sshconn.
 			jumpPort = g_ciSshDefaultPort
 		}
 		jump := &sshconn.Target{
-			Title:     record.M_szAlias + " 베스천",
+			Title:     record.M_szAlias + " 경유 서버",
 			Host:      jd.M_szHost,
 			Port:      jumpPort,
 			Username:  jd.M_szUsername,
@@ -110,7 +110,7 @@ func (pService *Service) buildSSHTarget(record hostRecord, depth int) (*sshconn.
 	case record.M_szJumpHostId != "":
 		jumpRecord, bFound := pService.findHost(record.M_szJumpHostId)
 		if !bFound {
-			return nil, errors.New("점프 호스트를 찾을 수 없습니다")
+			return nil, errors.New("경유 서버를 찾을 수 없습니다")
 		}
 		jump, errJump := pService.buildSSHTarget(jumpRecord, depth+1)
 		if errJump != nil {
@@ -158,7 +158,7 @@ func forwardsOf(record hostRecord) []sshconn.Forward {
 func (pService *Service) afterSshLogin(record hostRecord, conn *sshconn.Conn, notify func(string)) {
 	if conn.Asked.Asked && conn.Asked.Save && pService.pVault.Status().M_bUnlocked {
 		if pService.saveCredentialForHost(record, conn) {
-			notify("비밀번호를 볼트에 저장했습니다")
+			notify("비밀번호를 보관함에 저장했습니다")
 		}
 	}
 	pService.patchHost(record.M_szId, map[string]any{"lastUsedAt": time.Now().UnixMilli()})

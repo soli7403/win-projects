@@ -79,7 +79,7 @@ describe('서버 여러 개 선택 (D59)', () => {
     fireEvent.click(row('srv-1'));
     fireEvent.click(row('srv-2'), { ctrlKey: true });
     fireEvent.contextMenu(row('srv-3'));
-    expect(useUi.getState().menu?.items.some((x) => x.label === '편집')).toBe(true);
+    expect(useUi.getState().menu?.items.some((x) => x.label === '수정')).toBe(true);
   });
 
   it('Shift+클릭 범위를 끌어 폴더에 놓으면 모두 그 폴더로 옮긴다', async () => {

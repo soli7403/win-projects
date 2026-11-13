@@ -41,17 +41,17 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('F1 · Telnet 칸 포커스 → SFTP 안내', () => {
+describe('F1 · Telnet 창 포커스 → SFTP 안내', () => {
   it('SSH 가 아니면 프로토콜 안내를 보인다', async () => {
     await openSession(false);
     render(<SftpPanel />);
-    expect(screen.getByText('SFTP는 SSH 세션에서만 사용할 수 있습니다.')).toBeTruthy();
+    expect(screen.getByText('파일 창은 SSH·로컬 터미널 세션에서만 사용할 수 있습니다.')).toBeTruthy();
     expect(screen.getByText('(TELNET 세션)')).toBeTruthy();
   });
 
   it('포커스 세션이 없으면 세션 선택 안내를 보인다', () => {
     render(<SftpPanel />);
-    expect(screen.getByText('세션을 선택하면 해당 서버의 파일이 표시됩니다.')).toBeTruthy();
+    expect(screen.getByText('세션을 선택하면 해당 서버(또는 이 PC)의 파일이 표시됩니다.')).toBeTruthy();
   });
 });
 
@@ -127,18 +127,18 @@ describe('F9 · 업로드 완료 시 현재 폴더 목록 갱신', () => {
   });
 });
 
-describe('F10 · 스니펫 저장: 명령이 비면 비활성', () => {
+describe('F10 · 명령 모음 저장: 명령이 비면 비활성', () => {
   it('명령이 비어 있으면 저장 버튼이 비활성이다', async () => {
     await openSession(true);
     render(<SnippetsPanel />);
-    fireEvent.click(screen.getByRole('button', { name: '새 스니펫' }));
+    fireEvent.click(screen.getByRole('button', { name: '새 명령' }));
     const save = screen.getByRole('button', { name: '저장' }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
     fireEvent.change(screen.getByPlaceholderText('tail -f /var/log/nginx/error.log'), { target: { value: 'uptime' } });
     expect((screen.getByRole('button', { name: '저장' }) as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it('스니펫이 없으면 안내 문구를 보인다', async () => {
+  it('명령 모음이 없으면 안내 문구를 보인다', async () => {
     await openSession(true);
     useApp.setState((s) => (s.store ? { store: { ...s.store, snippets: [] } } : s));
     render(<SnippetsPanel />);
@@ -146,7 +146,7 @@ describe('F10 · 스니펫 저장: 명령이 비면 비활성', () => {
   });
 });
 
-describe('F11 · 스니펫 클릭 → 동시 입력 탭의 모든 칸에 입력', () => {
+describe('F11 · 명령 모음 클릭 → 일괄 입력 탭의 모든 창에 입력', () => {
   it('본문과 Enter 를 모든 연결 세션에 보낸다', async () => {
     const a = await openSession(true);
     const b2 = await openSession(true);
@@ -165,14 +165,14 @@ describe('F11 · 스니펫 클릭 → 동시 입력 탭의 모든 칸에 입력'
   });
 });
 
-describe('우측 패널 폭', () => {
+describe('우측 창 폭', () => {
   it('260~760 으로 자른다', () => {
     expect(clampWidth(100)).toBe(260);
     expect(clampWidth(340)).toBe(340);
     expect(clampWidth(900)).toBe(760);
   });
 
-  it('SFTP 도크는 닫기 버튼으로 그 그룹의 패널만 닫는다', () => {
+  it('SFTP 도크는 닫기 버튼으로 그 그룹의 창만 닫는다', () => {
     useUi.setState({ sftpOpen: [true, true] });
     render(<SftpDock group={1} />);
     expect(document.querySelector('.rpanel')).toBeTruthy();

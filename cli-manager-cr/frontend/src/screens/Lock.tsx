@@ -150,7 +150,7 @@ export function Lock({ overlay = false }: LockProps) {
 
         {mode === 'unlock' && (
           <form key="unlock" className="lock-form" onSubmit={submitUnlock} style={formStyle}>
-            <h1><LockIcon size={18} style={{ verticalAlign: '-3px', marginRight: 6 }} />DariTerm 잠금</h1>
+            <h1><LockIcon size={18} style={{ verticalAlign: '-3px', marginRight: 6 }} />DariTerm 잠김</h1>
             <p className="desc">
               {overlay
                 ? '세션은 계속 연결되어 있습니다. 마스터 비밀번호를 입력하면 다시 사용할 수 있습니다.'
@@ -169,7 +169,7 @@ export function Lock({ overlay = false }: LockProps) {
             <div className="err-text" role="alert">{error}</div>
             <div className="lock-actions">
               <button className="btn primary" type="submit" disabled={!pw || busy}>
-                {busy ? '확인 중...' : '잠금 해제'}
+                {busy ? '확인 중...' : '열기'}
               </button>
               {vault?.osUnlockEnabled && (
                 <button className="btn" type="button" onClick={unlockOs} disabled={busy}>
@@ -187,7 +187,7 @@ export function Lock({ overlay = false }: LockProps) {
 
         {mode === 'setup' && (
           <form key="setup" onSubmit={submitSetup} style={formStyle}>
-            <h1>DariTerm 시작하기</h1>
+            <h1>DariTerm 처음 설정</h1>
             <p className="desc">
               서버 ID·비밀번호·키는 이 마스터 비밀번호로 AES-256 암호화되어 이 PC에만 저장됩니다. 마스터 비밀번호는 어디에도 전송되지 않습니다.
             </p>
@@ -220,7 +220,7 @@ export function Lock({ overlay = false }: LockProps) {
             />
             <div className="err-text" role="alert">{error}</div>
             <button className="btn primary" type="submit" disabled={busy}>
-              {busy ? '암호화 키 생성 중...' : '볼트 만들기'}
+              {busy ? '암호화 키 생성 중...' : '보관함 만들기'}
             </button>
           </form>
         )}
@@ -247,9 +247,9 @@ export function Lock({ overlay = false }: LockProps) {
 
         {mode === 'recover' && (
           <form key="recover" onSubmit={submitRecover} style={formStyle}>
-            <h1>복구 코드로 재설정</h1>
+            <h1>복구 코드로 비밀번호 다시 정하기</h1>
             <p className="desc">
-              볼트를 만들 때 받은 24자리 복구 코드와 새 마스터 비밀번호를 입력하세요. 저장된 계정은 그대로 유지됩니다.
+              보관함을 만들 때 받은 24자리 복구 코드와 새 마스터 비밀번호를 입력하세요. 저장된 계정은 그대로 유지됩니다.
             </p>
             <input
               className="input mono"
@@ -278,9 +278,9 @@ export function Lock({ overlay = false }: LockProps) {
               aria-label="새 비밀번호 확인"
             />
             <div className="err-text" role="alert">{error}</div>
-            <button className="btn primary" type="submit" disabled={busy}>재설정</button>
+            <button className="btn primary" type="submit" disabled={busy}>다시 정하기</button>
             <div className="center-row">
-              <button className="btn link small-btn" type="button" onClick={() => go('unlock')}>돌아가기</button>
+              <button className="btn link small-btn" type="button" onClick={() => go('unlock')}>뒤로</button>
             </div>
           </form>
         )}

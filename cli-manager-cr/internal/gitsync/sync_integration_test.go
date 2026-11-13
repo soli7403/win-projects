@@ -135,8 +135,8 @@ func TestSyncScenarios(t *testing.T) {
 	}
 
 	pB := newPC(t, "other-pass-2")
-	if res := pB.syncer.Run(szBare, G_cszModeAuto); res.M_szState != G_cszStateVaultMismatch || res.M_szMessage != "저장소의 볼트가 이 PC 의 볼트와 다릅니다" {
-		t.Fatalf("볼트 불일치 상태 아님 (Y8): %+v", res)
+	if res := pB.syncer.Run(szBare, G_cszModeAuto); res.M_szState != G_cszStateVaultMismatch || res.M_szMessage != "저장소의 보관함이 이 PC 의 보관함과 다릅니다" {
+		t.Fatalf("보관함 불일치 상태 아님 (Y8): %+v", res)
 	}
 	pB.szAsked, pB.bAnswer = "wrong-pass-9", true
 	if res := pB.syncer.Run(szBare, G_cszModePullVault); res.M_szState != G_cszStateVaultMismatch || res.M_szMessage != "마스터 비밀번호가 맞지 않거나 취소되었습니다" {
@@ -144,7 +144,7 @@ func TestSyncScenarios(t *testing.T) {
 	}
 	pB.szAsked, pB.bAnswer = "master-pass-1", true
 	if res := pB.syncer.Run(szBare, G_cszModePullVault); res.M_szState != G_cszStateOk {
-		t.Fatalf("볼트 받기 실패: %+v", res)
+		t.Fatalf("보관함 받기 실패: %+v", res)
 	}
 	if mapHosts := pB.local.data.M_mapHosts; len(mapHosts) != 1 {
 		t.Fatalf("받은 뒤 서버가 없음: %d", len(mapHosts))

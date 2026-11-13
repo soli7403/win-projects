@@ -29,11 +29,11 @@ export function Welcome() {
         <LogoMark size={48} />
         <h1>DariTerm</h1>
         <p className="muted" style={{ margin: 0 }}>
-          서버를 더블클릭하거나 <span className="kbd">Ctrl+K</span> 로 바로 접속하세요.
+          서버를 더블클릭하거나 <span className="kbd">Ctrl+K</span> 로 바로 연결하세요.
         </p>
         <div className="welcome-actions">
           <button className="btn primary" onClick={() => useUi.getState().openQuick(null)}>
-            <Zap size={15} />빠른 접속
+            <Zap size={15} />빠른 연결
           </button>
           <button className="btn" title="Ctrl+Alt+T" onClick={() => runShortcut('newLocal')}>
             <Terminal size={15} />로컬 터미널

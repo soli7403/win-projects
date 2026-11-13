@@ -22,13 +22,13 @@ const G_cszOsUnlockKind = "windows"
 const G_ciMinPasswordLen = 8
 
 // ErrLocked 는 볼트가 잠겨 있을 때 돌려준다.
-var ErrLocked = errors.New("볼트가 잠겨 있습니다")
+var ErrLocked = errors.New("보관함이 잠겨 있습니다")
 
 // ErrNoVault 는 볼트 파일이 없을 때 돌려준다.
-var ErrNoVault = errors.New("볼트 없음")
+var ErrNoVault = errors.New("보관함 없음")
 
 // ErrAlreadySetup 은 이미 볼트가 있을 때 돌려준다.
-var ErrAlreadySetup = errors.New("이미 볼트가 설정되어 있습니다")
+var ErrAlreadySetup = errors.New("이미 보관함이 설정되어 있습니다")
 
 // ErrPasswordShort 는 마스터 비밀번호가 짧을 때 돌려준다.
 var ErrPasswordShort = errors.New("마스터 비밀번호는 8자 이상이어야 합니다")

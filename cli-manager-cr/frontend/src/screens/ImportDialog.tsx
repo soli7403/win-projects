@@ -121,7 +121,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
       await useApp.getState().refreshVault();
       pushToast({
         kind: 'ok',
-        text: `${r.hosts}개 서버를 가져왔습니다${r.keys > 0 ? ` (키 ${r.keys}개 볼트에 저장)` : ''}`,
+        text: `${r.hosts}개 서버를 가져왔습니다${r.keys > 0 ? ` (키 ${r.keys}개 보관함에 저장)` : ''}`,
       });
       if (r.skipped && r.skipped.length > 0) pushToast({ kind: 'error', text: r.skipped.join('\n') });
       onClose();
@@ -149,15 +149,15 @@ function ImportBody({ onClose }: { onClose: () => void }) {
       }
     >
       <div className="set-notice" style={{ lineHeight: 1.6 }}>
-        PuTTY 저장 세션(레지스트리)과 <code className="kbdish">~/.ssh/config</code>를 읽어 옵니다. 호스트·포트·사용자·키 파일·포트 포워딩·시리얼 설정·인코딩이 옮겨집니다. PuTTY는 비밀번호를 저장하지 않으므로, 비밀번호는 처음 접속할 때 한 번 입력하면 저장됩니다.
-        {vaultLocked && ' (볼트가 잠겨 있으면 키 파일은 볼트에 복사되지 않습니다)'}
+        PuTTY 저장 세션(레지스트리)과 <code className="kbdish">~/.ssh/config</code>를 읽어 옵니다. 호스트·포트·사용자·키 파일·포트 포워딩·시리얼 설정·인코딩이 옮겨집니다. PuTTY는 비밀번호를 저장하지 않으므로, 비밀번호는 처음 연결할 때 한 번 입력하면 저장됩니다.
+        {vaultLocked && ' (보관함이 잠겨 있으면 키 파일은 보관함에 복사되지 않습니다)'}
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <button className="btn" type="button" disabled={awsBusy} onClick={() => void scanAws()} style={{ flex: 'none' }}>
           <Cloud size={14} /> {awsBusy ? 'AWS 전 리전 조회 중...' : 'AWS EC2 불러오기'}
         </button>
-        <span className="set-note">aws CLI 자격 증명으로 인스턴스를 읽습니다. 사설 IP 서버는 같은 VPC 의 배스천을 점프 호스트로 잇고, 키는 ~/.ssh/&lt;키 이름&gt;.pem 에서 찾습니다.</span>
+        <span className="set-note">aws CLI 자격 증명으로 인스턴스를 읽습니다. 사설 IP 서버는 같은 VPC 의 배스천을 경유 서버로 거쳐 연결하고, 키는 ~/.ssh/&lt;키 이름&gt;.pem 에서 찾습니다.</span>
       </div>
 
       {scanning && <div className="faint">검색 중...</div>}
@@ -170,7 +170,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
 
       {cands.length > 0 && (
         <>
-          <Field label="넣을 폴더 이름" help="이름이 prod-/stg-/dev- 로 시작하면 운영/기능테스트/개발 환경이 자동 지정됩니다. 비우면 최상위에 넣습니다.">
+          <Field label="넣을 폴더 이름" help="이름이 prod-/stg-/dev- 로 시작하면 운영/검증/개발 환경이 자동 지정됩니다. 비우면 최상위에 넣습니다.">
             <input className="input" aria-label="넣을 폴더 이름" value={folder} onChange={(e) => setFolder(e.target.value)} />
           </Field>
           <div className="import-wrap">
@@ -200,7 +200,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
                     <td>{kindOf(c)}</td>
                     <td title={c.note ?? undefined}>
                       {SOURCE_LABEL[c.source] ?? String(c.source ?? '')}
-                      {c.source === 'aws' && c.jumpVia ? ' · 배스천 경유' : ''}
+                      {c.source === 'aws' && c.jumpVia ? ' · 경유 서버 거침' : ''}
                       {typeof c.note === 'string' && c.note.includes('키 파일 없음') && <span className="danger-note"> (키 없음)</span>}
                     </td>
                   </tr>

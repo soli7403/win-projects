@@ -61,13 +61,13 @@ describe('단축키 매핑 (shortcuts.md §2)', () => {
   });
 });
 
-describe('빠른 접속 입력 해석 (dialogs.md §2.1)', () => {
+describe('빠른 연결 입력 해석 (dialogs.md §2.1)', () => {
   it('user@host:port 형식과 기본 포트', () => {
     expect(parseDirect('root@10.0.0.5:2222')).toEqual({ protocol: 'ssh', host: '10.0.0.5', port: 2222, username: 'root' });
     expect(parseDirect('telnet://sw1')).toEqual({ protocol: 'telnet', host: 'sw1', port: 23, username: undefined });
     expect(parseDirect('10.0.0.5')?.port).toBe(22);
   });
-  it('직접 접속처럼 보이지 않으면 null (예: 그냥 단어)', () => {
+  it('직접 연결처럼 보이지 않으면 null (예: 그냥 단어)', () => {
     expect(parseDirect('webserver')).toBeNull();
     expect(parseDirect('')).toBeNull();
   });

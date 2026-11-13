@@ -38,12 +38,12 @@ func notice(szColor string, szText string) string {
 
 // MsgConnecting 은 접속 시작 안내다 (로컬 제외).
 func MsgConnecting(szTitle string, szTarget string) string {
-	return notice(G_cszColorInfo, szTitle+" ("+szTarget+") 접속 중...")
+	return notice(G_cszColorInfo, szTitle+" ("+szTarget+") 연결 중...")
 }
 
 // MsgConnectFailed 는 접속 실패 안내다. 로컬은 MsgShellFailed 를 쓴다.
 func MsgConnectFailed(szReason string) string {
-	return notice(G_cszColorError, "접속 실패: "+TranslateError(szReason))
+	return notice(G_cszColorError, "연결 실패: "+TranslateError(szReason))
 }
 
 // MsgShellFailed 는 로컬 셸 실행 실패 안내다.
@@ -61,12 +61,12 @@ func MsgDisconnected(szReason string) string {
 
 // MsgReconnectScheduled 는 자동 재접속 예약 안내다.
 func MsgReconnectScheduled(iSec int) string {
-	return notice(G_cszColorInfo, fmt.Sprintf("%d초 후 자동 재접속합니다... (Enter: 즉시 재접속)", iSec))
+	return notice(G_cszColorInfo, fmt.Sprintf("%d초 후 자동 재연결합니다... (Enter: 즉시 재연결)", iSec))
 }
 
 // MsgGiveUp 는 재접속을 포기했을 때의 안내다.
 func MsgGiveUp() string {
-	return notice(G_cszColorInfo, "Enter 키를 누르면 다시 접속합니다.")
+	return notice(G_cszColorInfo, "Enter 키를 누르면 다시 연결합니다.")
 }
 
 // MsgTmuxMissing 은 tmux 가 없을 때 스크립트가 내는 안내다 (session.md §7 1번).
@@ -79,12 +79,12 @@ var g_slErrorRules = []struct {
 	slWords  []string
 	szOutput string
 }{
-	{[]string{"refused", "actively refused"}, "서버가 접속을 거부했습니다 (포트 확인)"},
+	{[]string{"refused", "actively refused"}, "서버가 연결을 거부했습니다 (포트 확인)"},
 	{[]string{"timed out", "i/o timeout"}, "응답 시간 초과 (주소·방화벽 확인)"},
 	{[]string{"no such host"}, "호스트 이름을 찾을 수 없습니다"},
 	{[]string{"unreachable"}, "네트워크에 도달할 수 없습니다"},
 	{[]string{"unable to authenticate", "no supported methods"}, "인증 실패 (사용자 이름/비밀번호/키 확인)"},
-	{[]string{"host key rejected"}, "호스트 키를 승인하지 않아 접속을 중단했습니다"},
+	{[]string{"host key rejected"}, "호스트 키를 승인하지 않아 연결을 중단했습니다"},
 	{[]string{"access is denied", "cannot find the file"}, "%s (포트 사용 중이거나 권한 없음)"},
 }
 

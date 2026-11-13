@@ -80,7 +80,7 @@ describe('탭 그룹', () => {
     expect(ws().activeByGroup[0]).toBe(a);
   });
 
-  it('G9: 화면 나누기 해제는 모든 탭을 왼쪽 그룹으로 합친다', () => {
+  it('G9: 좌우 나누기 해제는 모든 탭을 왼쪽 그룹으로 합친다', () => {
     const [, b] = open3();
     ws().moveTabToGroup(b, 1);
     ws().mergeGroups();

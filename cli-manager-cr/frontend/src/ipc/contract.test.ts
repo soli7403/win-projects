@@ -163,7 +163,7 @@ describe('화면·상태 저장소가 계약 응답을 크래시 없이 처리',
     expect(Array.isArray(s.groups)).toBe(true);
   });
 
-  it('boot 이 저장 데이터와 볼트 상태를 읽는다', async () => {
+  it('boot 이 저장 데이터와 보관함 상태를 읽는다', async () => {
     await useApp.getState().boot();
     const st = useApp.getState();
     expect(st.booted).toBe(true);

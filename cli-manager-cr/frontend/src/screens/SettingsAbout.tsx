@@ -45,13 +45,13 @@ export function SettingsAbout() {
 
       <Group>
         <ToggleRow
-          title="새 버전 자동 확인"
+          title="업데이트 자동 확인"
           desc="앱을 켤 때와 12시간마다 배포 저장소의 최신 릴리스를 확인합니다. 서버 목록·IP·계정 등 사용자 정보는 보내지 않으며, 확인에 실패해도(폐쇄망 등) 조용히 넘어갑니다"
           checked={updateCheck}
           onChange={setUpdateCheck}
         />
         <div style={{ paddingBottom: 10 }}>
-          <button className="btn small-btn" type="button" onClick={() => void checkNow()}>지금 확인</button>
+          <button className="btn small-btn" type="button" onClick={() => void checkNow()}>업데이트 확인</button>
         </div>
       </Group>
 

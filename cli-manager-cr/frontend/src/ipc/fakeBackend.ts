@@ -118,7 +118,7 @@ export function createFakeBackend(): Backend {
     },
     'vault.status': () => vaultStatus(),
     'vault.setup': ([pw]) => {
-      if (vault.initialized) throw new Error('이미 볼트가 있습니다');
+      if (vault.initialized) throw new Error('이미 보관함이 있습니다');
       vault = { initialized: true, unlocked: true, password: String(pw), recoveryCode: randomCode() };
       emit('vault.changed', true);
       return { recoveryCode: vault.recoveryCode };
@@ -153,7 +153,7 @@ export function createFakeBackend(): Backend {
     'vault.setOsUnlock': () => undefined,
     'cred.list': () => creds.map((c) => ({ ...c })),
     'cred.get': () => {
-      if (!vault.unlocked) throw new Error('볼트가 잠겨 있습니다');
+      if (!vault.unlocked) throw new Error('보관함이 잠겨 있습니다');
       return null;
     },
     // 실제 백엔드와 같은 규칙: id 가 없으면 새로 만든다, 빠진 필드는 기존 값 유지, 빈 사용자 이름은 지운다.

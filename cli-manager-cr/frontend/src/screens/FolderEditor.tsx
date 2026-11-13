@@ -21,12 +21,12 @@ function envOption(v: EnvKind, text: string) {
 }
 
 const ENVS: { value: EnvKind; label: string }[] = [
-  { value: 'none', label: '일반' },
+  { value: 'none', label: '기본' },
   { value: 'dev', label: '개발' },
-  { value: 'stage', label: '기능테스트' },
-  { value: 'perf', label: '성능테스트' },
+  { value: 'stage', label: '검증' },
+  { value: 'perf', label: '부하 테스트' },
   { value: 'prod', label: '운영' },
-  { value: 'device', label: '장비' },
+  { value: 'device', label: '네트워크 장비' },
 ];
 
 export function FolderEditor({ folderId, parentId }: { folderId: string | null; parentId: string | null }) {
@@ -61,7 +61,7 @@ export function FolderEditor({ folderId, parentId }: { folderId: string | null; 
 
   return (
     <Modal
-      title={original ? '폴더 편집' : '새 폴더'}
+      title={original ? '폴더 수정' : '새 폴더'}
       size="sm"
       onClose={closeEditor}
       foot={

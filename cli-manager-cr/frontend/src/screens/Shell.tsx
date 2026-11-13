@@ -27,7 +27,7 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
   const linkInput = useUi((s) => s.linkInput);
   const toggleLink = () => {
     useUi.getState().toggleLinkInput();
-    pushToast({ kind: 'info', text: linkInput ? '동시 입력을 껐습니다 — 창마다 따로 입력합니다' : '동시 입력을 켰습니다 — 보이는 모든 창에 같이 입력됩니다' });
+    pushToast({ kind: 'info', text: linkInput ? '일괄 입력을 껐습니다 — 창마다 따로 입력합니다' : '일괄 입력을 켰습니다 — 보이는 모든 창에 같이 입력됩니다' });
   };
   const lock = async () => {
     try {
@@ -49,8 +49,8 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
       </button>
       <button
         className={`icon-btn${sidebarOpen && snippetsOpen ? ' on' : ''}`}
-        title="스니펫"
-        aria-label="스니펫"
+        title="명령 모음"
+        aria-label="명령 모음"
         aria-pressed={sidebarOpen && snippetsOpen}
         onClick={() => {
           const ui = useUi.getState();
@@ -66,15 +66,15 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
       {/* 모든 창 동시 입력: 이어진 쇠사슬 = 켜짐(보이는 모든 창에 같이 입력), 끊어진 쇠사슬 = 꺼짐 */}
       <button
         className={`icon-btn link-input${linkInput ? ' on' : ''}`}
-        title={linkInput ? '동시 입력 켜짐 — 보이는 모든 창에 같이 입력합니다 (누르면 끄기)' : '동시 입력 꺼짐 — 누르면 보이는 모든 창에 같이 입력합니다'}
-        aria-label="모든 창 동시 입력"
+        title={linkInput ? '일괄 입력 켜짐 — 보이는 모든 창에 같이 입력합니다 (누르면 끄기)' : '일괄 입력 꺼짐 — 누르면 보이는 모든 창에 같이 입력합니다'}
+        aria-label="모든 창 일괄 입력"
         aria-pressed={linkInput}
         onClick={toggleLink}
       >
         {linkInput ? <Link size={16} /> : <Unlink size={16} />}
       </button>
       {vaultOpen && (
-        <button className="icon-btn" title="지금 잠그기" aria-label="지금 잠그기" onClick={lock}>
+        <button className="icon-btn" title="바로 잠그기" aria-label="바로 잠그기" onClick={lock}>
           <LockIcon size={16} />
         </button>
       )}
@@ -87,9 +87,9 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
 
 const STATE_LABEL: Record<string, string> = {
   connected: '연결됨',
-  connecting: '접속 중',
-  reconnecting: '재접속 대기',
-  closed: '끊김',
+  connecting: '연결 중',
+  reconnecting: '재연결 대기',
+  closed: '연결 끊김',
   error: '실패',
 };
 
@@ -145,7 +145,7 @@ export function StatusBar() {
             {connected && elapsed ? ` · ${elapsed}` : ''}
             {!connected && info.message ? ` · ${info.message}` : ''}
           </span>
-          {broadcast && <span className="badge-bc">동시 입력 ON</span>}
+          {broadcast && <span className="badge-bc">일괄 입력 중</span>}
         </>
       ) : (
         <span className="faint">연결된 세션 없음</span>
@@ -156,12 +156,12 @@ export function StatusBar() {
       {savedHost && <span className="faint">{savedHost.encoding.toUpperCase()}</span>}
       {entry && size && <span className="faint">{`${size.cols}×${size.rows}`}</span>}
       {open ? (
-        <button className="link-btn" title="클릭하면 볼트를 잠급니다" onClick={lock}>
-          <LockOpen size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />볼트 열림
+        <button className="link-btn" title="누르면 보관함을 잠급니다" onClick={lock}>
+          <LockOpen size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />보관함 열림
         </button>
       ) : (
-        <span title="볼트 잠김">
-          <LockIcon size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />볼트 잠김
+        <span title="보관함 잠김">
+          <LockIcon size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />보관함 잠김
         </span>
       )}
     </footer>
@@ -177,7 +177,7 @@ function TabGroupColumn({ group, split, flex }: { group: 0 | 1; split: boolean; 
     <section
       className={`tabgroup${split && focused ? ' focused' : ''}`}
       style={{ flex: `${flex} 1 0` }}
-      aria-label={group === 0 ? '왼쪽 탭 그룹' : '오른쪽 탭 그룹'}
+      aria-label={group === 0 ? '왼쪽 화면' : '오른쪽 화면'}
     >
       <TabBar group={group} />
       <div className="tabgroup-body">
@@ -214,7 +214,7 @@ function GroupDivider({ containerRef }: { containerRef: React.RefObject<HTMLDivE
       className="group-divider"
       role="separator"
       aria-orientation="vertical"
-      aria-label="탭 그룹 경계"
+      aria-label="좌우 화면 경계"
       onPointerDown={onDown}
       onDoubleClick={() => useWorkspace.getState().setGroupRatio(50)}
     />
@@ -249,7 +249,7 @@ function SnippetDivider({ containerRef }: { containerRef: React.RefObject<HTMLDi
       className="snippet-divider"
       role="separator"
       aria-orientation="horizontal"
-      aria-label="서버 목록·스니펫 경계"
+      aria-label="서버 목록·명령 모음 경계"
       onPointerDown={onDown}
       onDoubleClick={() => useUi.getState().setSnippetRatio(SNIPPET_RATIO_DEFAULT)}
     />
@@ -283,7 +283,7 @@ export function Shell() {
               {snippetsOpen && (
                 <>
                   <SnippetDivider containerRef={leftRef} />
-                  <div className="snippet-dock" aria-label="스니펫" style={{ flex: `${snippetRatio} 1 0` }}>
+                  <div className="snippet-dock" aria-label="명령 모음" style={{ flex: `${snippetRatio} 1 0` }}>
                     <SnippetsPanel />
                   </div>
                 </>
@@ -326,7 +326,7 @@ export function Shell() {
                 useWorkspace.getState().moveTabToGroup(id, 1);
               }}
             >
-              <span>여기에 놓아 화면 나누기</span>
+              <span>여기에 놓으면 좌우로 나눕니다</span>
             </div>
           )}
         </main>

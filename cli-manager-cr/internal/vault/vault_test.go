@@ -44,10 +44,10 @@ func TestBrokenVaultIsPreservedAndTreatedAsUninitialized(t *testing.T) {
 	}
 	pv, errOpen := Open(szPath)
 	if errOpen != nil {
-		t.Fatalf("깨진 볼트도 열기는 성공해야 함: %v", errOpen)
+		t.Fatalf("깨진 보관함도 열기는 성공해야 함: %v", errOpen)
 	}
 	if pv.Status().M_bInitialized {
-		t.Fatal("깨진 볼트는 미초기화로 보아야 함")
+		t.Fatal("깨진 보관함은 미초기화로 보아야 함")
 	}
 	matches, _ := filepath.Glob(szPath + ".corrupt-*")
 	if len(matches) != 1 {
@@ -77,7 +77,7 @@ func TestSetupCreatesOpenVaultWithRecoveryCode(t *testing.T) {
 		t.Fatalf("복구 코드 형식 오류: %q", szCode)
 	}
 	if !pv.Status().M_bUnlocked {
-		t.Fatalf("설정 직후 볼트는 열려 있어야 함")
+		t.Fatalf("설정 직후 보관함은 열려 있어야 함")
 	}
 	if pv.pfile.M_kdf.M_iN != 131072 || pv.pfile.M_kdf.M_iR != 8 || pv.pfile.M_kdf.M_iP != 1 {
 		t.Fatalf("scrypt 매개변수 불일치: %+v", pv.pfile.M_kdf)
@@ -94,7 +94,7 @@ func TestSetupRejectsShortPassword(t *testing.T) {
 		t.Fatalf("짧은 비밀번호 오류 기대, 실제: %v", errSetup)
 	}
 	if pv.Status().M_bInitialized {
-		t.Fatalf("실패한 설정으로 볼트가 만들어지면 안 됨")
+		t.Fatalf("실패한 설정으로 보관함이 만들어지면 안 됨")
 	}
 }
 
@@ -141,7 +141,7 @@ func TestRecoverWithLowercaseCode(t *testing.T) {
 		t.Fatalf("Recover: ok=%v err=%v", bOk, errRecover)
 	}
 	if !pv.Status().M_bUnlocked {
-		t.Fatal("복구 후 볼트는 열려야 함")
+		t.Fatal("복구 후 보관함은 열려야 함")
 	}
 	pv.Lock()
 	if !pv.Unlock("recovered-pw-3") {
@@ -186,7 +186,7 @@ func TestCredentialSaveKeepsExistingFields(t *testing.T) {
 	}
 	pv.Lock()
 	if _, errLocked := pv.Get(meta.M_szId); errLocked != ErrLocked {
-		t.Fatalf("잠긴 볼트 조회 오류 기대, 실제: %v", errLocked)
+		t.Fatalf("잠긴 보관함 조회 오류 기대, 실제: %v", errLocked)
 	}
 	if len(pv.List()) != 1 {
 		t.Fatal("잠겨 있어도 목록은 조회되어야 함")

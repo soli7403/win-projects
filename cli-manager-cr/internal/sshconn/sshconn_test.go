@@ -261,8 +261,8 @@ func TestSSHJumpHost(t *testing.T) {
 	if len(conn.Hops) != 1 {
 		t.Fatalf("점프 연결 하나가 있어야 함: %d", len(conn.Hops))
 	}
-	if len(slNotices) == 0 || !strings.Contains(slNotices[0], "bastion 경유 중") {
-		t.Fatalf("점프 안내 줄 누락: %v", slNotices)
+	if len(slNotices) == 0 || !strings.Contains(slNotices[0], "bastion 를 거쳐 연결 중") {
+		t.Fatalf("경유 서버 안내 줄 누락: %v", slNotices)
 	}
 }
 

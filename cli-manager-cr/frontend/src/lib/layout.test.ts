@@ -7,8 +7,8 @@ import {
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
-describe('분할 (panes.md §4)', () => {
-  it('같은 방향 분할의 직접 자식이면 형제로 끼우고 균등 분할', () => {
+describe('나누기 (panes.md §4)', () => {
+  it('같은 방향 나누기의 직접 자식이면 형제로 끼우고 균등 나누기', () => {
     const a = newPane('s1');
     const b = newPane('s2');
     let root: LayoutNode = splitPane(a, a.id, 'row', b);
@@ -19,7 +19,7 @@ describe('분할 (panes.md §4)', () => {
     expect(split.sizes.every((s) => Math.abs(s - 100 / 3) < 1e-9)).toBe(true);
   });
 
-  it('다른 방향이면 대상 칸 자리를 50/50 분할로 바꾼다(before 지정 가능)', () => {
+  it('다른 방향이면 대상 창 자리를 50/50 나누기로 바꾼다(before 지정 가능)', () => {
     const a = newPane('s1');
     const b = newPane('s2');
     const root = splitPane(a, a.id, 'col', b, true) as SplitNode;
@@ -29,8 +29,8 @@ describe('분할 (panes.md §4)', () => {
   });
 });
 
-describe('칸 제거 (panes.md §4 칸 제거, §5.1)', () => {
-  it('자식이 하나 남으면 그 자식이 분할을 대신하고, 남은 크기는 합 100', () => {
+describe('창 제거 (panes.md §4 창 제거, §5.1)', () => {
+  it('자식이 하나 남으면 그 자식이 나누기를 대신하고, 남은 크기는 합 100', () => {
     const a = newPane('s1');
     const b = newPane('s2');
     const c = newPane('s3');
@@ -44,7 +44,7 @@ describe('칸 제거 (panes.md §4 칸 제거, §5.1)', () => {
     expect((root as { id: string }).id).toBe(c.id);
   });
 
-  it('마지막 칸을 지우면 null(탭 닫힘)', () => {
+  it('마지막 창을 지우면 null(탭 닫힘)', () => {
     expect(removePane(newPane('s1'), 'nope')).not.toBeNull();
     const only = newPane('s1');
     expect(removePane(only, only.id)).toBeNull();
@@ -52,7 +52,7 @@ describe('칸 제거 (panes.md §4 칸 제거, §5.1)', () => {
 });
 
 describe('크기 조절 (panes.md §4 크기 조절)', () => {
-  it('분할선을 끌면 양옆만 바뀌고 각 칸은 최소 8%', () => {
+  it('나누기선을 끌면 양옆만 바뀌고 각 창은 최소 8%', () => {
     const a = newPane('s1');
     const b = newPane('s2');
     const root = splitPane(a, a.id, 'row', b) as SplitNode;
@@ -64,7 +64,7 @@ describe('크기 조절 (panes.md §4 크기 조절)', () => {
   });
 });
 
-describe('세션 맞바꿈·칸 이동 (panes.md §7)', () => {
+describe('세션 맞바꿈·창 이동 (panes.md §7)', () => {
   it('가운데 놓기는 세션만 맞바꾼다(구조 불변)', () => {
     const a = newPane('s1');
     const b = newPane('s2');
@@ -100,8 +100,8 @@ describe('세션 맞바꿈·칸 이동 (panes.md §7)', () => {
   });
 });
 
-describe('그리드 모으기 (panes.md §6)', () => {
-  it('열 수는 ceil(sqrt(n)), 칸 n개가 모두 남는다', () => {
+describe('바둑판 모으기 (panes.md §6)', () => {
+  it('열 수는 ceil(sqrt(n)), 창 n개가 모두 남는다', () => {
     for (const n of [2, 3, 4, 5, 9]) {
       const panes = Array.from({ length: n }, (_, i) => newPane(`s${i}`));
       const root = gridLayout(panes);

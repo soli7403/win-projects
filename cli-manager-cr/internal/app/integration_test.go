@@ -145,7 +145,7 @@ func TestSessionOpenAskAndEchoThroughIPC(t *testing.T) {
 	answer("password", `{"password":"pw","save":false}`)
 
 	deadline := time.Now().Add(10 * time.Second)
-	for !strings.Contains(em.allText(), "접속 중") || !strings.Contains(em.allText(), "\x1b[2K") {
+	for !strings.Contains(em.allText(), "연결 중") || !strings.Contains(em.allText(), "\x1b[2K") {
 		if time.Now().After(deadline) {
 			break
 		}
@@ -182,7 +182,7 @@ func TestUnknownProtocolReportsError(t *testing.T) {
 		t.Fatal(errOpen)
 	}
 	deadline := time.Now().Add(5 * time.Second)
-	for !strings.Contains(em.allText(), "접속 실패") {
+	for !strings.Contains(em.allText(), "연결 실패") {
 		if time.Now().After(deadline) {
 			t.Fatalf("오류 안내가 나오지 않음:\n%s", em.allText())
 		}

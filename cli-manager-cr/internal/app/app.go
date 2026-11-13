@@ -41,7 +41,7 @@ func NewService(szDataDir string, emitter ipc.Emitter) (*Service, error) {
 	}
 	pVault, errVault := vault.Open(filepath.Join(szDataDir, "vault.json"))
 	if errVault != nil {
-		return nil, fmt.Errorf("볼트를 열 수 없습니다: %w", errVault)
+		return nil, fmt.Errorf("보관함을 열 수 없습니다: %w", errVault)
 	}
 	pService := &Service{
 		pRouter:   ipc.NewRouter(emitter),

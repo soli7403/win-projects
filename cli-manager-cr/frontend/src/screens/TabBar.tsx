@@ -53,7 +53,7 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
 
   const rename = async (t: Tab) => {
     const cur = tabTitle(t, sessions);
-    const v = await prompt({ title: '탭 이름 바꾸기', value: t.title ?? cur, okText: '확인' });
+    const v = await prompt({ title: '탭 이름 변경', value: t.title ?? cur, okText: '확인' });
     if (v === null) return;
     renameTab(t.id, v);
   };
@@ -81,16 +81,16 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
   const menuFor = (t: Tab): MenuItem[] => {
     const panes = paneIds(t.root).length;
     return [
-      { label: '탭 이름 바꾸기', onSelect: () => void rename(t) },
+      { label: '탭 이름 변경', onSelect: () => void rename(t) },
       groupOf(t) === 0
-        ? { label: '오른쪽 그룹으로 이동', disabled: allTabs.length < 2, onSelect: () => moveTabToGroup(t.id, 1) }
-        : { label: '왼쪽 그룹으로 이동', onSelect: () => moveTabToGroup(t.id, 0) },
-      ...(split ? [{ label: '화면 나누기 해제', onSelect: () => mergeGroups() } as MenuItem] : []),
-      { label: t.broadcast ? '이 탭의 모든 패널에 동시 입력 끄기' : '이 탭의 모든 패널에 동시 입력', shortcut: 'Ctrl+Shift+B', disabled: panes < 2, onSelect: () => toggleBroadcast(t.id) },
-      { label: '패널을 각각 탭으로 분리', disabled: panes < 2, onSelect: () => detachPanes(t.id) },
-      { label: '모든 탭을 이 창 그리드로 모으기', onSelect: () => gridTabs() },
+        ? { label: '오른쪽 화면으로 보내기', disabled: allTabs.length < 2, onSelect: () => moveTabToGroup(t.id, 1) }
+        : { label: '왼쪽 화면으로 보내기', onSelect: () => moveTabToGroup(t.id, 0) },
+      ...(split ? [{ label: '한 화면으로 합치기', onSelect: () => mergeGroups() } as MenuItem] : []),
+      { label: t.broadcast ? '이 탭의 모든 창에 일괄 입력 끄기' : '이 탭의 모든 창에 일괄 입력', shortcut: 'Ctrl+Shift+B', disabled: panes < 2, onSelect: () => toggleBroadcast(t.id) },
+      { label: '창마다 탭으로 나누기', disabled: panes < 2, onSelect: () => detachPanes(t.id) },
+      { label: '모든 탭을 한 화면에 바둑판으로', onSelect: () => gridTabs() },
       { separator: true },
-      { label: '다른 탭 모두 닫기', onSelect: () => void closeOthers(t) },
+      { label: '나머지 탭 닫기', onSelect: () => void closeOthers(t) },
       { label: '탭 닫기', shortcut: 'Ctrl+Shift+W', danger: true, onSelect: () => void confirmClose(t) },
     ];
   };
@@ -201,7 +201,7 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
             {env && <span className="bar" style={{ background: env }} />}
             <span className={`dot ${dot}`} />
             <span className="title">{title}</span>
-            {t.broadcast && <Radio size={12} color="var(--warn)" aria-label="동시 입력" />}
+            {t.broadcast && <Radio size={12} color="var(--warn)" aria-label="일괄 입력" />}
             {showBadge(t) && <span className="tab-badge">{paneIds(t.root).length}</span>}
             <button
               className="x"
@@ -218,7 +218,7 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
           </div>
         );
       })}
-      <button className="icon-btn" title="새 연결 (Ctrl+K)" aria-label="새 연결" onClick={() => openQuick(null)} style={{ marginLeft: 4, marginTop: 5 }}>
+      <button className="icon-btn" title="새로 연결 (Ctrl+K)" aria-label="새로 연결" onClick={() => openQuick(null)} style={{ marginLeft: 4, marginTop: 5 }}>
         <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
       </button>
       <button

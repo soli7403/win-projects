@@ -23,9 +23,9 @@ export function ForwardsTable({ rows, onChange }: { rows: Forward[]; onChange: (
         <thead>
           <tr className="faint small" style={{ textAlign: 'left' }}>
             <th style={{ width: 70 }}>종류</th>
-            <th>바인드 주소</th>
+            <th>수신 주소</th>
             <th style={{ width: 90 }}>포트</th>
-            <th>대상 호스트</th>
+            <th>대상 주소</th>
             <th style={{ width: 90 }}>대상 포트</th>
             <th style={{ width: 40 }} />
           </tr>
@@ -39,9 +39,9 @@ export function ForwardsTable({ rows, onChange }: { rows: Forward[]; onChange: (
                   <option value="R">R</option>
                 </select>
               </td>
-              <td><input className="input mono" aria-label="바인드 주소" value={r.bindHost} onChange={(e) => patch(r.id, { bindHost: e.target.value })} /></td>
+              <td><input className="input mono" aria-label="수신 주소" value={r.bindHost} onChange={(e) => patch(r.id, { bindHost: e.target.value })} /></td>
               <td><input className="input" aria-label="포트" inputMode="numeric" value={String(r.bindPort)} onChange={(e) => patch(r.id, { bindPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
-              <td><input className="input mono" aria-label="대상 호스트" value={r.destHost} onChange={(e) => patch(r.id, { destHost: e.target.value })} /></td>
+              <td><input className="input mono" aria-label="대상 주소" value={r.destHost} onChange={(e) => patch(r.id, { destHost: e.target.value })} /></td>
               <td><input className="input" aria-label="대상 포트" inputMode="numeric" value={String(r.destPort)} onChange={(e) => patch(r.id, { destPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
               <td>
                 <button type="button" className="icon-btn" aria-label="삭제" title="삭제" onClick={() => onChange(rows.filter((x) => x.id !== r.id))}>
@@ -132,16 +132,16 @@ export function SerialFields({
             {FLOW.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </Field>
-        <Field label="Enter 전송값">
-          <Segmented value={value.enterSends} options={ENTER} onChange={(v) => set('enterSends', v)} label="Enter 전송값" />
+        <Field label="Enter 키 보낼 값">
+          <Segmented value={value.enterSends} options={ENTER} onChange={(v) => set('enterSends', v)} label="Enter 키 보낼 값" />
         </Field>
       </div>
       <div className="toggle-row">
         <div>
-          <div className="t-title">로컬 에코</div>
+          <div className="t-title">입력 글자 표시 (로컬 에코)</div>
           <div className="t-desc">장비가 입력한 글자를 돌려주지 않을 때 켜세요</div>
         </div>
-        <Switch checked={value.localEcho} onChange={(v) => set('localEcho', v)} label="로컬 에코" />
+        <Switch checked={value.localEcho} onChange={(v) => set('localEcho', v)} label="입력 글자 표시 (로컬 에코)" />
       </div>
     </>
   );
@@ -186,7 +186,7 @@ export function JumpDirectCard({
   void keyText;
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, border: '1px solid var(--border)', borderRadius: 8 }}>
-      <Field label="베스천 주소" help="user@host:port 형식으로 넣으면 사용자·호스트·포트로 나뉩니다">
+      <Field label="경유 서버 주소" help="user@host:port 형식으로 넣으면 사용자·호스트·포트로 나뉩니다">
         <input className="input mono" placeholder="ec2-user@203.0.113.10:22" value={address} onChange={(e) => onAddress(e.target.value)} />
       </Field>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -200,27 +200,27 @@ export function JumpDirectCard({
       <Field label="인증 방식">
         <Segmented
           value={authType}
-          options={[{ value: 'password', label: '비밀번호' }, { value: 'key', label: '개인 키' }]}
+          options={[{ value: 'password', label: '비밀번호' }, { value: 'key', label: '키 파일' }]}
           onChange={onAuthType}
-          label="베스천 인증 방식"
+          label="경유 서버 로그인 방식"
         />
       </Field>
       {authType === 'password' ? (
         <Field
           label="비밀번호"
-          help={hasSaved ? '저장됨 — 바꾸려면 새로 입력' : '볼트에 암호화해 저장 ("{별칭} 베스천")'}
+          help={hasSaved ? '저장됨 — 바꾸려면 새로 입력' : '보관함에 암호화해 저장 ("{표시 이름} 경유 서버")'}
         >
           <input className="input" type="password" placeholder={hasSaved ? '••••••••  (저장됨)' : '비밀번호'} value={password} onChange={(e) => onPassword(e.target.value)} />
         </Field>
       ) : (
         <>
-          <Field label="개인 키">
+          <Field label="키 파일">
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <button type="button" className="btn small-btn" onClick={onPickKey}>키 파일 선택</button>
               <span className="faint small">{keyStatus || (hasSaved ? '저장됨' : '선택된 키 없음')}</span>
             </div>
           </Field>
-          <Field label="키 암호 (있는 경우)">
+          <Field label="키 암호 (있으면)">
             <input className="input" type="password" value={passphrase} onChange={(e) => onPassphrase(e.target.value)} />
           </Field>
         </>

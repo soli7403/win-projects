@@ -35,18 +35,18 @@ function envOption(v: EnvKind, text: string) {
 }
 
 const ENVS: { value: EnvKind; label: string }[] = [
-  { value: 'none', label: '일반' },
+  { value: 'none', label: '기본' },
   { value: 'dev', label: '개발' },
-  { value: 'stage', label: '기능테스트' },
-  { value: 'perf', label: '성능테스트' },
+  { value: 'stage', label: '검증' },
+  { value: 'perf', label: '부하 테스트' },
   { value: 'prod', label: '운영' },
-  { value: 'device', label: '장비' },
+  { value: 'device', label: '네트워크 장비' },
 ];
 const AUTHS: { value: AuthType; label: string }[] = [
   { value: 'password', label: '비밀번호' },
-  { value: 'key', label: '개인 키' },
+  { value: 'key', label: '키 파일' },
   { value: 'agent', label: 'SSH 에이전트 (Pageant)' },
-  { value: 'ask', label: '매번 묻기' },
+  { value: 'ask', label: '접속할 때마다 입력' },
 ];
 const ENCODINGS: { value: string; label: string }[] = [
   { value: 'utf-8', label: 'UTF-8' },
@@ -294,8 +294,8 @@ export function HostEditor({ hostId, groupId }: Props) {
 
   const folders = sortGroups(groups);
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'basic', label: '기본' },
-    ...(isSsh ? [{ id: 'auth' as Tab, label: '인증' }] : []),
+    { id: 'basic', label: '일반' },
+    ...(isSsh ? [{ id: 'auth' as Tab, label: '로그인' }] : []),
     { id: 'adv', label: '고급' },
     ...(isSsh ? [{ id: 'fwd' as Tab, label: '포트 포워딩' }] : []),
   ];
@@ -308,7 +308,7 @@ export function HostEditor({ hostId, groupId }: Props) {
 
   return (
     <Modal
-      title={original ? `서버 편집 · ${original.alias}` : '새 서버'}
+      title={original ? `서버 수정 · ${original.alias}` : '서버 추가'}
       size="md"
       onClose={closeEditor}
       foot={
@@ -316,7 +316,7 @@ export function HostEditor({ hostId, groupId }: Props) {
           <div className="err-text" style={{ marginRight: 'auto' }}>{error}</div>
           <button className="btn" onClick={closeEditor}>취소</button>
           <button className="btn primary" disabled={busy} onClick={() => void save()}>저장</button>
-          <button className="btn primary" disabled={busy} onClick={() => void save(true)}>저장 후 연결</button>
+          <button className="btn primary" disabled={busy} onClick={() => void save(true)}>저장하고 연결</button>
         </>
       }
     >
@@ -347,7 +347,7 @@ export function HostEditor({ hostId, groupId }: Props) {
             <Field label="프로토콜">
               <Segmented value={protocol} options={PROTOCOLS} onChange={changeProtocol} label="프로토콜" />
             </Field>
-            <Field label="별칭 (탭·목록에 표시될 이름)">
+            <Field label="표시 이름 (탭과 목록에 보임)">
               <input className="input" autoFocus placeholder="예: 운영-WEB01" value={alias} onChange={(e) => setAlias(e.target.value)} />
             </Field>
             {isLocal && (
@@ -367,7 +367,7 @@ export function HostEditor({ hostId, groupId }: Props) {
             )}
             {isNet && (
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 14 }}>
-                <Field label="호스트 (IP 또는 도메인)">
+                <Field label="주소 (IP 또는 도메인)">
                   <input className="input mono" placeholder="10.0.0.11  또는  user@host:22" value={host} onChange={(e) => onHostChange(e.target.value)} />
                 </Field>
                 <Field label="포트">
@@ -407,7 +407,7 @@ export function HostEditor({ hostId, groupId }: Props) {
         )}
         {curTab === 'auth' && isSsh && (
           <>
-            {!vaultOpen && <div className="notice warn">볼트가 잠겨 있습니다. 비밀번호나 키를 저장하려면 먼저 잠금을 해제하세요.</div>}
+            {!vaultOpen && <div className="notice warn">보관함이 잠겨 있습니다. 비밀번호나 키를 저장하려면 먼저 잠금을 해제하세요.</div>}
             <Field label="인증 방식">
               <Segmented value={authType} options={AUTHS} onChange={setAuthType} label="인증 방식" />
             </Field>
@@ -415,7 +415,7 @@ export function HostEditor({ hostId, groupId }: Props) {
               <Field label="계정 저장 방식">
                 <Segmented
                   value={accountMode}
-                  options={[{ value: 'own', label: '이 서버 전용' }, { value: 'shared', label: '공유 계정 선택' }]}
+                  options={[{ value: 'own', label: '이 서버에만 저장' }, { value: 'shared', label: '저장된 계정 사용' }]}
                   onChange={setAccountMode}
                   label="계정 저장 방식"
                 />
@@ -432,23 +432,23 @@ export function HostEditor({ hostId, groupId }: Props) {
             {accountMode === 'own' && authType === 'password' && (
               <Field
                 label="비밀번호"
-                help={original?.credentialId ? '저장된 비밀번호가 있습니다. 바꾸려면 새로 입력하세요.' : '비워 두면 처음 접속할 때 묻고, 저장 여부를 선택할 수 있습니다.'}
+                help={original?.credentialId ? '저장된 비밀번호가 있습니다. 바꾸려면 새로 입력하세요.' : '비워 두면 처음 연결할 때 묻고, 저장 여부를 선택할 수 있습니다.'}
               >
                 <input className="input" type="password" placeholder={original?.credentialId ? '••••••••  (저장됨)' : '비밀번호'} value={password} onChange={(e) => setPassword(e.target.value)} />
               </Field>
             )}
             {accountMode === 'own' && authType === 'key' && (
               <>
-                <Field label="개인 키">
+                <Field label="키 파일">
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <button type="button" className="btn small-btn" onClick={() => void pickKey('own')}>키 파일 불러오기</button>
+                    <button type="button" className="btn small-btn" onClick={() => void pickKey('own')}>키 파일 선택</button>
                     <span className="faint small">{keyStatus || (original?.credentialId ? '저장된 키 사용 중' : '선택된 키 없음')}</span>
                   </div>
                 </Field>
-                <Field label="또는 키 내용 붙여넣기" help="OpenSSH, PEM, PuTTY PPK v2 지원. 키 내용은 볼트에 암호화되어 저장됩니다.">
+                <Field label="또는 키 내용 붙여넣기" help="OpenSSH, PEM, PuTTY PPK v2 지원. 키 내용은 보관함에 암호화되어 저장됩니다.">
                   <textarea className="input mono" rows={4} style={{ height: 'auto', padding: 8 }} placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" value={privateKey} onChange={(e) => setPrivateKey(e.target.value)} />
                 </Field>
-                <Field label="키 암호 (있는 경우)">
+                <Field label="키 암호 (있으면)">
                   <input className="input" type="password" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
                 </Field>
               </>
@@ -457,7 +457,7 @@ export function HostEditor({ hostId, groupId }: Props) {
               <div className="notice info">Windows에서는 Pageant, 그 외에는 SSH_AUTH_SOCK 에이전트를 사용합니다. 에이전트 인증이 실패하면 비밀번호를 묻습니다.</div>
             )}
             {authType === 'ask' && (
-              <div className="notice info">접속할 때마다 비밀번호를 묻습니다. 입력 창에서 "저장"을 선택하면 다음부터 자동으로 로그인됩니다.</div>
+              <div className="notice info">연결할 때마다 비밀번호를 묻습니다. 입력 창에서 "저장"을 선택하면 다음부터 자동으로 로그인됩니다.</div>
             )}
           </>
         )}
@@ -465,9 +465,9 @@ export function HostEditor({ hostId, groupId }: Props) {
         {curTab === 'adv' && (
           <>
             {isSsh && (
-              <Field label="점프 호스트 (배스천 경유)" help="이 서버에 접속하기 전에 먼저 거쳐 갈 서버입니다 (ProxyJump).">
+              <Field label="경유 서버 (ProxyJump)" help="이 서버에 연결하기 전에 먼저 거쳐 갈 서버입니다 (ProxyJump).">
                 <select className="input" value={jumpChoice} onChange={(e) => setJumpChoice(e.target.value)}>
-                  <option value="">사용 안 함</option>
+                  <option value="">없음</option>
                   <option value={JUMP_DIRECT}>직접 입력…</option>
                   {hosts.filter((h) => h.id !== hostId && h.protocol === 'ssh').map((h) => (
                     <option key={h.id} value={h.id}>{`${h.alias} (${h.host})`}</option>
@@ -498,22 +498,22 @@ export function HostEditor({ hostId, groupId }: Props) {
             {tmuxCardShown && (
               <div className="toggle-row">
                 <div>
-                  <div className="t-title">세션 유지 (tmux)</div>
+                  <div className="t-title">연결 유지 (tmux)</div>
                   <div className="t-desc">
                     {'창이나 앱을 닫아도 tmux 안의 프로그램은 계속 실행되고, 다시 열면 그 화면에 그대로 붙습니다. '}
                     {isLocal && isWindows ? 'Windows 로컬은 WSL 셸일 때만 지원합니다.' : '대상에 tmux 가 있어야 합니다.'}
                   </div>
                 </div>
-                <Switch checked={tmuxOn} onChange={(v) => setKeepSession(v)} label="세션 유지 (tmux)" />
+                <Switch checked={tmuxOn} onChange={(v) => setKeepSession(v)} label="연결 유지 (tmux)" />
               </div>
             )}
             {tmuxCardShown && tmuxOn && (
-              <Field label="tmux 세션 이름" help="비워 두면 서버 별칭(또는 로컬 폴더 이름)으로 만듭니다">
+              <Field label="tmux 세션 이름" help="비워 두면 서버 표시 이름(또는 로컬 폴더 이름)으로 만듭니다">
                 <input className="input mono" placeholder={tmuxPlaceholder(alias, protocol, localCwd)} value={tmuxName} onChange={(e) => setTmuxName(e.target.value)} />
               </Field>
             )}
             <Field
-              label={isLocal ? '셸 시작 후 자동 실행 명령' : '접속 후 자동 실행 명령'}
+              label={isLocal ? '시작할 때 실행할 명령' : '연결 후 실행할 명령'}
               help={isLocal ? '예: claude --continue' : '예: cd /var/www && sudo -i'}
             >
               <input className="input mono" placeholder={isLocal ? 'claude --continue' : 'cd /var/www && sudo -i'} value={startup} onChange={(e) => setStartup(e.target.value)} />
@@ -529,7 +529,7 @@ export function HostEditor({ hostId, groupId }: Props) {
                 <Field label="터미널 종류">
                   <input className="input mono" value={termType} onChange={(e) => setTermType(e.target.value)} />
                 </Field>
-                <Field label="Keepalive (초)">
+                <Field label="연결 확인 간격 (초)">
                   <input className="input" inputMode="numeric" value={keepalive} onChange={(e) => setKeepalive(e.target.value.replace(/\D/g, ''))} />
                 </Field>
               </div>

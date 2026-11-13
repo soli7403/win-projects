@@ -48,7 +48,7 @@
 ### 세션
 | 채널 | 인자 | 결과 |
 |---|---|---|
-| `session.open` | `{hostId?, adhoc?, cols?, rows?}` (`adhoc`: host, cwd?, port?, username?, protocol?) | 세션 정보 `{id, hostId|null, title, protocol, target, color?, env?, state, connectedAt?, message?, canSftp, keepSession?}`. 서버 id 도 즉석 정보도 없으면 오류 "서버를 찾을 수 없습니다". **접속은 바로 시작하지 않고 약 30ms 뒤** 시작한다(프런트가 터미널을 등록할 시간). **로컬 터미널**: 저장된 로컬 서버는 `hostId` 로 열고(셸·시작 폴더는 서버 설정의 `local` 값), 즉석 로컬은 `adhoc: {host: "", protocol: "local", cwd?: 시작 폴더}` 로 연다 — 즉석 로컬에는 셸 지정이 없고 기본 셸을 쓴다. 즉석 SSH/텔넷은 `{host, port?, username?, protocol?}` |
+| `session.open` | `{hostId?, adhoc?, cols?, rows?}` (`adhoc`: host, cwd?, port?, username?, protocol?) | 세션 정보 `{id, hostId|null, title, protocol, target, color?, env?, state, connectedAt?, message?, canSftp, keepSession?}`. 서버 id 도 즉석 정보도 없으면 오류 "서버를 찾을 수 없습니다". **연결은 바로 시작하지 않고 약 30ms 뒤** 시작한다(프런트가 터미널을 등록할 시간). **로컬 터미널**: 저장된 로컬 서버는 `hostId` 로 열고(셸·시작 폴더는 서버 설정의 `local` 값), 즉석 로컬은 `adhoc: {host: "", protocol: "local", cwd?: 시작 폴더}` 로 연다 — 즉석 로컬에는 셸 지정이 없고 기본 셸을 쓴다. 즉석 SSH/텔넷은 `{host, port?, username?, protocol?}` |
 | `session.close` | id | 없음. SFTP 캐시도 정리 |
 | `session.reconnect` | id | 없음 |
 | `local.shells` | | `[{path, label}]` (첫 항목이 기본) |

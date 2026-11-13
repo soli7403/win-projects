@@ -43,7 +43,7 @@ func TestVaultAndCredThroughInvoke(t *testing.T) {
 	if _, errLock := pRouter.Invoke("vault.lock", "[]"); errLock != nil {
 		t.Fatal(errLock)
 	}
-	if _, errLocked := pRouter.Invoke("cred.get", `["`+szId+`"]`); errLocked == nil || errLocked.Error() != "볼트가 잠겨 있습니다" {
+	if _, errLocked := pRouter.Invoke("cred.get", `["`+szId+`"]`); errLocked == nil || errLocked.Error() != "보관함이 잠겨 있습니다" {
 		t.Fatalf("잠긴 조회 오류 문구 불일치: %v", errLocked)
 	}
 	szList, errList := pRouter.Invoke("cred.list", "[]")

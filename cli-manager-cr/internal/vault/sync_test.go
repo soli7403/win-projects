@@ -13,7 +13,7 @@ func TestEncryptDataRoundTrip(t *testing.T) {
 		t.Fatal(errOpen)
 	}
 	if _, errLocked := pv.EncryptData("termgo-sync", []byte("x")); errLocked == nil {
-		t.Fatal("미초기화 볼트 암호화는 오류여야 함")
+		t.Fatal("미초기화 보관함 암호화는 오류여야 함")
 	}
 	if _, errSetup := pv.Setup("correct-horse-1"); errSetup != nil {
 		t.Fatal(errSetup)
@@ -57,7 +57,7 @@ func TestAdoptRemote(t *testing.T) {
 		t.Fatalf("틀린 비밀번호로 받기가 성공함: %v %v", bOk, errWrong)
 	}
 	if len(pLocal.List()) != 0 {
-		t.Fatal("실패한 받기가 볼트를 바꿈")
+		t.Fatal("실패한 받기가 보관함을 바꿈")
 	}
 
 	bOk, errAdopt := pLocal.AdoptRemote(bHeader, slRemoteItems, "remote-pass-1")
@@ -65,7 +65,7 @@ func TestAdoptRemote(t *testing.T) {
 		t.Fatalf("맞는 비밀번호로 받기 실패: %v %v", bOk, errAdopt)
 	}
 	if !pLocal.Status().M_bUnlocked || len(pLocal.List()) != 1 {
-		t.Fatal("받은 뒤 볼트가 열려 있지 않거나 항목이 없음")
+		t.Fatal("받은 뒤 보관함이 열려 있지 않거나 항목이 없음")
 	}
 	secret, errGet := pLocal.Get(pLocal.List()[0].M_szId)
 	if errGet != nil || secret == nil || secret.M_szPassword != "pw1" {
@@ -99,7 +99,7 @@ func TestReplaceItemsAndUnwrap(t *testing.T) {
 	bHeader, _ := pv.HeaderJSON()
 	bKey, bOk := UnwrapHeaderKey(bHeader, "correct-horse-1")
 	if !bOk || len(bKey) != 32 {
-		t.Fatal("헤더에서 볼트 키를 풀지 못함")
+		t.Fatal("헤더에서 보관함 키를 풀지 못함")
 	}
 	if _, bWrong := UnwrapHeaderKey(bHeader, "nope-nope-nope"); bWrong {
 		t.Fatal("틀린 비밀번호로 헤더가 풀리면 안 됨")

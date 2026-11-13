@@ -257,25 +257,25 @@ export function Sidebar() {
   };
 
   const hostMenu = (h: Host): MenuItem[] => [
-    { label: '새 탭에서 연결', shortcut: 'Enter', onSelect: () => void openHost(h.id) },
-    { label: '오른쪽으로 분할해 연결', onSelect: () => void openHost(h.id, { kind: 'rightGroup' }) },
-    { label: '아래로 분할해 연결', onSelect: () => void openHost(h.id, { kind: 'split', dir: 'col' }) },
-    { label: '위치 골라서 연결…', onSelect: () => useUi.getState().openLocation(h.id) },
+    { label: '새 탭으로 열기', shortcut: 'Enter', onSelect: () => void openHost(h.id) },
+    { label: '오른쪽 화면에 열기', onSelect: () => void openHost(h.id, { kind: 'rightGroup' }) },
+    { label: '아래 창으로 열기', onSelect: () => void openHost(h.id, { kind: 'split', dir: 'col' }) },
+    { label: '열 위치 선택…', onSelect: () => useUi.getState().openLocation(h.id) },
     { separator: true },
-    { label: '편집', shortcut: 'F2', onSelect: () => openEditor({ kind: 'host', hostId: h.id, groupId: null }) },
-    { label: '복제', onSelect: () => void duplicateHost(h) },
-    { label: h.favorite ? '즐겨찾기 해제' : '즐겨찾기', onSelect: () => void toggleFavorite(h) },
-    { label: '주소 복사', onSelect: () => void copyAddress(h) },
+    { label: '수정', shortcut: 'F2', onSelect: () => openEditor({ kind: 'host', hostId: h.id, groupId: null }) },
+    { label: '복사본 만들기', onSelect: () => void duplicateHost(h) },
+    { label: h.favorite ? '즐겨찾기에서 빼기' : '즐겨찾기에 추가', onSelect: () => void toggleFavorite(h) },
+    { label: '접속 주소 복사', onSelect: () => void copyAddress(h) },
     { separator: true },
     { label: '삭제', danger: true, onSelect: () => void removeHost(h) },
   ];
 
   const folderMenu = (g: Group): MenuItem[] => [
-    { label: '폴더 전체를 그리드로 열기', onSelect: () => void openFolderGrid(g.id) },
+    { label: '폴더 서버 모두 바둑판으로 열기', onSelect: () => void openFolderGrid(g.id) },
     { separator: true },
-    { label: '이 폴더에 새 서버', onSelect: () => openEditor({ kind: 'host', hostId: null, groupId: g.id }) },
-    { label: '하위 폴더 만들기', onSelect: () => openEditor({ kind: 'folder', folderId: null, parentId: g.id }) },
-    { label: '폴더 편집', onSelect: () => openEditor({ kind: 'folder', folderId: g.id, parentId: g.parentId }) },
+    { label: '여기에 서버 추가', onSelect: () => openEditor({ kind: 'host', hostId: null, groupId: g.id }) },
+    { label: '새 하위 폴더', onSelect: () => openEditor({ kind: 'folder', folderId: null, parentId: g.id }) },
+    { label: '폴더 수정', onSelect: () => openEditor({ kind: 'folder', folderId: g.id, parentId: g.parentId }) },
     { separator: true },
     { label: '폴더 삭제', danger: true, onSelect: () => void deleteFolder(g) },
   ];
@@ -388,8 +388,8 @@ export function Sidebar() {
         ) : null}
         {hoverId === h.id && opts.selectable && (
           <span style={{ display: 'inline-flex', gap: 2 }}>
-            <button className="btn small-btn" title="분할로 연결" onClick={(e) => { e.stopPropagation(); void openHost(h.id, { kind: 'rightGroup' }); }}>분할로 연결</button>
-            <button className="btn small-btn" title="하나 더 연결" onClick={(e) => { e.stopPropagation(); void openHost(h.id); }}>하나 더 연결</button>
+            <button className="btn small-btn" title="옆에 열기" onClick={(e) => { e.stopPropagation(); void openHost(h.id, { kind: 'rightGroup' }); }}>옆에 열기</button>
+            <button className="btn small-btn" title="새로 열기" onClick={(e) => { e.stopPropagation(); void openHost(h.id); }}>새로 열기</button>
           </span>
         )}
       </div>
@@ -477,15 +477,15 @@ export function Sidebar() {
           <Search size={14} />
           <input
             className="search-input"
-            placeholder="서버 검색"
+            placeholder="서버 찾기"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="서버 검색"
+            aria-label="서버 찾기"
           />
         </div>
         <div className="side-btns">
-          <button className="btn small-btn" onClick={() => openEditor({ kind: 'host', hostId: null, groupId: null })}><Plus size={13} />서버</button>
-          <button className="btn small-btn" onClick={() => openEditor({ kind: 'folder', folderId: null, parentId: null })}><FolderPlus size={13} />폴더</button>
+          <button className="btn small-btn" onClick={() => openEditor({ kind: 'host', hostId: null, groupId: null })}><Plus size={13} />서버 추가</button>
+          <button className="btn small-btn" onClick={() => openEditor({ kind: 'folder', folderId: null, parentId: null })}><FolderPlus size={13} />폴더 추가</button>
           <button className="btn small-btn" title="PuTTY / SSH config 가져오기" onClick={() => useUi.getState().openImportDialog()}><Download size={13} />가져오기</button>
         </div>
       </div>
@@ -524,7 +524,7 @@ export function Sidebar() {
         )}
         {showRecent && (
           <>
-            <div className="side-section"><Clock size={12} /> 최근 접속</div>
+            <div className="side-section"><Clock size={12} /> 최근 사용</div>
             {recent.map((h) => hostRow(h, 0, { selectable: false }))}
           </>
         )}

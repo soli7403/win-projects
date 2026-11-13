@@ -32,16 +32,16 @@ describe('서버 편집 규칙', () => {
     expect(r).toEqual({ tab: 'basic', message: '호스트 주소를 입력하세요' });
   });
 
-  it('H4: 볼트가 잠겨 있고 비밀번호가 있으면 인증 탭에서 막는다', () => {
+  it('H4: 보관함이 잠겨 있고 비밀번호가 있으면 인증 탭에서 막는다', () => {
     const r = validateHostForm({
       protocol: 'ssh', host: '10.0.0.1', serialPath: '', authType: 'password', hasSecret: true,
       vaultOpen: false, jumpDirect: false, jumpAddress: '', jumpHasSecret: false,
     });
     expect(r?.tab).toBe('auth');
-    expect(r?.message).toBe('볼트가 잠겨 있어 비밀번호를 저장할 수 없습니다');
+    expect(r?.message).toBe('보관함이 잠겨 있어 비밀번호를 저장할 수 없습니다');
   });
 
-  it('H5: 별칭을 비우면 호스트 주소가 별칭이 된다', () => {
+  it('H5: 표시 이름을 비우면 호스트 주소가 표시 이름이 된다', () => {
     expect(fallbackAlias('', 'ssh', { host: '10.0.0.5' })).toBe('10.0.0.5');
     expect(fallbackAlias('  ', 'serial', { host: '', serialPath: 'COM4' })).toBe('COM4');
     expect(fallbackAlias('', 'local', { host: '', localCwd: 'C:\\Work\\프로젝트' })).toBe('프로젝트');

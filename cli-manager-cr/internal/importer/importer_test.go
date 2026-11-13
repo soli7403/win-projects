@@ -184,10 +184,10 @@ func TestAwsBastionPriority(t *testing.T) {
 	// 줄기가 web 인 대상: 줄기 같고 이름에 bastion 이 든 web-bastion 이 이긴다.
 	pPick := PickAwsBastion(slAll[0], slAll)
 	if pPick == nil || pPick.M_szId != "i-c" {
-		t.Fatalf("1순위 베스천 선택 실패: %+v", pPick)
+		t.Fatalf("1순위 경유 서버 선택 실패: %+v", pPick)
 	}
 	if pNone := PickAwsBastion(AwsInstance{M_szId: "i-z", M_szVpcId: "vpc-9"}, slAll); pNone != nil {
-		t.Fatal("다른 VPC 베스천을 고르면 안 됨")
+		t.Fatal("다른 VPC 경유 서버를 고르면 안 됨")
 	}
 	pFirst := PickAwsBastion(AwsInstance{M_szId: "i-q", M_szName: "db", M_szVpcId: "vpc-1"}, slAll)
 	if pFirst == nil || pFirst.M_szId != "i-c" {

@@ -55,14 +55,14 @@ export function SftpList(p: ListProps) {
       },
       { label: p.local ? '다른 폴더로 복사...' : '다운로드...', onSelect: () => void ops.downloadPaths(p.sid, targets.map((t) => t.path), p.local) },
       {
-        label: p.local ? '기본 앱으로 열기' : '로컬 앱으로 편집 (저장 시 자동 업로드)',
+        label: p.local ? '기본 앱으로 열기' : '이 PC 앱으로 편집 (저장하면 자동 업로드)',
         disabled: e.isDir || n > 1,
         onSelect: () => void ops.editLocally(p.sid, e.path, p.local),
       },
       { separator: true },
       { label: '경로를 터미널에 입력', onSelect: () => ops.typePaths(targets.map((t) => t.path), p.sep) },
       {
-        label: '터미널에서 이 폴더로 cd',
+        label: '터미널을 이 폴더로 이동 (cd)',
         onSelect: () => ops.cdTerminal(e.isDir ? e.path : cur, p.sep),
       },
       { label: '경로 복사', onSelect: () => void ops.copyPaths(targets.map((t) => t.path)) },
@@ -75,7 +75,7 @@ export function SftpList(p: ListProps) {
       ...(showChmod
         ? [
             {
-              label: `권한 변경 (현재 ${e.perm})`,
+              label: `권한 바꾸기 (지금 ${e.perm})`,
               disabled: n > 1,
               onSelect: () => void ops.chmodEntry(p.sid, e).then((ok) => ok && p.onRefresh()),
             },

@@ -14,7 +14,7 @@
 | Q8 | answered | data/sync-backup.md §1 | 데이터 폴더 기본 위치를 `os.UserConfigDir()`(Windows: `%APPDATA%`)로 구현했다. 다른 OS 의 기본 위치 규칙은 명세에 없다(1차 범위 밖). |
 | Q9 | answered | ipc.md §1·§4 | Wails 전역 객체 이름과 이벤트 구독 함수가 명세에 없다. 구현은 Wails v2 관례(`window.go.main.App`, `window.runtime.EventsOn`)를 가정했다. 또 `session.data` 처럼 값이 둘인 이벤트의 전달 방식(인자 여러 개인지 객체 하나인지)을 정해 달라. |
 | Q10 | answered | ui/shell.md §3·§4, ui/dialogs.md §2.1 | 로컬 터미널·시리얼 세션의 "대상 문자열" 표기가 없다. 구현은 로컬을 빈 문자열, 시리얼을 주소만으로 둔다. |
-| Q11 | answered | ui/lock.md §1, ipc.md §2 (vault.status) | "Windows 계정으로 잠금 해제" 버튼의 표시 조건이 `osUnlockEnabled` 인지, `osUnlockAvailable` 도 함께 봐야 하는지 명세에 없다. 구현은 `osUnlockEnabled` 만 본다. |
+| Q11 | answered | ui/lock.md §1, ipc.md §2 (vault.status) | "Windows 로그인으로 열기" 버튼의 표시 조건이 `osUnlockEnabled` 인지, `osUnlockAvailable` 도 함께 봐야 하는지 명세에 없다. 구현은 `osUnlockEnabled` 만 본다. |
 | Q12 | answered | ui/lock.md §1, ipc.md §2 (vault.unlock) | `vault.unlock` 이 거짓(false)이 아니라 오류를 던질 때(예: 볼트 손상) 표시할 문구가 없다. 구현은 오류 메시지를 그대로 보인다. |
 | Q13 | answered | ui/shell.md §2, ui/tokens.md §3 | 제목 표시줄 오른쪽 "창 컨트롤용 여백 약 140px" 과 "운영체제 기본 프레임" 의 관계가 불명확하다(기본 프레임이면 창 버튼이 제목 표시줄 밖에 있는데 왜 여백이 필요한지). 구현은 명세대로 여백을 둔다. |
 | Q14 | answered | ui/lock.md §4 | 복구 코드 입력 중 하이픈을 자동으로 넣는지 여부가 없다(명세는 대문자 변환만). 구현은 입력을 그대로 두고 제출 시에만 하이픈·공백을 뺀다. |
@@ -25,7 +25,7 @@
 | Q19 · open · ui/sftp-snippets.md §4 · 스니펫 검색 결과가 0개일 때(스니펫은 있음) 보일 문구가 없다. 현재는 빈 목록만 보인다. |
 | Q20 · open · ui/settings.md §1 · 글자 크기·줄 간격의 범위 밖 값: 본문은 "범위 밖이거나 비면 14", 수용 G2 는 100 입력 시 32 로 제한. 구현은 경계 제한(초과·미만), 빈 값·숫자 아님은 기본값으로 함. 맞는지 확인 요청. |
 | Q21 · open · ipc.md §4 · `sync.status` 이벤트의 값 형태(상태·메시지·마지막 동기화 시각·변경됨)가 `sync.run` 결과와 같은지 명세에 없다. 구현은 같은 형태로 읽는다. |
-| Q22 | answered | data/sync-backup.md §5.4 · behavior/lifecycle.md §2 | 새 PC(볼트 미설정)에서 "저장소 볼트 받기"를 하려면 볼트가 열려 있어야 하지만, §5.4 사전 검사 3은 잠긴 상태를 `locked` 로 먼저 막는다. 받기 전에 빈 볼트를 만들도록 안내하는 절차(또는 받기 전용 예외)를 명세에 적어 달라. 현재 구현은 명세대로 `locked` 로 막는다(임시). |
+| Q22 | answered | data/sync-backup.md §5.4 · behavior/lifecycle.md §2 | 새 PC(볼트 미설정)에서 "저장소의 보관함 받기"를 하려면 볼트가 열려 있어야 하지만, §5.4 사전 검사 3은 잠긴 상태를 `locked` 로 먼저 막는다. 받기 전에 빈 보관함을 만들도록 안내하는 절차(또는 받기 전용 예외)를 명세에 적어 달라. 현재 구현은 명세대로 `locked` 로 막는다(임시). |
 | Q23 | answered | behavior/lifecycle.md §4 | 시작 창 위치 판정 기준이 없다. Wails 화면 목록에는 화면 원점이 없어 보조 모니터 위치를 알 수 없다. 현재 구현은 주 화면 크기 안에 걸치는지만 본다(D40). 이 기준으로 충분한지, 다른 기준이 필요한지 정해 달라. |
 | Q24 | answered | ipc.md §3 (ui.request) | `ui.request` 요청 객체에 요청 id 를 담는 키 이름이 명세에 없다. 구현은 `requestId` 로 통일했다(D45). 명세에 이 이름을 적어 달라. |
 | Q25 | answered | ipc.md §2 (session.open)·§4 (session.state) | 세션 상태의 토큰 이름(연결 중·연결됨·재접속·끊김·오류)이 명세에 없다. 구현은 `connecting/connected/reconnecting/disconnected/error` 를 쓴다(D46). 닫힌 세션의 끊김 상태 이름을 정해 달라. |

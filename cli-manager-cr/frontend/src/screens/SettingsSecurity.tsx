@@ -19,14 +19,14 @@ export function SettingsSecurity() {
 
   return (
     <>
-      <Field label="자동 잠금 (분)" help="PC를 이 시간 동안 사용하지 않거나, Windows를 잠그거나 절전하면 볼트를 잠급니다. 열린 세션은 유지됩니다. 0 = 사용 안 함">
+      <Field label="자동 잠금 (분)" help="PC를 이 시간 동안 사용하지 않거나, Windows를 잠그거나 절전하면 보관함을 잠급니다. 열린 세션은 유지됩니다. 0 = 사용 안 함">
         <NumberField label="자동 잠금 (분)" value={autoLock} min={0} max={1440} fallback={0} onCommit={(v) => void saveSettings({ autoLockMinutes: v })} />
       </Field>
 
       {vault?.osUnlockAvailable && (
         <Group>
           <ToggleRow
-            title="Windows 계정으로 잠금 해제"
+            title="Windows 로그인으로 열기"
             desc="잠금 화면에서 마스터 비밀번호 대신 Windows 로그인(DPAPI)으로 열 수 있습니다"
             checked={!!vault.osUnlockEnabled}
             onChange={async (on) => {
@@ -128,7 +128,7 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
     const n = usersOf(c.id).length;
     const ok = await confirm({
       title: '계정 삭제',
-      body: `"${c.name}" 계정을 볼트에서 삭제할까요?${n > 0 ? ` ${n}개 서버가 접속할 때 비밀번호를 다시 묻게 됩니다.` : ''}`,
+      body: `"${c.name}" 계정을 보관함에서 삭제할까요?${n > 0 ? ` ${n}개 서버가 연결할 때 비밀번호를 다시 묻게 됩니다.` : ''}`,
       okText: '삭제',
       danger: true,
     });

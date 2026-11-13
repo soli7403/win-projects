@@ -28,7 +28,7 @@ export function LocationPicker() {
   };
 
   return (
-    <Modal title={`위치 골라서 연결 — ${host.alias}`} size="lg" onClose={close}
+    <Modal title={`열 위치 선택 — ${host.alias}`} size="lg" onClose={close}
       foot={<button className="btn primary" onClick={() => { close(); void openHost(loc.hostId); }}>새 탭으로 열기</button>}>
       {tabs.length === 0 && <div className="faint">열린 탭이 없습니다. 새 탭으로 여세요.</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
@@ -58,7 +58,7 @@ function MiniNode({ tab, node, onPlace, sessions }: {
     if (!title) {
       return (
         <div className="loc-pane">
-          <button className="btn small-btn" title="이 빈 칸에서 열기" onClick={() => onPlace(node.id, 'row', false, true)}>여기에</button>
+          <button className="btn small-btn" title="이 빈 창에서 열기" onClick={() => onPlace(node.id, 'row', false, true)}>여기에</button>
         </div>
       );
     }
@@ -66,10 +66,10 @@ function MiniNode({ tab, node, onPlace, sessions }: {
       <div className="loc-pane">
         <span className="small">{title}</span>
         <div className="loc-arrows">
-          <button className="icon-btn small" title="이 방향으로 분할해 열기" aria-label="위로 분할" onClick={() => onPlace(node.id, 'col', true, false)}><ArrowUp size={12} /></button>
-          <button className="icon-btn small" title="이 방향으로 분할해 열기" aria-label="왼쪽으로 분할" onClick={() => onPlace(node.id, 'row', true, false)}><ArrowLeft size={12} /></button>
-          <button className="icon-btn small" title="이 방향으로 분할해 열기" aria-label="오른쪽으로 분할" onClick={() => onPlace(node.id, 'row', false, false)}><ArrowRight size={12} /></button>
-          <button className="icon-btn small" title="이 방향으로 분할해 열기" aria-label="아래로 분할" onClick={() => onPlace(node.id, 'col', false, false)}><ArrowDown size={12} /></button>
+          <button className="icon-btn small" title="이 방향으로 나눠 열기" aria-label="위로 나누기" onClick={() => onPlace(node.id, 'col', true, false)}><ArrowUp size={12} /></button>
+          <button className="icon-btn small" title="이 방향으로 나눠 열기" aria-label="왼쪽으로 나누기" onClick={() => onPlace(node.id, 'row', true, false)}><ArrowLeft size={12} /></button>
+          <button className="icon-btn small" title="이 방향으로 나눠 열기" aria-label="오른쪽으로 나누기" onClick={() => onPlace(node.id, 'row', false, false)}><ArrowRight size={12} /></button>
+          <button className="icon-btn small" title="이 방향으로 나눠 열기" aria-label="아래로 나누기" onClick={() => onPlace(node.id, 'col', false, false)}><ArrowDown size={12} /></button>
         </div>
       </div>
     );

@@ -127,7 +127,7 @@ func ApplyCandidates(slCands []Candidate, szFolderName string, slGroups []map[st
 		}
 		if szTarget == "" {
 			name, _ := mapHost["alias"].(string)
-			out.Result.M_slSkipped = append(out.Result.M_slSkipped, fmt.Sprintf("%s: 점프 호스트 %s 를 찾지 못해 직접 접속으로 등록", name, szJump))
+			out.Result.M_slSkipped = append(out.Result.M_slSkipped, fmt.Sprintf("%s: 경유 서버 %s 를 찾지 못해 직접 연결로 등록", name, szJump))
 			continue
 		}
 		slNewHosts[iIndex]["jumpHostId"] = szTarget

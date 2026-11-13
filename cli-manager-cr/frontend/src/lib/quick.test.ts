@@ -8,7 +8,7 @@ const h = (over: Partial<Host>): Host => ({
   tags: [], encoding: 'utf-8', termType: 'xterm-256color', keepaliveSec: 30, forwards: [], sort: 0, ...over,
 });
 
-describe('빠른 접속 서버 검색', () => {
+describe('빠른 연결 서버 검색', () => {
   const hosts = [
     h({ id: '1', alias: 'web-prod', host: '10.0.0.1' }),
     h({ id: '2', alias: 'db', host: 'web.internal' }),

@@ -84,7 +84,7 @@ describe('사이드바 규칙', () => {
 });
 
 describe('서버 행 연결 점 규칙(§5)', () => {
-  it('connected 인 세션만 센다: 접속 중·재접속·닫힘·오류는 제외', () => {
+  it('connected 인 세션만 센다: 연결 중·재연결·닫힘·오류는 제외', () => {
     const mk = (hostId: string, state: string) => ({ info: { hostId, state } });
     const counts = connectedCountByHost({
       a: mk('h1', 'connected'),

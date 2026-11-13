@@ -39,9 +39,9 @@ export function SettingsAppearance() {
 
   return (
     <>
-      <Field label="앱 테마">
+      <Field label="테마">
         <Segmented
-          label="앱 테마"
+          label="테마"
           value={theme}
           onChange={changeTheme}
           options={[
@@ -51,8 +51,8 @@ export function SettingsAppearance() {
         />
       </Field>
 
-      <Field label="터미널 색 테마">
-        <div className="themes" role="radiogroup" aria-label="터미널 색 테마">
+      <Field label="터미널 색상">
+        <div className="themes" role="radiogroup" aria-label="터미널 색상">
           {TERM_THEMES.map((t) => {
             const on = current.name === t.name;
             return (
@@ -89,14 +89,14 @@ export function SettingsAppearance() {
 
       <div className="set-grid c2">
         <ToggleRow
-          title="창 크기·위치 기억"
+          title="프로그램 창 크기·위치 기억"
           desc="다음 실행 때 마지막 크기, 위치, 최대화 상태로 엽니다 (모니터가 바뀌어 화면 밖이면 가운데로 엽니다)"
           checked={remember}
           onChange={setRemember}
         />
-        <Field label="창 크기">
+        <Field label="프로그램 창 크기">
           <div>
-            <button className="btn" type="button" onClick={() => void resetWindow()}>원래 크기로</button>
+            <button className="btn" type="button" onClick={() => void resetWindow()}>기본 크기로</button>
           </div>
         </Field>
       </div>
@@ -114,14 +114,14 @@ export function SettingsAppearance() {
             ]}
           />
         </Field>
-        <Field label="스크롤백 (줄)">
-          <NumberField label="스크롤백 (줄)" value={scrollback} min={500} max={200000} fallback={10000} onCommit={(v) => void saveSettings({ scrollback: v })} />
+        <Field label="기록 줄 수">
+          <NumberField label="기록 줄 수" value={scrollback} min={500} max={200000} fallback={10000} onCommit={(v) => void saveSettings({ scrollback: v })} />
         </Field>
       </div>
 
-      <Field label="최대 화면 분할 (상하)" help="탭 하나에 위아래로 쌓을 수 있는 칸의 최대 개수입니다. 이 개수에 이르면 아래로 분할 버튼이 꺼집니다.">
+      <Field label="위아래 창 최대 개수" help="탭 하나에 위아래로 쌓을 수 있는 창의 최대 개수입니다. 이 개수에 이르면 아래로 나누기 버튼이 꺼집니다.">
         <Segmented
-          label="최대 화면 분할 (상하)"
+          label="위아래 창 최대 개수"
           value={String(maxSplits ?? 3) as '1' | '2' | '3' | '4' | '5'}
           onChange={(v) => void saveSettings({ maxVerticalSplits: Number(v) })}
           options={[
@@ -136,7 +136,7 @@ export function SettingsAppearance() {
 
       <Group>
         <ToggleRow title="커서 깜빡임" checked={cursorBlink} onChange={setCursorBlink} />
-        <ToggleRow title="벨 소리" checked={bell} onChange={setBell} />
+        <ToggleRow title="경고음" checked={bell} onChange={setBell} />
       </Group>
     </>
   );

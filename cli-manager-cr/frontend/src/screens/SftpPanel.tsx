@@ -223,7 +223,7 @@ export function SftpPanel({ group, onClose }: { group?: 0 | 1; onClose?: () => v
 
   let status: { text: string; sub?: string } | null = null;
   if (!sid) status = { text: '세션을 선택하면 해당 서버(또는 이 PC)의 파일이 표시됩니다.' };
-  else if (!sftpOk) status = { text: '파일 패널은 SSH·로컬 터미널 세션에서만 사용할 수 있습니다.', sub: `(${info!.protocol.toUpperCase()} 세션)` };
+  else if (!sftpOk) status = { text: '파일 창은 SSH·로컬 터미널 세션에서만 사용할 수 있습니다.', sub: `(${info!.protocol.toUpperCase()} 세션)` };
   else if (!connected) status = { text: '연결되면 파일 목록이 표시됩니다.' };
 
   return (
@@ -241,7 +241,7 @@ export function SftpPanel({ group, onClose }: { group?: 0 | 1; onClose?: () => v
         <button className="icon-btn small" title={isLocal ? '파일 가져오기 (이 폴더로 복사)' : '파일 업로드'} aria-label="파일 업로드" disabled={!ready} onClick={() => void onUpload()}>
           <Upload size={14} />
         </button>
-        <button className="icon-btn small" title="터미널에서 이 폴더로 cd" aria-label="터미널에서 이 폴더로 cd" disabled={!ready} onClick={onCd}>
+        <button className="icon-btn small" title="터미널을 이 폴더로 이동 (cd)" aria-label="터미널을 이 폴더로 이동 (cd)" disabled={!ready} onClick={onCd}>
           <SquareTerminal size={14} />
         </button>
         {onClose && (

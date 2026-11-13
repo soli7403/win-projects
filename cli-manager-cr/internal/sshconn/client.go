@@ -14,7 +14,7 @@ import (
 )
 
 // ErrJumpTooDeep 는 점프 호스트 체인이 너무 길 때의 오류다 (protocols.md §2.4).
-var ErrJumpTooDeep = errors.New("점프 호스트 체인이 너무 깁니다")
+var ErrJumpTooDeep = errors.New("경유 서버 체인이 너무 깁니다")
 
 // ErrNoUsername 은 사용자 이름이 입력되지 않았을 때의 오류다 (protocols.md §2.2).
 var ErrNoUsername = errors.New("사용자 이름이 입력되지 않았습니다")
@@ -62,7 +62,7 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 	var conn net.Conn
 	if tgt.Jump != nil {
 		tgt.Jump.Depth = tgt.Depth + 1
-		notice(fmt.Sprintf("점프 호스트 %s 경유 중...", tgt.Jump.Title))
+		notice(fmt.Sprintf("경유 서버 %s 를 거쳐 연결 중...", tgt.Jump.Title))
 		jumpConn, errJump := Connect(tgt.Jump, store, prompt, notice)
 		if errJump != nil {
 			return nil, errJump
