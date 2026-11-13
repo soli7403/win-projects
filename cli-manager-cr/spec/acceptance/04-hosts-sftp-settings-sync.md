@@ -56,6 +56,9 @@
 | I7 | 키 파일 경로가 없음 | 가져오기 | 건너뛴 목록에 "키 파일을 읽지 못함" |
 | I8 | 볼트 잠김 | 키 파일 있는 후보 | 키가 볼트에 복사되지 않고 인증 `agent` |
 | I9 | AWS 후보 | 인스턴스에 공인 IP 없음 | 같은 VPC 의 베스천을 점프 호스트로 연결 |
+| I10 | SecureCRT `Sessions/MDS/web01.ini`, `Sessions/a/b/c.ini`, `__FolderData__.ini`, 최상위 `Default.ini` (D66) | 넣을 폴더 "SecureCRT" 로 가져오기 | 세션 2개. 폴더 SecureCRT/MDS, SecureCRT/a/b 가 생기고 서버가 각각 들어감. 다시 가져오면 같은 폴더를 재사용. 태그 securecrt |
+| I11 | SecureCRT `Port Forward Table V2` 줄 `app\|25095\|1\|10.0.5.95\|22\|\|` | | L 포워딩 127.0.0.1:25095 → 10.0.5.95:22 |
+| I12 | SecureCRT 세션에 저장된 비밀번호 | | 비밀번호는 옮기지 않음(인증 password, 볼트 항목 없음) |
 
 ## 백업·동기화 (data/sync-backup.md)
 | # | 조건 | 동작 | 기대 결과 |

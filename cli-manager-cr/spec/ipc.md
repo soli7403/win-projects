@@ -91,13 +91,14 @@
 ### 가져오기 후보 객체 (import.scan / import.scanAws 결과, import.apply 입력)
 후보 하나는 다음 JSON 객체다. **서버 정보는 평평하게 펼치지 않고 `host` 객체 안에 둔다.**
 ```
-{ "source": "putty" | "ssh-config" | "aws",
+{ "source": "putty" | "securecrt" | "ssh-config" | "aws",
   "name": 문자열,
   "host": { "alias", "protocol", "host", "port", "username"?, "authType", "keepaliveSec"?, "encoding"?, "termType"?,
             "forwards"?, "serial"?, "startupCommand"?, "notes"? },   // data/store.md 서버 필드의 부분 집합
   "keyFile"?: 문자열(키 파일 경로),
   "jumpVia"?: 문자열(점프 호스트 주소),
-  "note"?: 문자열 }
+  "note"?: 문자열,
+  "folderPath"?: 문자열 배열(넣을 폴더 아래 하위 폴더, SecureCRT) }
 ```
 - 화면은 이 구조를 그대로 읽는다: 종류 열 = `host.protocol`(없으면 `ssh`), 주소 열 = `host.username`·`host.host`·`host.port`(시리얼은 `host.serial.path`·`host.serial.baudRate`), 이름 열 = `name`, 출처 = `source`, 중복 판정 = `host.host`·`host.port`·`host.username` 이 기존 서버와 같은지.
 - `import.apply` 에는 사용자가 고른 **후보 객체를 변경 없이 그대로** 보내고, 두 번째 인자로 폴더 이름을 보낸다.
@@ -106,7 +107,8 @@
 ### 가져오기·동기화·업데이트
 | 채널 | 인자 | 결과 |
 |---|---|---|
-| `import.scan` | | 후보 배열(PuTTY 레지스트리 + ssh config) — **후보 JSON 구조는 위 "가져오기 후보 객체"** |
+| `import.scan` | | 후보 배열(PuTTY 레지스트리 + 기본 위치 SecureCRT + ssh config) — **후보 JSON 구조는 위 "가져오기 후보 객체"** |
+| `import.scanSecureCrt` | 폴더 경로(선택) | 후보 배열(SecureCRT, import.md §1.5). 경로를 안 주면 폴더 선택 대화상자("SecureCRT 설정 폴더 선택", 시작 폴더는 기본 설정 폴더, 새 폴더 만들기 없음) — 취소하면 null |
 | `import.scanAws` | 프로필(선택) | 후보 배열 / 오류(메시지) |
 | `import.apply` | 후보 배열, 폴더 이름 | `{hosts, keys, skipped}` |
 | `sync.run` | 모드(`""` / `pull-vault` / `overwrite`) | 상태 `{state, message?, lastSync?, changed?}` |
