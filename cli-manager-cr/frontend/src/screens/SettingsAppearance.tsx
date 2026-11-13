@@ -76,7 +76,7 @@ export function SettingsAppearance() {
       </Field>
 
       <div className="set-grid c3">
-        <Field label="글꼴" help="D2Coding, Cascadia Mono 등 설치된 고정폭 글꼴">
+        <Field label="글꼴" help="설치된 고정폭 글꼴 이름 (예: D2Coding, Cascadia Mono)">
           <FontInput value={fontFamily} onCommit={setFontFamily} />
         </Field>
         <Field label="글자 크기">
@@ -90,7 +90,7 @@ export function SettingsAppearance() {
       <div className="set-grid c2">
         <ToggleRow
           title="프로그램 창 크기·위치 기억"
-          desc="다음 실행 때 마지막 크기, 위치, 최대화 상태로 엽니다 (모니터가 바뀌어 화면 밖이면 가운데로 엽니다)"
+          desc="다음 실행 때 마지막 크기·위치·최대화 상태로 엽니다. 모니터 구성이 바뀌어 화면 밖이면 가운데로 엽니다"
           checked={remember}
           onChange={setRemember}
         />
@@ -119,7 +119,7 @@ export function SettingsAppearance() {
         </Field>
       </div>
 
-      <Field label="위아래 창 최대 개수" help="탭 하나에 위아래로 쌓을 수 있는 창의 최대 개수입니다. 이 개수에 이르면 아래로 나누기 버튼이 꺼집니다.">
+      <Field label="위아래 창 최대 개수" help="한 탭에서 위아래로 나눌 수 있는 최대 창 수입니다. 도달하면 [아래로 나누기] 버튼이 비활성화됩니다.">
         <Segmented
           label="위아래 창 최대 개수"
           value={String(maxSplits ?? 3) as '1' | '2' | '3' | '4' | '5'}

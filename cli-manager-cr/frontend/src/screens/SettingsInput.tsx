@@ -47,45 +47,45 @@ export function SettingsInput() {
       <Group>
         <ToggleRow
           title="드래그하면 바로 복사"
-          desc="PuTTY처럼 마우스로 드래그하면 바로 클립보드에 복사됩니다"
+          desc="드래그로 선택하면 즉시 클립보드에 복사합니다 (PuTTY 방식)"
           checked={copyOnSelect}
           onChange={setCopyOnSelect}
         />
         <ToggleRow
           title="마우스 오른쪽 버튼으로 붙여넣기"
-          desc="끄면 오른쪽 클릭 시 메뉴가 나옵니다 (켜져 있어도 Shift+오른쪽 클릭은 메뉴)"
+          desc="끄면 오른쪽 클릭에 메뉴가 뜹니다. 켜져 있어도 Shift+오른쪽 클릭은 메뉴입니다"
           checked={rightClickPaste}
           onChange={setRightClickPaste}
         />
         {platform !== 'linux' && platform !== 'darwin' && (
           <ToggleRow
             title="Ctrl+V로 붙여넣기"
-            desc="끄면 Ctrl+V가 서버로 전달되고, 붙여넣기는 Ctrl+Shift+V"
+            desc="끄면 Ctrl+V 는 그대로 서버로 보내고, 붙여넣기는 Ctrl+Shift+V 로 합니다"
             checked={ctrlVPaste}
             onChange={setCtrlVPaste}
           />
         )}
         <ToggleRow
           title="Shift+Enter 로 줄바꿈"
-          desc="명령을 실행하지 않고 줄만 바꿉니다 (Claude Code 같은 CLI 의 여러 줄 입력용, Alt+Enter 와 같은 신호)"
+          desc="실행하지 않고 줄만 바꿉니다. Claude Code 같은 CLI의 여러 줄 입력용입니다 (Alt+Enter 와 같은 값 전송)"
           checked={shiftEnterNewline}
           onChange={setShiftEnterNewline}
         />
         <ToggleRow
           title="서버의 클립보드 쓰기 허용 (OSC 52)"
-          desc="tmux·vim·Claude Code 등이 보내는 '클립보드에 쓰기' 요청을 이 PC 클립보드에 넣습니다. 클립보드를 읽으려는 요청은 항상 거절합니다"
+          desc="서버 쪽 tmux·vim·Claude Code 등의 클립보드 쓰기 요청을 이 PC 클립보드에 반영합니다. 읽기 요청은 항상 거부합니다"
           checked={osc52Copy}
           onChange={setOsc52Copy}
         />
         <ToggleRow
           title="여러 줄 붙여넣기 전에 묻기"
-          desc="여러 줄을 붙여넣으면 실행 전에 한 번 확인합니다"
+          desc="두 줄 이상 붙여넣을 때 실행 전에 확인합니다"
           checked={confirmMultilinePaste}
           onChange={setConfirmMultilinePaste}
         />
         <ToggleRow
           title="운영 서버 위험 명령 경고"
-          desc="'운영' 환경 서버에서 아래 패턴의 명령을 실행하거나 붙여넣을 때 확인 창을 띄웁니다"
+          desc="환경이 '운영'인 서버에서 아래 패턴(정규식)에 맞는 명령을 실행하거나 붙여넣으면 먼저 확인합니다"
           checked={guardDangerousOnProd}
           onChange={setGuardDangerousOnProd}
         />

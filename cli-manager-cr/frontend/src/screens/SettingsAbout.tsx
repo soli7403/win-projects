@@ -46,7 +46,7 @@ export function SettingsAbout() {
       <Group>
         <ToggleRow
           title="업데이트 자동 확인"
-          desc="앱을 켤 때와 12시간마다 배포 저장소의 최신 릴리스를 확인합니다. 서버 목록·IP·계정 등 사용자 정보는 보내지 않으며, 확인에 실패해도(폐쇄망 등) 조용히 넘어갑니다"
+          desc="시작할 때와 12시간마다 새 릴리스를 확인합니다. 서버 목록·IP·계정 정보는 보내지 않으며, 폐쇄망 등으로 확인이 안 되면 조용히 건너뜁니다"
           checked={updateCheck}
           onChange={setUpdateCheck}
         />

@@ -39,7 +39,7 @@ export function SettingsBackup() {
     <>
       <div className="set-notice">
         <div>
-          백업 파일에는 서버 목록·설정·명령 모음과 <b>암호화된</b> 보관함이 들어 있습니다. 다른 PC에서 가져온 뒤 같은 마스터 비밀번호로 열 수 있습니다.
+          백업 파일 하나에 서버 목록·설정·명령 모음과 <b>암호화된</b> 보관함이 담깁니다. 다른 PC에서 가져온 뒤 같은 마스터 비밀번호로 엽니다.
         </div>
       </div>
       <div style={{ display: 'flex', gap: 10 }}>

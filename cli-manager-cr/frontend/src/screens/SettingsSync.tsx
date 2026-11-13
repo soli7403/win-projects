@@ -95,15 +95,15 @@ export function SettingsSync() {
   return (
     <>
       <p className="set-section-title" style={{ lineHeight: 1.6, margin: 0, color: 'var(--fg-2)' }}>
-        비공개 git 저장소에 <b>보관함 키로 암호화한 파일 하나</b>만 올립니다. 서버 주소·계정명을 포함해 어떤 정보도 평문으로 남기지 않습니다. 다른 PC 에서는 같은 마스터 비밀번호로 그 파일을 엽니다. 인증은 이 PC 에 설치된 git 과 그 설정(SSH 키, 자격 증명 도우미)을 그대로 사용하며, 앱은 git 자격 증명을 저장하지 않습니다.
+        여러 PC의 서버 목록을 맞춥니다. 비공개 git 저장소에는 <b>보관함 키로 암호화한 파일 하나</b>만 올라가며 평문 정보는 남지 않습니다. 다른 PC에서는 같은 마스터 비밀번호로 엽니다. 저장소 인증은 이 PC의 git 설정(SSH 키, credential helper)을 그대로 쓰고, 앱은 git 자격 증명을 저장하지 않습니다.
       </p>
 
-      <Field label="저장소 주소" help="예: git@github.com:me/termgo-sync.git — 주소에 비밀번호·토큰을 넣지 마세요">
+      <Field label="저장소 주소" help="예: git@github.com:me/dariterm-sync.git — URL에 비밀번호·토큰을 넣지 마세요">
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             className="input mono"
             aria-label="저장소 주소"
-            placeholder="https://github.com/me/termgo-sync.git"
+            placeholder="https://github.com/me/dariterm-sync.git"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={saveRepo}
@@ -117,7 +117,7 @@ export function SettingsSync() {
       <Group>
         <ToggleRow
           title="자동 동기화"
-          desc="보관함을 열 때, 데이터를 바꾼 약 20초 뒤, 그리고 10분마다 동기화합니다"
+          desc="보관함을 열 때, 변경 후 약 20초 뒤, 그리고 10분마다 동기화합니다"
           checked={auto}
           onChange={setAuto}
         />
@@ -136,7 +136,7 @@ export function SettingsSync() {
             <div className="cred-main">
               <div style={{ fontWeight: 700 }}>저장소의 보관함이 이 PC 의 보관함과 다릅니다</div>
               <div className="cred-sub" style={{ fontSize: 12, lineHeight: 1.6 }}>
-                처음 연결하는 새 PC 라면 "저장소의 보관함 받기"를 선택하세요. 이 PC 의 데이터를 저장소의 기준으로 삼으려면 "이 PC 보관함으로 덮어쓰기"를 선택하세요 (저장소의 기존 내용이 대체됩니다).
+                새 PC라면 "저장소의 보관함 받기", 이 PC 내용을 기준으로 삼으려면 "이 PC 보관함으로 덮어쓰기"를 선택하세요 (저장소의 기존 내용은 대체됩니다).
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>

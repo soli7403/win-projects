@@ -24,19 +24,19 @@ export function SettingsConnection() {
       <Group>
         <ToggleRow
           title="연결이 끊기면 다시 연결"
-          desc="네트워크가 끊기면 2·4·8…초 간격으로 최대 8번 다시 연결합니다"
+          desc="연결이 끊기면 2·4·8…초로 간격을 늘리며 최대 8번 재연결합니다"
           checked={autoReconnect}
           onChange={setAutoReconnect}
         />
         <ToggleRow
           title="마지막 화면 배치 복원"
-          desc="앱을 닫을 때 열려 있던 탭과 창 배치를 기억하고, 다음 실행 때 같은 서버에 다시 연결합니다 (비밀번호·화면 내용은 저장하지 않습니다. 저장되지 않은 즉석 SSH 연결은 제외)"
+          desc="종료할 때 열린 탭과 창 배치를 저장하고, 다음 실행 때 같은 서버로 다시 연결합니다. 비밀번호·화면 내용은 저장하지 않으며, 목록에 없는 일회성 SSH 연결은 복원하지 않습니다"
           checked={restoreLayout}
           onChange={setRestoreLayout}
         />
         <ToggleRow
           title="터미널 출력 기록"
-          desc="터미널 출력을 텍스트 파일로 저장합니다 (새 연결부터 적용)"
+          desc="터미널 출력을 텍스트 파일로 남깁니다 (켠 뒤 새로 여는 연결부터)"
           checked={sessionLog}
           onChange={setSessionLog}
         />

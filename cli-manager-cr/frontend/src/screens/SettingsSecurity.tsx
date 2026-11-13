@@ -19,7 +19,7 @@ export function SettingsSecurity() {
 
   return (
     <>
-      <Field label="자동 잠금 (분)" help="PC를 이 시간 동안 사용하지 않거나, Windows를 잠그거나 절전하면 보관함을 잠급니다. 열린 세션은 유지됩니다. 0 = 사용 안 함">
+      <Field label="자동 잠금 (분)" help="이 시간 동안 입력이 없거나 Windows 잠금·절전 시 보관함을 잠급니다. 연결된 세션은 유지됩니다. 0이면 끕니다">
         <NumberField label="자동 잠금 (분)" value={autoLock} min={0} max={1440} fallback={0} onCommit={(v) => void saveSettings({ autoLockMinutes: v })} />
       </Field>
 
@@ -27,7 +27,7 @@ export function SettingsSecurity() {
         <Group>
           <ToggleRow
             title="Windows 로그인으로 열기"
-            desc="잠금 화면에서 마스터 비밀번호 대신 Windows 로그인(DPAPI)으로 열 수 있습니다"
+            desc="마스터 비밀번호 대신 현재 Windows 계정(DPAPI)으로 보관함을 엽니다"
             checked={!!vault.osUnlockEnabled}
             onChange={async (on) => {
               try {
