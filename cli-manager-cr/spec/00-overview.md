@@ -3,7 +3,7 @@
 > 작성 방식: 기존 앱 사용 관찰 + 열람. 작성일 2026-11-10. 상태: **draft**.
 
 ## 1. 한 줄 설명
-Windows 에서 쓰는 **터미널 접속 관리 앱**. 여러 서버(SSH·텔넷·시리얼)와 이 PC 의 셸을 탭·분할 화면으로 열고, 접속 정보(계정·키)를 마스터 비밀번호로 암호화한 볼트에 저장하며, SFTP 파일 탐색·이미지 붙여넣기 업로드·git 동기화를 제공한다.
+Windows 에서 쓰는 **터미널 접속 관리 앱**. 여러 서버(SSH·텔넷·시리얼)와 이 PC 의 셸을 탭·분할 화면으로 열고, 접속 정보(계정·키)를 앱 잠금 비밀번호로 암호화한 볼트에 저장하며, SFTP 파일 탐색·이미지 붙여넣기 업로드·git 동기화를 제공한다.
 
 ## 2. 범위
 | 기능 | 문서 |
@@ -14,7 +14,7 @@ Windows 에서 쓰는 **터미널 접속 관리 앱**. 여러 서버(SSH·텔넷
 | 터미널(xterm.js): 복사·붙여넣기·찾기·위험 명령 가드·OSC 52 | behavior/terminal.md |
 | SSH(점프 호스트·포워딩·keepalive)·텔넷·시리얼·로컬 셸·tmux 세션 유지 | protocols.md, behavior/session.md |
 | SFTP 탐색기·전송·미리보기·로컬 편집, 스니펫 | ui/sftp-snippets.md, protocols.md §3 |
-| 볼트(마스터 비밀번호·복구 코드·OS 잠금 해제), 자동 잠금 | data/vault.md, ui/lock.md, behavior/lifecycle.md §2 |
+| 볼트(앱 잠금 비밀번호·복구 코드·OS 잠금 해제), 자동 잠금 | data/vault.md, ui/lock.md, behavior/lifecycle.md §2 |
 | 설정, 백업, git 동기화, 새 버전 확인 | ui/settings.md, data/sync-backup.md |
 | 단축키 | behavior/shortcuts.md |
 
