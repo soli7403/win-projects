@@ -7,6 +7,7 @@ import { addGridTab, groupOf, openSessionFor, useWorkspace, type Tab } from './w
 import { findPane, paneIds, type Dir, type LayoutNode } from '../lib/layout';
 import { sameTargetRequest } from '../lib/sameTarget';
 import type { ShortcutAction } from '../lib/keys';
+import { focusActiveTerminal } from '../screens/TerminalView';
 
 /** 포커스 그룹(나뉘지 않았으면 전체)의 탭 목록. */
 function focusGroupTabs(ws: { tabs: Tab[]; activeTabId: string | null }): Tab[] {
@@ -26,8 +27,18 @@ export function canSplitMore(root: LayoutNode, max = maxVerticalSplits()): boole
   return paneIds(root).length < max;
 }
 
-/** 저장된 서버 또는 즉석 접속을 연다. where: 새 탭, 오른쪽 그룹의 새 탭, 또는 포커스 칸 기준 분할/빈 칸 채우기. */
+/** 저장된 서버 또는 즉석 접속을 연다 (where 는 아래 openHostAt 참고). 연 뒤 그 터미널에 입력 포커스를 준다. */
 export async function openHost(
+  hostId: string | null,
+  where: Parameters<typeof openHostAt>[1] = { kind: 'tab' },
+  adhoc?: unknown,
+): Promise<void> {
+  await openHostAt(hostId, where, adhoc);
+  focusActiveTerminal();
+}
+
+/** where: 새 탭, 오른쪽 그룹의 새 탭, 또는 포커스 칸 기준 분할/빈 칸 채우기. */
+async function openHostAt(
   hostId: string | null,
   where:
     | { kind: 'tab' }

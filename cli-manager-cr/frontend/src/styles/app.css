@@ -288,7 +288,9 @@ button { font: inherit; color: inherit; }
 .pane-head .spacer { flex: 1; }
 .env-tag { font-size: 10px; font-weight: 700; padding: 0 5px; border-radius: 4px; color: #fff; }
 .pane-body { flex: 1; min-height: 0; position: relative; display: flex; padding: 4px 2px 2px 8px; background: #0d1117; }
-.term-host { flex: 1; min-width: 0; min-height: 0; }
+.term-host { flex: 1; min-width: 0; min-height: 0; display: flex; }
+/* 세션별로 살려 두는 터미널 DOM(칸이 다시 그려질 때 떼었다 붙인다). */
+.term-keep { flex: 1; min-width: 0; min-height: 0; height: 100%; }
 .term-host .xterm { height: 100%; }
 .pane-watermark {
   position: absolute; right: 18px; bottom: 10px; font-size: 28px; font-weight: 800; opacity: 0.06;

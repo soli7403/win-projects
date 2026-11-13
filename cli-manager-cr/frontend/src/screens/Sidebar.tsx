@@ -9,6 +9,7 @@ import { useUi, type MenuItem } from '../state/ui';
 import { effectiveColor } from '../lib/hosts';
 import { openFolderGrid, openHost } from '../state/actions';
 import { HOST_MIME } from './Panes';
+import { focusActiveTerminal } from './TerminalView';
 import {
   canDropGroup, clampSidebarWidth, connectedCountByHost, countHostsIn, duplicateHostRecord, effectiveGroupId, folderDeletePlan, fullTarget,
   matchesQuery, moveHost, sidebarSubtitle, sortGroups, sortHosts,
@@ -42,6 +43,8 @@ function focusOpenSessionOf(hostId: string): boolean {
   const next = list[(idx + 1) % list.length];
   ws.activateTab(next.tabId);
   ws.focusPane(next.paneId);
+  // 이미 열린 세션으로 옮겨 가면 바로 입력할 수 있게 터미널에 포커스.
+  focusActiveTerminal();
   return true;
 }
 

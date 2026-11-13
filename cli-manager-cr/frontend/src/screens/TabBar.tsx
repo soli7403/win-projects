@@ -5,6 +5,7 @@ import { useWorkspace, tabTitle, detachPanes, groupOf, isSplit, type Tab } from 
 import { useUi, type MenuItem } from '../state/ui';
 import { paneIds, findPane } from '../lib/layout';
 import { isFileDrag, hoverStart, hoverEnd, dropFiles, tabSessionId } from './fileDrag';
+import { focusActiveTerminal } from './TerminalView';
 
 export const TAB_MIME = 'application/x-termgo-tab';
 
@@ -187,6 +188,8 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
               if (e.button === 0) activate(t.id);
               onMiddle(e, t);
             }}
+            // 탭을 누르면 그 탭의 터미널로 바로 입력할 수 있게 포커스를 옮긴다.
+            onClick={() => focusActiveTerminal()}
             onDoubleClick={() => void rename(t)}
             onContextMenu={(e) => {
               e.preventDefault();

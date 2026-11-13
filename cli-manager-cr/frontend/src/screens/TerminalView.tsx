@@ -26,6 +26,20 @@ interface Props {
 /** 칸 id → xterm 인스턴스. 칸 우클릭 메뉴가 복사·모두 선택·화면 지우기에 쓴다. */
 export const termHandles = new Map<string, Terminal>();
 
+/**
+ * 활성 탭의 포커스 칸 터미널에 키보드 포커스를 준다. 탭 클릭·서버 열기 뒤 바로 입력할 수 있게 한다.
+ * 클릭의 기본 동작(포커스 이동)과 React 그리기가 끝난 다음 프레임에 준다.
+ */
+export function focusActiveTerminal(): void {
+  requestAnimationFrame(() => {
+    if (useUi.getState().dialogs.length > 0) return;
+    const s = useWorkspace.getState();
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    const pid = tab?.zoomed ?? tab?.focusedPane;
+    if (pid) termHandles.get(pid)?.focus();
+  });
+}
+
 /** 찾기 요청 이벤트(칸 id 가 detail). 단축키·칸 머리글·우클릭 메뉴가 보낸다. */
 export const FIND_EVENT = 'termgo:find';
 
@@ -187,11 +201,190 @@ function FindBar({ term, paneId, onClose }: { term: Terminal; paneId: string; on
   );
 }
 
+/**
+ * 세션별로 살려 두는 터미널(xterm 과 그 DOM). 칸이 다시 그려져도(탭 전환·분할·크게 보기·그룹 이동)
+ * 같은 터미널을 다시 붙이므로 화면 내용·스크롤백을 잃지 않고, 안 보이는 동안의 출력도 계속 받는다.
+ * 세션이 작업 공간에서 사라질 때(칸·탭 닫기)만 정리한다.
+ */
+interface KeptTerm {
+  term: Terminal;
+  fit: FitAddon;
+  el: HTMLDivElement;
+  /** 지금 이 터미널을 보여 주는 칸(입력 대상 계산용). 칸이 바뀌면 붙일 때 갱신한다. */
+  paneId: string;
+}
+const keptTerms = new Map<string, KeptTerm>();
+
+function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): KeptTerm {
+  const el = document.createElement('div');
+  el.className = 'term-keep';
+  const tracker = new LineTracker();
+  const st = useApp.getState().store?.settings;
+  const theme = resolveTermTheme(st?.terminalTheme);
+  const t = new Terminal({
+    fontFamily: st?.fontFamily,
+    fontSize: st?.fontSize ?? 14,
+    lineHeight: st?.lineHeight ?? 1.15,
+    cursorStyle: st?.cursorStyle ?? 'block',
+    cursorBlink: st?.cursorBlink ?? true,
+    scrollback: st?.scrollback ?? 10000,
+    rightClickSelectsWord: false,
+    macOptionClickForcesSelection: true,
+    altClickMovesCursor: true,
+    drawBoldTextInBrightColors: true,
+    minimumContrastRatio: 1,
+    smoothScrollDuration: 0,
+    allowProposedApi: true,
+    theme: {
+      background: theme.background,
+      foreground: theme.foreground,
+      cursor: theme.cursor,
+      cursorAccent: theme.background,
+      selectionBackground: theme.selectionBackground,
+      black: theme.black, red: theme.red, green: theme.green, yellow: theme.yellow,
+      blue: theme.blue, magenta: theme.magenta, cyan: theme.cyan, white: theme.white,
+      brightBlack: theme.brightBlack, brightRed: theme.brightRed, brightGreen: theme.brightGreen,
+      brightYellow: theme.brightYellow, brightBlue: theme.brightBlue, brightMagenta: theme.brightMagenta,
+      brightCyan: theme.brightCyan, brightWhite: theme.brightWhite,
+    },
+  });
+  const fit = new FitAddon();
+  t.loadAddon(fit);
+  // 링크: Ctrl+클릭으로 기본 브라우저에서 연다(terminal.md §1).
+  t.loadAddon(new WebLinksAddon((ev, uri) => {
+    if (!ev.ctrlKey) return;
+    void getBackend().invoke('app.openExternal', [uri]).catch(() => undefined);
+  }));
+  // open 은 문서에 붙은 요소에서 해야 글자 크기를 잴 수 있으므로 칸에 먼저 붙인다.
+  host.appendChild(el);
+  t.open(el);
+  useWorkspace.getState().registerWriter(sessionId, (text) => t.write(text));
+
+  // 입력: 동시 입력 대상으로 보낸다. Enter 는 위험 명령 가드를 거친다.
+  t.onData((data) => {
+    const guardOn = !!useApp.getState().store?.settings.guardDangerousOnProd;
+    const info = useWorkspace.getState().sessions[sessionId]?.info;
+    if (data === '\r' && guardOn && info?.env === 'prod') {
+      const line = tracker.current();
+      tracker.reset();
+      if (line && matchesDangerous(line, useApp.getState().store?.settings.dangerousPatterns ?? DANGEROUS_PATTERNS)) {
+        void useUi.getState().confirm({
+          title: '운영 서버 위험 명령',
+          body: `[${info.title}] 운영 서버에서 실행하려는 명령입니다. 정말 실행할까요?`,
+          detail: line,
+          okText: '실행',
+          danger: true,
+        }).then((ok) => {
+          if (ok) for (const sid of targetsFor(k.paneId, sessionId)) getBackend().termInput(sid, '\r');
+          t.focus();
+        });
+        return;
+      }
+    }
+    tracker.feed(data);
+    for (const sid of targetsFor(k.paneId, sessionId)) getBackend().termInput(sid, data);
+  });
+
+  // 선택하면 자동 복사
+  t.onSelectionChange(() => {
+    const st2 = useApp.getState().store?.settings;
+    if (st2?.copyOnSelect && t.getSelection()) void copySelection(t);
+  });
+
+  // 벨: 설정이 켜져 있을 때만 짧은 소리
+  t.onBell(() => {
+    if (useApp.getState().store?.settings.bell) beep();
+  });
+
+  // OSC 52: 쓰기만 처리, 읽기는 거절(terminal.md §8)
+  t.parser.registerOscHandler(52, (payload) => {
+    if (!useApp.getState().store?.settings.osc52Copy) return true;
+    const text = decodeOsc52(payload);
+    if (text !== null) void getBackend().invoke('clip.writeText', [text]).catch(() => undefined);
+    return true;
+  });
+
+  // 키 처리: 앱 단축키는 터미널로 보내지 않는다(window 캡처에서 처리).
+  t.attachCustomKeyEventHandler((e) => {
+    if (e.type !== 'keydown') return true;
+    if (useUi.getState().dialogs.length > 0) return false;
+    if (shortcutFor(e)) return false;
+    if (e.ctrlKey && e.shiftKey && e.code === 'KeyC') {
+      void copySelection(t);
+      return false;
+    }
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && e.code === 'KeyC' && t.hasSelection()) {
+      void copySelection(t);
+      t.clearSelection();
+      return false;
+    }
+    if (e.key === 'Enter' && e.shiftKey && !e.ctrlKey && !e.altKey && useApp.getState().store?.settings.shiftEnterNewline) {
+      for (const sid of targetsFor(k.paneId, sessionId)) getBackend().termInput(sid, '\x1b\r');
+      return false;
+    }
+    if (e.ctrlKey && e.altKey && e.code === 'KeyV') {
+      void forceImagePaste(sessionId, targetsFor(k.paneId, sessionId));
+      return false;
+    }
+    const pasteKey = (e.ctrlKey && e.code === 'KeyV' && !e.shiftKey && !e.altKey && useApp.getState().store?.settings.ctrlVPaste)
+      || (e.ctrlKey && e.shiftKey && e.code === 'KeyV')
+      || (e.shiftKey && e.code === 'Insert');
+    if (pasteKey) {
+      void pasteFromClipboard(k.paneId, sessionId, t);
+      return false;
+    }
+    return true;
+  });
+
+  // 우클릭 규칙(panes §2.3): Shift 없이 설정이 켜져 있으면 복사 또는 붙여넣기, 아니면 메뉴(칸이 연다).
+  const onContext = (ev: MouseEvent) => {
+    const s = useApp.getState().store?.settings;
+    if (ev.shiftKey || !s?.rightClickPaste) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (t.hasSelection() && !s.copyOnSelect) {
+      void copySelection(t);
+      t.clearSelection();
+      return;
+    }
+    void pasteFromClipboard(k.paneId, sessionId, t);
+  };
+  el.addEventListener('contextmenu', onContext, true);
+
+  // Ctrl+휠: 글자 크기 ±1(8~32), 페이지 스크롤은 막는다(shortcuts.md §3).
+  const onWheel = (ev: WheelEvent) => {
+    if (!ev.ctrlKey) return;
+    ev.preventDefault();
+    const st3 = useApp.getState().store;
+    if (!st3) return;
+    const next = Math.max(8, Math.min(32, st3.settings.fontSize + (ev.deltaY < 0 ? 1 : -1)));
+    if (next !== st3.settings.fontSize) void useApp.getState().patchStore({ settings: { ...st3.settings, fontSize: next } });
+  };
+  el.addEventListener('wheel', onWheel, { passive: false });
+
+  const k: KeptTerm = { term: t, fit, el, paneId };
+  keptTerms.set(sessionId, k);
+  return k;
+}
+
+function disposeKeptTerm(sessionId: string): void {
+  const k = keptTerms.get(sessionId);
+  if (!k) return;
+  keptTerms.delete(sessionId);
+  k.el.remove();
+  k.term.dispose();
+  if (useWorkspace.getState().writers[sessionId]) useWorkspace.getState().registerWriter(sessionId, null);
+}
+
+// 세션이 닫혀 작업 공간에서 빠지면 살려 둔 터미널도 버린다.
+useWorkspace.subscribe((s) => {
+  for (const sid of [...keptTerms.keys()]) if (!s.sessions[sid]) disposeKeptTerm(sid);
+});
+
 export function TerminalView({ paneId, sessionId, focused }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
-  const tracker = useRef(new LineTracker());
   const settings = useApp((s) => s.store?.settings);
   const [findOpen, setFindOpen] = useState(false);
   const [term, setTerm] = useState<Terminal | null>(null);
@@ -205,178 +398,41 @@ export function TerminalView({ paneId, sessionId, focused }: Props) {
     return () => window.removeEventListener(FIND_EVENT, on);
   }, [paneId]);
 
-  // 생성·정리
+  // 붙이기·떼기: 세션의 터미널을 (없으면 만들어) 이 칸에 붙이고, 칸이 사라지면 떼기만 한다(dispose 하지 않음).
   useEffect(() => {
-    const st = useApp.getState().store?.settings;
-    const theme = resolveTermTheme(st?.terminalTheme);
-    const t = new Terminal({
-      fontFamily: st?.fontFamily,
-      fontSize: st?.fontSize ?? 14,
-      lineHeight: st?.lineHeight ?? 1.15,
-      cursorStyle: st?.cursorStyle ?? 'block',
-      cursorBlink: st?.cursorBlink ?? true,
-      scrollback: st?.scrollback ?? 10000,
-      rightClickSelectsWord: false,
-      macOptionClickForcesSelection: true,
-      altClickMovesCursor: true,
-      drawBoldTextInBrightColors: true,
-      minimumContrastRatio: 1,
-      smoothScrollDuration: 0,
-      allowProposedApi: true,
-      theme: {
-        background: theme.background,
-        foreground: theme.foreground,
-        cursor: theme.cursor,
-        cursorAccent: theme.background,
-        selectionBackground: theme.selectionBackground,
-        black: theme.black, red: theme.red, green: theme.green, yellow: theme.yellow,
-        blue: theme.blue, magenta: theme.magenta, cyan: theme.cyan, white: theme.white,
-        brightBlack: theme.brightBlack, brightRed: theme.brightRed, brightGreen: theme.brightGreen,
-        brightYellow: theme.brightYellow, brightBlue: theme.brightBlue, brightMagenta: theme.brightMagenta,
-        brightCyan: theme.brightCyan, brightWhite: theme.brightWhite,
-      },
-    });
-    const fit = new FitAddon();
-    t.loadAddon(fit);
-    // 링크: Ctrl+클릭으로 기본 브라우저에서 연다(terminal.md §1).
-    t.loadAddon(new WebLinksAddon((ev, uri) => {
-      if (!ev.ctrlKey) return;
-      void getBackend().invoke('app.openExternal', [uri]).catch(() => undefined);
-    }));
-    t.open(hostRef.current!);
+    const host = hostRef.current!;
+    const k = keptTerms.get(sessionId) ?? createKeptTerm(sessionId, paneId, host);
+    k.paneId = paneId;
+    const t = k.term;
+    const fit = k.fit;
+    host.appendChild(k.el);
     termRef.current = t;
     fitRef.current = fit;
     termHandles.set(paneId, t);
     setTerm(t);
-    useWorkspace.getState().registerWriter(sessionId, (text) => t.write(text));
-
-    // 입력: 동시 입력 대상으로 보낸다. Enter 는 위험 명령 가드를 거친다.
-    t.onData((data) => {
-      const guardOn = !!useApp.getState().store?.settings.guardDangerousOnProd;
-      const info = useWorkspace.getState().sessions[sessionId]?.info;
-      if (data === '\r' && guardOn && info?.env === 'prod') {
-        const line = tracker.current.current();
-        tracker.current.reset();
-        if (line && matchesDangerous(line, useApp.getState().store?.settings.dangerousPatterns ?? DANGEROUS_PATTERNS)) {
-          void useUi.getState().confirm({
-            title: '운영 서버 위험 명령',
-            body: `[${info.title}] 운영 서버에서 실행하려는 명령입니다. 정말 실행할까요?`,
-            detail: line,
-            okText: '실행',
-            danger: true,
-          }).then((ok) => {
-            if (ok) for (const sid of targetsFor(paneId, sessionId)) getBackend().termInput(sid, '\r');
-            t.focus();
-          });
-          return;
-        }
-      }
-      tracker.current.feed(data);
-      for (const sid of targetsFor(paneId, sessionId)) getBackend().termInput(sid, data);
-    });
-
-    // 선택하면 자동 복사
-    t.onSelectionChange(() => {
-      const st2 = useApp.getState().store?.settings;
-      if (st2?.copyOnSelect && t.getSelection()) void copySelection(t);
-    });
-
-    // 벨: 설정이 켜져 있을 때만 짧은 소리
-    t.onBell(() => {
-      if (useApp.getState().store?.settings.bell) beep();
-    });
-
-    // OSC 52: 쓰기만 처리, 읽기는 거절(terminal.md §8)
-    t.parser.registerOscHandler(52, (payload) => {
-      if (!useApp.getState().store?.settings.osc52Copy) return true;
-      const text = decodeOsc52(payload);
-      if (text !== null) void getBackend().invoke('clip.writeText', [text]).catch(() => undefined);
-      return true;
-    });
-
-    // 키 처리: 앱 단축키는 터미널로 보내지 않는다(window 캡처에서 처리).
-    t.attachCustomKeyEventHandler((e) => {
-      if (e.type !== 'keydown') return true;
-      if (useUi.getState().dialogs.length > 0) return false;
-      if (shortcutFor(e)) return false;
-      if (e.ctrlKey && e.shiftKey && e.code === 'KeyC') {
-        void copySelection(t);
-        return false;
-      }
-      if (e.ctrlKey && !e.shiftKey && !e.altKey && e.code === 'KeyC' && t.hasSelection()) {
-        void copySelection(t);
-        t.clearSelection();
-        return false;
-      }
-      if (e.key === 'Enter' && e.shiftKey && !e.ctrlKey && !e.altKey && useApp.getState().store?.settings.shiftEnterNewline) {
-        for (const sid of targetsFor(paneId, sessionId)) getBackend().termInput(sid, '\x1b\r');
-        return false;
-      }
-      if (e.ctrlKey && e.altKey && e.code === 'KeyV') {
-        void forceImagePaste(sessionId, targetsFor(paneId, sessionId));
-        return false;
-      }
-      const pasteKey = (e.ctrlKey && e.code === 'KeyV' && !e.shiftKey && !e.altKey && useApp.getState().store?.settings.ctrlVPaste)
-        || (e.ctrlKey && e.shiftKey && e.code === 'KeyV')
-        || (e.shiftKey && e.code === 'Insert');
-      if (pasteKey) {
-        void pasteFromClipboard(paneId, sessionId, t);
-        return false;
-      }
-      return true;
-    });
-
-    // 우클릭 규칙(panes §2.3): Shift 없이 설정이 켜져 있으면 복사 또는 붙여넣기, 아니면 메뉴(칸이 연다).
-    const onContext = (ev: MouseEvent) => {
-      const s = useApp.getState().store?.settings;
-      if (ev.shiftKey || !s?.rightClickPaste) return;
-      ev.preventDefault();
-      ev.stopPropagation();
-      if (t.hasSelection() && !s.copyOnSelect) {
-        void copySelection(t);
-        t.clearSelection();
-        return;
-      }
-      void pasteFromClipboard(paneId, sessionId, t);
-    };
-    hostRef.current!.addEventListener('contextmenu', onContext, true);
-
-    // Ctrl+휠: 글자 크기 ±1(8~32), 페이지 스크롤은 막는다(shortcuts.md §3).
-    const onWheel = (ev: WheelEvent) => {
-      if (!ev.ctrlKey) return;
-      ev.preventDefault();
-      const st3 = useApp.getState().store;
-      if (!st3) return;
-      const next = Math.max(8, Math.min(32, st3.settings.fontSize + (ev.deltaY < 0 ? 1 : -1)));
-      if (next !== st3.settings.fontSize) void useApp.getState().patchStore({ settings: { ...st3.settings, fontSize: next } });
-    };
-    hostRef.current!.addEventListener('wheel', onWheel, { passive: false });
 
     // 크기 맞춤: 숨겨졌거나 너무 작으면 맞추지 않는다.
     const sendSize = () => {
-      const el = hostRef.current;
-      if (!el || el.clientWidth < 20 || el.clientHeight < 20) return;
+      if (host.clientWidth < 20 || host.clientHeight < 20) return;
       fit.fit();
       useWorkspace.getState().setSize(sessionId, t.cols, t.rows);
       getBackend().termResize(sessionId, t.cols, t.rows);
     };
     const ro = new ResizeObserver(sendSize);
-    ro.observe(hostRef.current!);
+    ro.observe(host);
     sendSize();
+    // 떼어 둔 동안 받은 출력을 다시 그린다.
+    t.refresh(0, t.rows - 1);
 
     return () => {
       ro.disconnect();
-      hostRef.current?.removeEventListener('wheel', onWheel);
-      hostRef.current?.removeEventListener('contextmenu', onContext, true);
-      useWorkspace.getState().registerWriter(sessionId, null);
-      termHandles.delete(paneId);
-      t.dispose();
+      if (termHandles.get(paneId) === t) termHandles.delete(paneId);
+      if (k.el.parentElement === host) host.removeChild(k.el);
       termRef.current = null;
+      fitRef.current = null;
       setTerm(null);
     };
-    // 세션이 바뀌면 새로 만든다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, [sessionId, paneId]);
 
   // 설정 변경은 열린 터미널 모두에 즉시 적용
   useEffect(() => {
