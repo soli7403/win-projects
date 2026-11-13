@@ -9,6 +9,8 @@ import { useApp } from '../state/app';
 import { useUpdate } from '../state/update';
 import { useSetting, Group } from './Settings';
 import { REFERENCE_NOTICE } from '../lib/notices';
+// 오픈소스 고지 전문: 저장소 루트에서 `go run ./tools/notices` 가 만든 복사본(D64).
+import THIRD_PARTY_NOTICES from '../generated/third-party-notices.md?raw';
 
 export function SettingsAbout() {
   const [updateCheck, setUpdateCheck] = useSetting('updateCheck');
@@ -41,7 +43,7 @@ export function SettingsAbout() {
       </div>
       <div className="set-stack">
         <div className="set-label">라이선스</div>
-        <div>MIT · Copyright © 2026 kai</div>
+        <div>독점 소프트웨어 · Copyright © 2026 kai. All rights reserved.</div>
       </div>
       <div className="set-stack">
         <div className="set-label">참고한 프로젝트</div>
@@ -51,6 +53,14 @@ export function SettingsAbout() {
         <details>
           <summary className="faint" style={{ fontSize: 12, cursor: 'pointer' }}>라이선스 전문 보기</summary>
           <div className="detail-box" style={{ marginTop: 6 }}>{REFERENCE_NOTICE.license}</div>
+        </details>
+      </div>
+      <div className="set-stack">
+        <div className="set-label">오픈소스 라이선스</div>
+        <div className="faint" style={{ fontSize: 12 }}>이 프로그램에 들어 있는 오픈소스 구성 요소와 각 라이선스 원문입니다.</div>
+        <details>
+          <summary className="faint" style={{ fontSize: 12, cursor: 'pointer' }}>오픈소스 라이선스 보기</summary>
+          <div className="detail-box notices-box" style={{ marginTop: 6 }}>{THIRD_PARTY_NOTICES}</div>
         </details>
       </div>
 

@@ -24,5 +24,10 @@ describe('정보 화면 — 참고한 프로젝트 고지 (D63)', () => {
     const full = container.querySelector('details .detail-box')?.textContent ?? '';
     expect(full).toContain('Copyright (c) 2026 Dany Kim');
     expect(full).toContain('The above copyright notice and this permission notice shall be included in all');
+    // 내 코드는 독점 라이선스(D64), 오픈소스 구성 요소 고지가 앱 안에 있다.
+    expect(screen.getByText('독점 소프트웨어 · Copyright © 2026 kai. All rights reserved.')).toBeTruthy();
+    const oss = container.querySelector('.notices-box')?.textContent ?? '';
+    expect(oss).toContain('github.com/wailsapp/wails/v2');
+    expect(oss).toContain('@xterm/xterm');
   });
 });

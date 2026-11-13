@@ -108,6 +108,8 @@ button { font: inherit; color: inherit; }
 .notice.info { background: var(--accent-soft); }
 .notice.warn { background: var(--warn-soft); }
 .notice.danger { background: var(--danger-soft); }
+/* 오픈소스 고지 전문은 길어서 높이를 제한하고 안에서 스크롤 */
+.notices-box { max-height: 320px; overflow: auto; }
 .detail-box {
   font-family: var(--mono); font-size: 12px; background: var(--bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 10px; user-select: text; white-space: pre-wrap; word-break: break-all;

@@ -1,21 +1,37 @@
-MIT License
+DariTerm 소프트웨어 사용권 / DariTerm Software License
 
-Copyright (c) 2026 kai
+Copyright (c) 2026 kai. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+[한국어]
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. 이 소프트웨어(실행 파일, 소스 코드, 문서 포함)의 저작권은 kai 에게 있습니다.
+2. 배포받은 실행 파일을 설치하고 실행해 사용할 수 있습니다. 개인과 업무 용도 모두 허용합니다.
+3. 저작권자의 서면 허락 없이 다음을 할 수 없습니다.
+   - 소프트웨어의 복제(설치·실행·백업에 필요한 경우 제외), 수정, 번역, 파생물 작성
+   - 역설계, 디컴파일, 디스어셈블(관련 법이 명시적으로 허용하는 범위는 제외)
+   - 재배포, 판매, 대여, 재사용권 허락, 공개 게시
+4. 소스 코드는 공개하지 않으며, 이 사용권은 소스 코드에 대한 권리를 주지 않습니다.
+5. 이 소프트웨어에 들어 있는 오픈소스 구성 요소는 각자의 라이선스를 따릅니다.
+   THIRD_PARTY_NOTICES.md(앱의 설정 > 정보에서도 볼 수 있음)를 참고하세요.
+   이 사용권은 그 구성 요소의 라이선스가 허용하는 권리를 제한하지 않습니다.
+6. 이 소프트웨어는 "있는 그대로" 제공되며, 상품성·특정 목적 적합성·비침해를 포함한
+   어떠한 명시적·묵시적 보증도 하지 않습니다. 저작권자는 이 소프트웨어의 사용 또는 사용 불능으로
+   생긴 어떠한 손해에 대해서도 책임지지 않습니다.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+[English]
+
+1. This software (including executables, source code, and documentation) is copyrighted by kai.
+2. You may install and run the distributed executable for personal or business use.
+3. Without prior written permission from the copyright holder, you may not:
+   - copy (except as needed to install, run, or back up), modify, translate, or create derivative works;
+   - reverse engineer, decompile, or disassemble the software, except to the extent expressly
+     permitted by applicable law;
+   - redistribute, sell, rent, sublicense, or publicly post the software.
+4. The source code is not published, and this license grants no rights to the source code.
+5. Open source components included in this software are governed by their own licenses; see
+   THIRD_PARTY_NOTICES.md (also available in the app under Settings > About). This license does
+   not restrict any rights granted by those component licenses.
+6. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+   BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   OTHER LIABILITY ARISING FROM THE USE OF OR INABILITY TO USE THE SOFTWARE.
