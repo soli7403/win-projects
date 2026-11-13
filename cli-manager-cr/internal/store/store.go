@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"termgo/internal/jsonfile"
+	"dariterm/internal/jsonfile"
 )
 
 // G_cszSaveDelay 는 변경 후 디스크에 쓰기까지의 지연이다.
@@ -15,7 +15,7 @@ const G_cszSaveDelay = 300 * time.Millisecond
 // g_mapSettingsDefault 는 설정 기본값이다 (data/store.md §4). 저장 값에 없는 키만 채운다.
 var g_mapSettingsDefault = map[string]any{
 	"theme":                 "dark",
-	"terminalTheme":         "TermGo Dark",
+	"terminalTheme":         "DariTerm Dark",
 	"fontFamily":            "'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace",
 	"fontSize":              14,
 	"lineHeight":            1.15,
@@ -99,7 +99,14 @@ func Open(szPath string) (*Store, error) {
 		}
 	}
 	mapData["version"] = json.RawMessage("1")
-	return &Store{szPath: szPath, mapData: mapData}, nil
+	pstrStore := &Store{szPath: szPath, mapData: mapData}
+	// 원본 앱(BrightTerm) 이름으로 저장된 설정 값은 열 때 바꾸고 지연 저장으로 파일에도 남긴다 (store.md §4).
+	if migrateLegacySettings(mapData) {
+		pstrStore.mtxData.Lock()
+		pstrStore.scheduleSaveLocked()
+		pstrStore.mtxData.Unlock()
+	}
+	return pstrStore, nil
 }
 
 // SetOnSyncKeys 는 groups/hosts/snippets 가 바뀔 때 부를 콜백을 등록한다.

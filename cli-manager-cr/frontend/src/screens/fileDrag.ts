@@ -7,7 +7,7 @@ import { useUi } from '../state/ui';
 import { useWorkspace } from '../state/workspace';
 import { findPane } from '../lib/layout';
 
-export const FILE_MIME = 'application/x-termgo-files';
+export const FILE_MIME = 'application/x-dariterm-files';
 
 interface FileDrag {
   sessionId: string;

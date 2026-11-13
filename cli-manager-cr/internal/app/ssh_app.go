@@ -8,9 +8,9 @@ import (
 
 	"github.com/pkg/sftp"
 
-	"termgo/internal/session"
-	"termgo/internal/sshconn"
-	"termgo/internal/vault"
+	"dariterm/internal/session"
+	"dariterm/internal/sshconn"
+	"dariterm/internal/vault"
 )
 
 // g_ciSshDefaultPort 는 SSH 기본 포트다.

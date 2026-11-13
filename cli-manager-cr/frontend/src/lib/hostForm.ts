@@ -134,9 +134,9 @@ export function isWslShell(path: string | undefined): boolean {
 export function tmuxPlaceholder(alias: string, protocol: Protocol, localCwd: string): string {
   if (protocol === 'local') {
     const last = localCwd.trim().split(/[\\/]/).filter(Boolean).pop();
-    return last || 'termgo';
+    return last || 'dariterm';
   }
-  return alias.trim() || 'termgo';
+  return alias.trim() || 'dariterm';
 }
 
 /** 폴더 편집 저장 가능 여부(H10): 이름 공백 제거 후 비어 있지 않아야 한다. */

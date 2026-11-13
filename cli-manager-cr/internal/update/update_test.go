@@ -47,7 +47,7 @@ func TestCheckWithFakeServer(t *testing.T) {
 	if res.M_szStatus != G_cszStatusNewer || res.M_szVersion != "2.3.4" || res.M_szUrl != "https://example.com/rel" {
 		t.Fatalf("newer 결과 불일치: %+v", res)
 	}
-	if szSeenUA != "TermGo/2.0.0" || szSeenAccept != "application/vnd.github+json" || szSeenPath != "/repos/owner/name/releases/latest" {
+	if szSeenUA != "DariTerm/2.0.0" || szSeenAccept != "application/vnd.github+json" || szSeenPath != "/repos/owner/name/releases/latest" {
 		t.Fatalf("요청 헤더/경로 불일치: %s %s %s", szSeenUA, szSeenAccept, szSeenPath)
 	}
 	if res := Check(pServer.URL, "owner/name", "2.3.4", nil); res.M_szStatus != G_cszStatusLatest {

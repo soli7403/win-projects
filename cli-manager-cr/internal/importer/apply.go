@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"termgo/internal/uid"
+	"dariterm/internal/uid"
 )
 
 // KeyStore 는 가져오기가 개인 키를 볼트에 넣을 때 쓰는 인터페이스다 (app 이 볼트로 구현한다).

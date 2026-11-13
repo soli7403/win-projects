@@ -12,7 +12,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"termgo/internal/app"
+	"dariterm/internal/app"
 )
 
 //go:embed all:frontend/dist

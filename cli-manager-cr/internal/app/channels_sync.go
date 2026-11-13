@@ -3,8 +3,8 @@ package app
 import (
 	"encoding/json"
 
-	"termgo/internal/gitsync"
-	"termgo/internal/vault"
+	"dariterm/internal/gitsync"
+	"dariterm/internal/vault"
 )
 
 // storeLocal 은 이 PC 의 store 배열과 볼트 항목을 동기화 데이터로 읽고 쓰는 어댑터다 (gitsync.LocalStore).

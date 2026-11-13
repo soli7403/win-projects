@@ -21,7 +21,7 @@ describe('이미지 붙여넣기 업로드 (terminal.md §5, T9)', () => {
     const typed: string[] = [];
     setBackend({
       async invoke(channel: string): Promise<any> {
-        if (channel === 'sftp.uploadForPrompt') return ['/home/ops/.dariterm/uploads/tg-20261114-093015-a3f1.png'];
+        if (channel === 'sftp.uploadForPrompt') return ['/home/ops/.dariterm/uploads/dt-20261114-093015-a3f1.png'];
         return undefined;
       },
       termInput: (_sid: string, data: string) => typed.push(data),
@@ -36,7 +36,7 @@ describe('이미지 붙여넣기 업로드 (terminal.md §5, T9)', () => {
     await uploadAndInsert('s1', ['s1'], { kind: 'clipboardImage' });
     const texts = useApp.getState().toasts.map((t) => t.text);
     expect(texts[0]).toBe('클립보드 이미지 서버로 전송 중...');
-    expect(texts[1]).toBe('클립보드 이미지 전송 완료 → /home/ops/.dariterm/uploads/tg-20261114-093015-a3f1.png');
-    expect(typed).toEqual(['\x1b[200~/home/ops/.dariterm/uploads/tg-20261114-093015-a3f1.png \x1b[201~']);
+    expect(texts[1]).toBe('클립보드 이미지 전송 완료 → /home/ops/.dariterm/uploads/dt-20261114-093015-a3f1.png');
+    expect(typed).toEqual(['\x1b[200~/home/ops/.dariterm/uploads/dt-20261114-093015-a3f1.png \x1b[201~']);
   });
 });

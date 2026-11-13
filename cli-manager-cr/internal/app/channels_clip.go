@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"termgo/internal/clipboard"
-	"termgo/internal/dialog"
+	"dariterm/internal/clipboard"
+	"dariterm/internal/dialog"
 )
 
 // WindowControl 은 창 동작(최대화 토글, 원래 크기) 을 맡는 쪽이 구현한다 (main.go 의 Wails 런타임).

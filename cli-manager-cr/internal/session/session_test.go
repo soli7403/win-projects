@@ -262,8 +262,8 @@ func TestTmuxSessionNameAndLine(t *testing.T) {
 	if got := TmuxSessionName("", "my.web server", ""); got != "my-web-server" {
 		t.Fatalf("이름 치환: %q", got)
 	}
-	if got := TmuxSessionName("~", "", ""); got != "termgo" {
-		t.Fatalf("빈 이름은 termgo: %q", got)
+	if got := TmuxSessionName("~", "", ""); got != "dariterm" {
+		t.Fatalf("빈 이름은 dariterm: %q", got)
 	}
 	szLine := TmuxAttachLine("dev", "echo 'hi'\nls")
 	if !strings.HasPrefix(szLine, " sh -c ") || !strings.HasSuffix(szLine, "\r") {

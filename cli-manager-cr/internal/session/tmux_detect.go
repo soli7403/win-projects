@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"termgo/internal/procutil"
+	"dariterm/internal/procutil"
 )
 
 // G_cdurTmuxProbe 는 WSL 안의 tmux 검사 제한 시간이다 (session.md §7.1).

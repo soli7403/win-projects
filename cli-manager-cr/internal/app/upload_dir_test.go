@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"termgo/internal/sftpfs"
+	"dariterm/internal/sftpfs"
 )
 
 // TestEnsureUploadDirNested 는 상위 폴더까지 없는 업로드 폴더(기본 ~/.dariterm/uploads 같은)를 만들고,

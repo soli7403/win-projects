@@ -1,7 +1,7 @@
 package gitsync
 
 import (
-	"termgo/internal/vault"
+	"dariterm/internal/vault"
 )
 
 // VaultAdapter 는 열린 볼트를 VaultOps 로 쓰게 하는 어댑터다.
@@ -19,7 +19,7 @@ func (adapter VaultAdapter) HeaderJSON() ([]byte, error) {
 	return adapter.M_pVault.HeaderJSON()
 }
 
-// EncryptPayload 는 payload 평문을 볼트 키로 암호화한다 (AAD = termgo-sync).
+// EncryptPayload 는 payload 평문을 볼트 키로 암호화한다 (AAD = dariterm-sync).
 func (adapter VaultAdapter) EncryptPayload(bPlain []byte) (vault.Blob, error) {
 	return adapter.M_pVault.EncryptData(vault.G_cszSyncPayloadAad, bPlain)
 }

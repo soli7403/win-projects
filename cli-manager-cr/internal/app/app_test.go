@@ -65,7 +65,7 @@ func TestStoreGetHasDefaults(t *testing.T) {
 		t.Fatal(errNew)
 	}
 	szStore, errStore := pService.Router().Invoke("store.get", "[]")
-	if errStore != nil || !strings.Contains(szStore, `"terminalTheme":"TermGo Dark"`) {
+	if errStore != nil || !strings.Contains(szStore, `"terminalTheme":"DariTerm Dark"`) {
 		t.Fatalf("store.get 기본값 누락: %v", errStore)
 	}
 }

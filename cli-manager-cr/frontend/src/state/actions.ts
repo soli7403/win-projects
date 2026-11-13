@@ -146,7 +146,7 @@ export function runShortcut(action: ShortcutAction, arg?: number | 'last' | 'up'
       if (active) ws.toggleZoom(active.id);
       return;
     case 'find':
-      if (focused) window.dispatchEvent(new CustomEvent('termgo:find', { detail: focused }));
+      if (focused) window.dispatchEvent(new CustomEvent('dariterm:find', { detail: focused }));
       return;
     case 'sftp': {
       // 포커스 그룹의 SFTP 패널을 열고 닫는다.

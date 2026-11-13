@@ -52,7 +52,7 @@ export function SettingsFiles() {
         />
       </Field>
 
-      <Field label="올린 파일 자동 정리 (일)" help="이 일수보다 오래된 업로드를 지웁니다. DariTerm이 올린 파일(tg- 접두어)만 대상이며, 0이면 끕니다.">
+      <Field label="올린 파일 자동 정리 (일)" help="이 일수보다 오래된 업로드를 지웁니다. DariTerm이 올린 파일(dt- 접두어)만 대상이며, 0이면 끕니다.">
         <NumberField label="올린 파일 자동 정리 (일)" value={cleanup} min={0} max={36500} fallback={7} onCommit={(v) => void saveSettings({ uploadCleanupDays: v })} />
       </Field>
 

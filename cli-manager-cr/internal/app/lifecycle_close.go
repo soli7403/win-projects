@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	"termgo/internal/session"
+	"dariterm/internal/session"
 )
 
 // CloseConfirmText 는 연결된 세션이 있을 때 종료 확인 본문을 만든다 (lifecycle.md §5 문구 원문).

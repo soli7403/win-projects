@@ -12,7 +12,7 @@ func TestEncryptDataRoundTrip(t *testing.T) {
 	if errOpen != nil {
 		t.Fatal(errOpen)
 	}
-	if _, errLocked := pv.EncryptData("termgo-sync", []byte("x")); errLocked == nil {
+	if _, errLocked := pv.EncryptData("dariterm-sync", []byte("x")); errLocked == nil {
 		t.Fatal("미초기화 볼트 암호화는 오류여야 함")
 	}
 	if _, errSetup := pv.Setup("correct-horse-1"); errSetup != nil {

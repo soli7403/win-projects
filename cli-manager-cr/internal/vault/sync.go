@@ -11,7 +11,7 @@ type Blob = cipherBlob
 type ItemRecord = itemRecord
 
 // G_cszSyncPayloadAad 는 동기화 payload 암호화의 AAD 다 (data/sync-backup.md §5.1).
-const G_cszSyncPayloadAad = "termgo-sync"
+const G_cszSyncPayloadAad = "dariterm-sync"
 
 // EncryptData 는 열린 볼트 키로 임의 데이터를 암호화한다 (data/vault.md §8). szAad 는 호출자가 정한다.
 func (pv *Vault) EncryptData(szAad string, bPlain []byte) (Blob, error) {

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"termgo/internal/session"
-	"termgo/internal/transport"
+	"dariterm/internal/session"
+	"dariterm/internal/transport"
 )
 
 // dialerFor 는 프로토콜별 접속 함수를 고른다 (protocols.md §2~§6).
@@ -96,7 +96,7 @@ func openLocalTransport(record hostRecord, notify func(string)) (session.Transpo
 	if szTerm == "" {
 		szTerm = "xterm-256color"
 	}
-	slEnv := append(os.Environ(), "TERM="+szTerm, "COLORTERM=truecolor", "TERM_PROGRAM=TermGo")
+	slEnv := append(os.Environ(), "TERM="+szTerm, "COLORTERM=truecolor", "TERM_PROGRAM=DariTerm")
 	pLocal, errOpen := transport.OpenLocal(transport.LocalOptions{
 		Shell: szShell,
 		Args:  slArgs,

@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"termgo/internal/gitsync"
+	"dariterm/internal/gitsync"
 )
 
 // G_cdurCloseWait 은 종료 때 세션 정리를 기다리는 최대 시간이다 (3초). 넘기면 정리를 두고 종료한다.

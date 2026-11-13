@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"time"
 
-	"termgo/internal/ipc"
-	"termgo/internal/session"
-	"termgo/internal/store"
-	"termgo/internal/vault"
+	"dariterm/internal/ipc"
+	"dariterm/internal/session"
+	"dariterm/internal/store"
+	"dariterm/internal/vault"
 )
 
 // G_cszAppVersion 은 앱 버전이다. 빌드 때 덮어쓸 수 있다.
@@ -30,7 +30,7 @@ type Service struct {
 	pLock     *lockState
 }
 
-// DataDir 은 datadir.go (DariTerm 폴더, 옛 TermGo 폴더에서 복사 이전).
+// DataDir 은 datadir.go (DariTerm 폴더).
 
 // NewService 는 데이터 폴더의 store.json·vault.json 을 열고 채널을 등록한다.
 // 실패하면 오류를 돌려준다 (앱은 이때 오류로 종료한다, lifecycle.md §1).

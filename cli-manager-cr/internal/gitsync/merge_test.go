@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"termgo/internal/vault"
+	"dariterm/internal/vault"
 )
 
 func raw(szText string) json.RawMessage {
@@ -82,7 +82,7 @@ func TestSyncFileFormat(t *testing.T) {
 	if errEncode != nil {
 		t.Fatal(errEncode)
 	}
-	if !strings.Contains(string(bFile), `"format": "termgo-sync-1"`) {
+	if !strings.Contains(string(bFile), `"format": "dariterm-sync-1"`) {
 		t.Fatalf("형식 이름 누락: %s", bFile)
 	}
 	if !strings.Contains(string(bFile), "\n \"format\"") {

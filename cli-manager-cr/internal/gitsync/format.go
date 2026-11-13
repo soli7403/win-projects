@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 
-	"termgo/internal/vault"
+	"dariterm/internal/vault"
 )
 
 // G_cszSyncFormat 은 저장소 파일의 형식 이름이다 (data/sync-backup.md §5.1).
-const G_cszSyncFormat = "termgo-sync-1"
+const G_cszSyncFormat = "dariterm-sync-1"
 
 // G_cszSyncFileName 은 저장소 루트의 파일 이름이다.
-const G_cszSyncFileName = "termgo-sync.json"
+const G_cszSyncFileName = "dariterm-sync.json"
 
 // ErrFormat 은 동기화 파일 형식을 알 수 없을 때 돌려준다.
 var ErrFormat = errors.New("동기화 파일 형식을 알 수 없습니다")

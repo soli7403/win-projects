@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"termgo/internal/session"
-	"termgo/internal/transport"
+	"dariterm/internal/session"
+	"dariterm/internal/transport"
 )
 
 // hostRecord 는 store 의 서버 항목 중 세션 열기에 쓰는 필드다 (data/store.md §3).

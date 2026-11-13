@@ -37,7 +37,7 @@ func TestBackupRoundTrip(t *testing.T) {
 	}
 	szRouterCall(pSrc, "vault.setup", `["correct-horse-1"]`)
 	szRouterCall(pSrc, "store.patch", `[{"hosts":[{"id":"h1","alias":"web","host":"10.0.0.1"}]}]`)
-	szPath := filepath.Join(dir, "dariterm-backup-test.tgbackup")
+	szPath := filepath.Join(dir, "dariterm-backup-test.dtbackup")
 	pSrc.SetBackupDialogs(&fakeDialogs{szPath: szPath})
 	if szExport := szRouterCall(pSrc, "backup.export", "[]"); !strings.Contains(szExport, "dariterm-backup") {
 		t.Fatalf("내보내기 경로 불일치: %s", szExport)
@@ -47,7 +47,7 @@ func TestBackupRoundTrip(t *testing.T) {
 		t.Fatal(errRead)
 	}
 	var mapFile map[string]any
-	if errJson := json.Unmarshal(bFile, &mapFile); errJson != nil || mapFile["app"] != "termgo" {
+	if errJson := json.Unmarshal(bFile, &mapFile); errJson != nil || mapFile["app"] != "dariterm" {
 		t.Fatalf("백업 app 값 불일치: %v", errJson)
 	}
 

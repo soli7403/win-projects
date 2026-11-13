@@ -25,8 +25,8 @@ export function SettingsAppearance() {
   // 앱 테마와 터미널 테마 짝 연동(G1): 짝 테마를 쓰고 있을 때만 바꾼다.
   const changeTheme = (t: 'dark' | 'light') => {
     setTheme(t);
-    if (t === 'light' && termTheme === 'TermGo Dark') setTermTheme('TermGo Light');
-    if (t === 'dark' && termTheme === 'TermGo Light') setTermTheme('TermGo Dark');
+    if (t === 'light' && termTheme === 'DariTerm Dark') setTermTheme('DariTerm Light');
+    if (t === 'dark' && termTheme === 'DariTerm Light') setTermTheme('DariTerm Dark');
   };
 
   const resetWindow = async () => {

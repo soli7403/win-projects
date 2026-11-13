@@ -1,4 +1,4 @@
-module termgo
+module dariterm
 
 go 1.26.2
 

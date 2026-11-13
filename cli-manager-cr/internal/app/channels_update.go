@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"termgo/internal/jsonfile"
-	"termgo/internal/update"
+	"dariterm/internal/jsonfile"
+	"dariterm/internal/update"
 )
 
 // G_cszUpdateRepo 는 빌드 때 -ldflags -X 로 정하는 배포 저장소(owner/name)다. 비어 있으면 환경 변수를 본다.
@@ -29,17 +29,17 @@ type updateState struct {
 	onceStop sync.Once
 }
 
-// updateRepo 는 배포 저장소 주소를 정한다 (환경 변수 TERMGO_UPDATE_REPO 가 빌드 값보다 우선).
+// updateRepo 는 배포 저장소 주소를 정한다 (환경 변수 DARITERM_UPDATE_REPO 가 빌드 값보다 우선).
 func updateRepo() string {
-	if szEnv := os.Getenv("TERMGO_UPDATE_REPO"); szEnv != "" {
+	if szEnv := os.Getenv("DARITERM_UPDATE_REPO"); szEnv != "" {
 		return szEnv
 	}
 	return G_cszUpdateRepo
 }
 
-// updateApi 는 API 주소다 (시험용 TERMGO_UPDATE_API, 없으면 공개 API).
+// updateApi 는 API 주소다 (시험용 DARITERM_UPDATE_API, 없으면 공개 API).
 func updateApi() string {
-	if szEnv := os.Getenv("TERMGO_UPDATE_API"); szEnv != "" {
+	if szEnv := os.Getenv("DARITERM_UPDATE_API"); szEnv != "" {
 		return szEnv
 	}
 	return "https://api.github.com"

@@ -3,7 +3,7 @@ package app
 import (
 	"encoding/json"
 
-	"termgo/internal/vault"
+	"dariterm/internal/vault"
 )
 
 // registerVault 는 vault.* 채널을 등록한다 (spec/ipc.md §2 볼트·계정).

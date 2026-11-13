@@ -13,9 +13,9 @@ import (
 
 	"github.com/pkg/sftp"
 
-	"termgo/internal/clipboard"
-	"termgo/internal/dialog"
-	"termgo/internal/sftpfs"
+	"dariterm/internal/clipboard"
+	"dariterm/internal/dialog"
+	"dariterm/internal/sftpfs"
 )
 
 // sftpEntry 는 세션의 SFTP 기능 묶음과 그 클라이언트다. 클라이언트가 바뀌면(재접속) 묶음을 새로 만든다.
@@ -342,7 +342,7 @@ func (pService *Service) uploadPrompt(svc *sftpfs.Service, origin sftpOrigin, sz
 	}
 }
 
-// saveLocalForPrompt 는 로컬 세션용 저장이다: 파일은 원래 경로, 이미지·버퍼는 업로드 폴더에 tg- 이름으로 저장한다.
+// saveLocalForPrompt 는 로컬 세션용 저장이다: 파일은 원래 경로, 이미지·버퍼는 업로드 폴더에 dt- 이름으로 저장한다.
 func (pService *Service) saveLocalForPrompt(origin sftpOrigin) ([]string, error) {
 	szDir := expandHome(pService.settingString("uploadDir", "~/.dariterm/uploads"))
 	switch origin.Kind {

@@ -17,7 +17,7 @@ export const DANGEROUS_PATTERNS: string[] = [
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'dark',
-  terminalTheme: 'TermGo Dark',
+  terminalTheme: 'DariTerm Dark',
   fontFamily: "'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace",
   fontSize: 14,
   lineHeight: 1.15,

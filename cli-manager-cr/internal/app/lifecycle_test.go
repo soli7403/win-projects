@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"termgo/internal/session"
+	"dariterm/internal/session"
 )
 
 // TestAutoLockRules 는 자동 잠금 판정표다 (acceptance A1~A4, A5 의 판정 부분).

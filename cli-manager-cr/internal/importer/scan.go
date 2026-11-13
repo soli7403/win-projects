@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"termgo/internal/procutil"
+	"dariterm/internal/procutil"
 )
 
 // G_cdurAwsCallTimeout 은 aws 호출 한 번의 제한 시간이다 (import.md §3).

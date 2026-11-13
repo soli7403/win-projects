@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"termgo/internal/backup"
+	"dariterm/internal/backup"
 )
 
 // BackupDialogs 는 백업 저장·열기 대화상자다 (Wails 런타임이 구현한다, spec/ipc.md §2 backup.*).

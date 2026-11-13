@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"termgo/internal/jsonfile"
+	"dariterm/internal/jsonfile"
 )
 
 // G_ciWindowMinW 와 G_ciWindowMinH 는 저장된 창 크기가 유효한 최소 값이다 (data/sync-backup.md §4).

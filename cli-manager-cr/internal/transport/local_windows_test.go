@@ -17,7 +17,7 @@ func TestLocalConPtyEchoAndExit(t *testing.T) {
 	}
 	pConn, errOpen := OpenLocal(LocalOptions{
 		Shell: szCmd,
-		Args:  []string{"/c", "echo termgo-ok"},
+		Args:  []string{"/c", "echo dariterm-ok"},
 		Cols:  120,
 		Rows:  32,
 		Env:   append(os.Environ(), "TERM=xterm-256color"),
@@ -35,7 +35,7 @@ func TestLocalConPtyEchoAndExit(t *testing.T) {
 			n, errRead := pConn.Read(bBuf)
 			if n > 0 {
 				szAll.Write(bBuf[:n])
-				if strings.Contains(szAll.String(), "termgo-ok") {
+				if strings.Contains(szAll.String(), "dariterm-ok") {
 					chOut <- szAll.String()
 					return
 				}
@@ -48,7 +48,7 @@ func TestLocalConPtyEchoAndExit(t *testing.T) {
 	}()
 	select {
 	case szGot := <-chOut:
-		if !strings.Contains(szGot, "termgo-ok") {
+		if !strings.Contains(szGot, "dariterm-ok") {
 			t.Fatalf("셸 출력이 돌아오지 않음: %q", szGot)
 		}
 	case <-time.After(10 * time.Second):

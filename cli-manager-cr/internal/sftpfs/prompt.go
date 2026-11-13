@@ -10,13 +10,18 @@ import (
 	"time"
 )
 
-// G_szPromptPrefix 는 붙여넣기용 업로드 파일 이름 접두어다 (protocols.md §3, 이 제품의 접두어 tg-).
-const G_szPromptPrefix = "tg-"
+// G_szPromptPrefix 는 붙여넣기용 업로드 파일 이름 접두어다 (protocols.md §3, DariTerm 의 dt-).
+const G_szPromptPrefix = "dt-"
+
+// IsPromptName 은 자동 정리 대상(이 앱이 올린 붙여넣기 파일) 이름인지 본다.
+func IsPromptName(szName string) bool {
+	return strings.HasPrefix(szName, G_szPromptPrefix)
+}
 
 // g_reUnsafeName 은 원래 이름에서 공백, ', ", `, $, \ 를 _ 로 바꾸는 규칙이다.
 var g_reUnsafeName = regexp.MustCompile("[\\s'\"`$\\\\]")
 
-// PromptStem 은 "tg-YYYYMMDD-HHMMSS-<4자리 16진>" 접두부를 만든다.
+// PromptStem 은 "dt-YYYYMMDD-HHMMSS-<4자리 16진>" 접두부를 만든다.
 func PromptStem(tNow time.Time, szRand4 string) string {
 	return G_szPromptPrefix + tNow.Format("20060102-150405") + "-" + szRand4
 }
@@ -30,7 +35,7 @@ func PromptImageName(tNow time.Time, szRand4 string, szGivenName string) string 
 	return PromptStem(tNow, szRand4) + szExt
 }
 
-// PromptFileName 은 파일의 붙여넣기용 이름이다: tg-…-<4자리>-<원래 이름 정리>.
+// PromptFileName 은 파일의 붙여넣기용 이름이다: dt-…-<4자리>-<원래 이름 정리>.
 func PromptFileName(tNow time.Time, szRand4 string, szOriginal string) string {
 	return PromptStem(tNow, szRand4) + "-" + g_reUnsafeName.ReplaceAllString(szOriginal, "_")
 }
@@ -40,7 +45,7 @@ func RandHex4() string {
 	return fmt.Sprintf("%04x", time.Now().UnixNano()&0xffff)
 }
 
-// CleanupOldPrompt 는 폴더의 tg- 접두 파일 중 수정 시각이 iDays 일보다 오래된 것을 지운다 (protocols.md §3).
+// CleanupOldPrompt 는 폴더의 dt- 접두 파일 중 수정 시각이 iDays 일보다 오래된 것을 지운다 (protocols.md §3).
 // iDays 가 0 이하이면 아무 일도 하지 않는다. 지운 개수를 돌려준다.
 func CleanupOldPrompt(szDir string, iDays int, tNow time.Time) (int, error) {
 	if iDays <= 0 {
@@ -53,7 +58,7 @@ func CleanupOldPrompt(szDir string, iDays int, tNow time.Time) (int, error) {
 	nRemoved := 0
 	limit := tNow.Add(-time.Duration(iDays) * 24 * time.Hour)
 	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasPrefix(entry.Name(), G_szPromptPrefix) {
+		if entry.IsDir() || !IsPromptName(entry.Name()) {
 			continue
 		}
 		info, errInfo := entry.Info()
@@ -81,7 +86,7 @@ func (pService *Service) CleanupOldRemotePrompt(szRemoteDir string, iDays int, t
 	nRemoved := 0
 	limit := tNow.Add(-time.Duration(iDays) * 24 * time.Hour)
 	for _, info := range infos {
-		if info.IsDir() || !strings.HasPrefix(info.Name(), G_szPromptPrefix) {
+		if info.IsDir() || !IsPromptName(info.Name()) {
 			continue
 		}
 		if info.ModTime().Before(limit) {
@@ -93,7 +98,7 @@ func (pService *Service) CleanupOldRemotePrompt(szRemoteDir string, iDays int, t
 	return nRemoved, nil
 }
 
-// UploadPromptBytes 는 이미지·버퍼 데이터를 원격 폴더에 tg- 이름으로 올린다.
+// UploadPromptBytes 는 이미지·버퍼 데이터를 원격 폴더에 dt- 이름으로 올린다.
 func (pService *Service) UploadPromptBytes(bData []byte, szGivenName string, szRemoteDir string, tNow time.Time) (string, error) {
 	szName := PromptImageName(tNow, RandHex4(), szGivenName)
 	szRemote := path.Join(szRemoteDir, szName)
@@ -108,7 +113,7 @@ func (pService *Service) UploadPromptBytes(bData []byte, szGivenName string, szR
 	return szRemote, nil
 }
 
-// UploadPromptPaths 는 붙여넣기용 파일·폴더를 올린다. 최상위 파일은 tg- 이름으로, 폴더는 구조 그대로 올린다.
+// UploadPromptPaths 는 붙여넣기용 파일·폴더를 올린다. 최상위 파일은 dt- 이름으로, 폴더는 구조 그대로 올린다.
 // 반환은 올린 원격 경로 배열이다.
 func (pService *Service) UploadPromptPaths(slLocal []string, szRemoteDir string, tNow time.Time) ([]string, error) {
 	var slOut []string

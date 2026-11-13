@@ -78,7 +78,7 @@ func Check(szApi string, szRepo string, szCurrent string, pClient *http.Client) 
 	if errReq != nil {
 		return Result{M_szStatus: G_cszStatusError}
 	}
-	pReq.Header.Set("User-Agent", "TermGo/"+szCurrent)
+	pReq.Header.Set("User-Agent", "DariTerm/"+szCurrent)
 	pReq.Header.Set("Accept", "application/vnd.github+json")
 	pResp, errDo := pClient.Do(pReq)
 	if errDo != nil {

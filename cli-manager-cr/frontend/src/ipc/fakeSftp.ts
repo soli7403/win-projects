@@ -190,7 +190,7 @@ export function createFakeSftp(deps: FakeSftpDeps): Record<string, (args: unknow
     'sftp.uploadForPrompt': ([id, origin]) => {
       const info = sshSession(id);
       const o = (origin ?? {}) as { kind?: string; paths?: string[]; name?: string };
-      const dir = `${HOME}/.termgo/uploads`;
+      const dir = `${HOME}/.dariterm/uploads`;
       if (!tree.has(dir)) tree.set(dir, { name: 'uploads', path: dir, isDir: true, size: 0, mtime: Date.now(), perm: 0o700 });
       const names: string[] =
         o.kind === 'clipboardImage' ? ['clipboard.png']
@@ -210,12 +210,12 @@ export function createFakeSftp(deps: FakeSftpDeps): Record<string, (args: unknow
       const o = (origin ?? {}) as { kind?: string; paths?: string[]; name?: string };
       if (o.kind === 'files') return o.paths ?? [];
       const name = o.kind === 'buffer' ? o.name || 'buffer.bin' : 'clipboard.png';
-      return [`C:\\Users\\demo\\.termgo\\uploads\\${name}`];
+      return [`C:\\Users\\demo\\.dariterm\\uploads\\${name}`];
     },
     'sftp.edit': ([id, path]) => {
       sshSession(id);
       const n = need(normalize(String(path)));
-      return `C:\\Users\\demo\\AppData\\Local\\Temp\\termgo-edit\\demo\\${n.name}`;
+      return `C:\\Users\\demo\\AppData\\Local\\Temp\\dariterm-edit\\demo\\${n.name}`;
     },
   };
 }

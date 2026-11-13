@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"os"
 
-	"termgo/internal/dialog"
-	"termgo/internal/importer"
-	"termgo/internal/vault"
+	"dariterm/internal/dialog"
+	"dariterm/internal/importer"
+	"dariterm/internal/vault"
 )
 
 // vaultKeyStore 는 볼트를 가져오기의 KeyStore 로 쓰는 어댑터다.

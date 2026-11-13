@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"termgo/internal/gitsync"
-	"termgo/internal/ipc"
-	"termgo/internal/session"
-	"termgo/internal/sftpfs"
+	"dariterm/internal/gitsync"
+	"dariterm/internal/ipc"
+	"dariterm/internal/session"
+	"dariterm/internal/sftpfs"
 )
 
 // g_bUpdateContract 가 켜지면 고정 파일(frontend/src/ipc/contract/*.json)을 현재 응답으로 다시 쓴다.

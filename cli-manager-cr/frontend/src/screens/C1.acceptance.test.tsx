@@ -104,7 +104,7 @@ describe('G3 위험 명령 패턴 편집', () => {
 });
 
 describe('G1 앱 테마와 터미널 테마 짝', () => {
-  it('짝 테마를 쓰는 중에 라이트로 바꾸면 TermGo Light 로 같이 바뀐다', async () => {
+  it('짝 테마를 쓰는 중에 라이트로 바꾸면 DariTerm Light 로 같이 바뀐다', async () => {
     seed();
     const m = mockBackend({ 'app.info': () => ({}) });
     render(<SettingsAppearance />);
@@ -113,7 +113,7 @@ describe('G1 앱 테마와 터미널 테마 짝', () => {
       const patches = m.calls.filter(([c]) => c === 'store.patch');
       const last = patches[patches.length - 1][1][0] as { settings: { theme: string; terminalTheme: string } };
       expect(last.settings.theme).toBe('light');
-      expect(last.settings.terminalTheme).toBe('TermGo Light');
+      expect(last.settings.terminalTheme).toBe('DariTerm Light');
     });
   });
 });
@@ -171,11 +171,11 @@ describe('G7 [지금 확인] 결과 토스트', () => {
 describe('Y1 백업 내보내기', () => {
   it('저장한 경로를 토스트로 보인다', async () => {
     seed();
-    mockBackend({ 'backup.export': () => 'D:/백업/termgo-backup-2026-11-10.tgbackup' });
+    mockBackend({ 'backup.export': () => 'D:/백업/dariterm-backup-2026-11-10.dtbackup' });
     render(<SettingsBackup />);
     fireEvent.click(screen.getByRole('button', { name: '백업 내보내기' }));
     await waitFor(() =>
-      expect(useApp.getState().toasts.map((t) => t.text)).toContain('백업 저장: D:/백업/termgo-backup-2026-11-10.tgbackup'),
+      expect(useApp.getState().toasts.map((t) => t.text)).toContain('백업 저장: D:/백업/dariterm-backup-2026-11-10.dtbackup'),
     );
   });
 

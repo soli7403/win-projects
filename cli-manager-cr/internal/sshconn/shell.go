@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"termgo/internal/transport"
+	"dariterm/internal/transport"
 )
 
 // Shell 은 SSH 셸 세션 하나다. session.Transport 를 만족한다.

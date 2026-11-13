@@ -41,7 +41,7 @@ export function focusActiveTerminal(): void {
 }
 
 /** 찾기 요청 이벤트(칸 id 가 detail). 단축키·칸 머리글·우클릭 메뉴가 보낸다. */
-export const FIND_EVENT = 'termgo:find';
+export const FIND_EVENT = 'dariterm:find';
 
 /** 이 칸의 입력 대상: 동시 입력이면 탭의 연결된 모든 세션. */
 export function targetsFor(paneId: string, sessionId: string): string[] {

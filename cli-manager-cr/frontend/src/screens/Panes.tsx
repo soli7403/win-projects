@@ -15,9 +15,9 @@ import { getBackend, errorMessage } from '../ipc/backend';
 import type { MenuItem } from '../state/ui';
 import { isFileDrag, hoverStart, hoverEnd, dropFiles } from './fileDrag';
 
-const PANE_MIME = 'application/x-termgo-pane';
+const PANE_MIME = 'application/x-dariterm-pane';
 /** 사이드바 서버 끌어 놓기 MIME(에이전트 B 가 dragstart 에서 설정). */
-export const HOST_MIME = 'application/x-termgo-host';
+export const HOST_MIME = 'application/x-dariterm-host';
 
 export function PaneTree({ tab }: { tab: Tab }) {
   const panes = paneIds(tab.root).length;

@@ -131,7 +131,7 @@ func BackoffSec(iAttempts int) int {
 
 var g_reTmuxNameSep = regexp.MustCompile("[.:\\s'\"$\\\\`]+")
 
-// TmuxSessionName 은 세션 이름을 만든다 (session.md §7). 결과가 비었거나 "~", "/" 이면 "termgo".
+// TmuxSessionName 은 세션 이름을 만든다 (session.md §7). 결과가 비었거나 "~", "/" 이면 "dariterm".
 func TmuxSessionName(szTmuxName string, szAlias string, szLocalFolder string) string {
 	szName := szTmuxName
 	if szName == "" {
@@ -142,7 +142,7 @@ func TmuxSessionName(szTmuxName string, szAlias string, szLocalFolder string) st
 	}
 	szName = strings.Trim(g_reTmuxNameSep.ReplaceAllString(szName, "-"), "-")
 	if szName == "" || szName == "~" || szName == "/" {
-		return "termgo"
+		return "dariterm"
 	}
 	return szName
 }

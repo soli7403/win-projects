@@ -193,6 +193,6 @@ export function toggleTheme(): void {
   if (!st) return;
   const toLight = st.settings.theme === 'dark';
   const term = st.settings.terminalTheme;
-  const nextTerm = toLight && term === 'TermGo Dark' ? 'TermGo Light' : !toLight && term === 'TermGo Light' ? 'TermGo Dark' : term;
+  const nextTerm = toLight && term === 'DariTerm Dark' ? 'DariTerm Light' : !toLight && term === 'DariTerm Light' ? 'DariTerm Dark' : term;
   void useApp.getState().patchStore({ settings: { ...st.settings, theme: toLight ? 'light' : 'dark', terminalTheme: nextTerm } });
 }

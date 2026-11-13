@@ -7,7 +7,7 @@ import { paneIds, findPane } from '../lib/layout';
 import { isFileDrag, hoverStart, hoverEnd, dropFiles, tabSessionId } from './fileDrag';
 import { focusActiveTerminal } from './TerminalView';
 
-export const TAB_MIME = 'application/x-termgo-tab';
+export const TAB_MIME = 'application/x-dariterm-tab';
 
 /** 탭의 상태 점: 칸 세션 상태를 합친다(shell.md §2.1). */
 function tabDot(t: Tab, sessions: Record<string, { info: { state: string }; activity: boolean }>): string {

@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"termgo/internal/jsonfile"
+	"dariterm/internal/jsonfile"
 )
 
 // G_cszVaultKeyAad 는 볼트 키를 감쌀 때 쓰는 추가 인증 데이터다.

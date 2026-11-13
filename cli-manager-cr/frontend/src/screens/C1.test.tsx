@@ -42,9 +42,9 @@ describe('설정 숫자 입력 보정 (G2)', () => {
 });
 
 describe('앱 테마와 터미널 테마 짝 (G1 기반 데이터)', () => {
-  it('TermGo Light 테마가 목록에 있고 이름으로 찾는다', () => {
-    expect(TERM_THEMES.map((t) => t.name)).toContain('TermGo Light');
-    expect(resolveTermTheme('TermGo Light').name).toBe('TermGo Light');
+  it('DariTerm Light 테마가 목록에 있고 이름으로 찾는다', () => {
+    expect(TERM_THEMES.map((t) => t.name)).toContain('DariTerm Light');
+    expect(resolveTermTheme('DariTerm Light').name).toBe('DariTerm Light');
   });
 });
 
@@ -53,8 +53,8 @@ describe('저장소 주소 비밀번호 검사 (Y4)', () => {
     expect(CRED_IN_URL.test('https://user:pw@host/repo.git')).toBe(true);
   });
   it('SSH 형식 주소는 막지 않는다', () => {
-    expect(CRED_IN_URL.test('git@github.com:me/termgo-sync.git')).toBe(false);
-    expect(CRED_IN_URL.test('https://github.com/me/termgo-sync.git')).toBe(false);
+    expect(CRED_IN_URL.test('git@github.com:me/dariterm-sync.git')).toBe(false);
+    expect(CRED_IN_URL.test('https://github.com/me/dariterm-sync.git')).toBe(false);
   });
 });
 

@@ -2,13 +2,14 @@ package backup
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 )
 
 // TestDefaultName 은 기본 이름 형식을 확인한다 (acceptance Y1).
 func TestDefaultName(t *testing.T) {
-	if DefaultName(time.Date(2026, 11, 10, 9, 0, 0, 0, time.Local)) != "dariterm-backup-2026-11-10.tgbackup" {
+	if DefaultName(time.Date(2026, 11, 10, 9, 0, 0, 0, time.Local)) != "dariterm-backup-2026-11-10.dtbackup" {
 		t.Fatal("기본 이름 형식 불일치")
 	}
 }
@@ -17,7 +18,10 @@ func TestDefaultName(t *testing.T) {
 func TestDecodeAppRules(t *testing.T) {
 	bOurs, _ := Encode(NewFile(map[string]any{"hosts": []any{}}, json.RawMessage("null"), time.Now()))
 	if _, errOurs := Decode(bOurs); errOurs != nil {
-		t.Fatalf("termgo 백업을 거부함: %v", errOurs)
+		t.Fatalf("dariterm 백업을 거부함: %v", errOurs)
+	}
+	if !strings.Contains(string(bOurs), `"app": "dariterm"`) && !strings.Contains(string(bOurs), `"app":"dariterm"`) {
+		t.Fatalf("새 백업의 app 은 dariterm 이어야 함: %s", bOurs)
 	}
 	if _, errLegacy := Decode([]byte(`{"app":"brightterm","version":1,"store":{}}`)); errLegacy != nil {
 		t.Fatalf("brightterm 백업을 거부함: %v", errLegacy)

@@ -7,7 +7,7 @@ describe('기본값 (spec/data/store.md §4·§6)', () => {
     expect(DEFAULT_SETTINGS.autoLockMinutes).toBe(15);
     expect(DEFAULT_SETTINGS.sidebarWidth).toBe(260);
     expect(DEFAULT_SETTINGS.rightPanelWidth).toBe(340);
-    expect(DEFAULT_SETTINGS.terminalTheme).toBe('TermGo Dark');
+    expect(DEFAULT_SETTINGS.terminalTheme).toBe('DariTerm Dark');
   });
   it('위험 명령 패턴 11개, 팔레트 14색', () => {
     expect(DANGEROUS_PATTERNS).toHaveLength(11);

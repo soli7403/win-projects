@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"termgo/internal/vault"
+	"dariterm/internal/vault"
 )
 
 // memLocal 은 테스트용 이 PC 데이터 저장소다.
@@ -130,7 +130,7 @@ func TestSyncScenarios(t *testing.T) {
 		t.Fatalf("첫 동기화 실패: %+v", res)
 	}
 	bShown := gitAt(t, szBare, "show", "main:"+G_cszSyncFileName)
-	if strings.Contains(bShown, "10.1.1.1") || !strings.Contains(bShown, `"format": "termgo-sync-1"`) {
+	if strings.Contains(bShown, "10.1.1.1") || !strings.Contains(bShown, `"format": "dariterm-sync-1"`) {
 		t.Fatalf("저장소 파일 형식/평문 노출 점검 실패 (Y5)")
 	}
 

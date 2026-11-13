@@ -3,7 +3,7 @@ package store
 import (
 	"encoding/json"
 
-	"termgo/internal/jsonfile"
+	"dariterm/internal/jsonfile"
 )
 
 // ReplaceAll 은 저장 데이터 전체를 바꾸고 즉시 저장한다 (백업 가져오기, data/sync-backup.md §3).

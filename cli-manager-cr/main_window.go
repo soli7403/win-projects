@@ -9,7 +9,7 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"termgo/internal/app"
+	"dariterm/internal/app"
 )
 
 // lifecycleWindow 는 창 상태, 종료 확인, 백업 대화상자를 Wails 런타임으로 구현한다 (lifecycle.md §4·§5, app.BackupDialogs).

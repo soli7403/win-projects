@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"termgo/internal/procutil"
+	"dariterm/internal/procutil"
 )
 
 // G_cdurGitCallTimeout 은 git 호출 한 번의 제한 시간이다 (안전장치, 명세에 수치 없음 — 넉넉히 5분).
