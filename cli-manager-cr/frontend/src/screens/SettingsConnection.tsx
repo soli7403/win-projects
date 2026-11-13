@@ -24,7 +24,7 @@ export function SettingsConnection() {
       <Group>
         <ToggleRow
           title="연결이 끊기면 다시 연결"
-          desc="연결이 끊기면 2·4·8…초로 간격을 늘리며 최대 8번 재연결합니다"
+          desc="연결이 끊기면 2·4·8·16·30초로 간격을 늘리며 최대 5번 재연결합니다"
           checked={autoReconnect}
           onChange={setAutoReconnect}
         />

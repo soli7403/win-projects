@@ -16,8 +16,8 @@ const (
 	G_cszClearLine  = "\r\x1b[2K"
 )
 
-// G_ciMaxReconnect 는 자동 재접속 최대 횟수다 (session.md §4).
-const G_ciMaxReconnect = 8
+// G_ciMaxReconnect 는 자동 재연결 최대 횟수다 (session.md §4). 대기 2·4·8·16·30초로 5번 (D62, 이전 8번).
+const G_ciMaxReconnect = 5
 
 // G_iMaxBackoffSec 는 재접속 대기 상한(초)이다.
 const G_iMaxBackoffSec = 30

@@ -233,8 +233,11 @@ func TestBackoffAndReconnectRules(t *testing.T) {
 	if CanAutoReconnect(true, true, true, 0) {
 		t.Fatal("시리얼은 자동 재연결 안 함")
 	}
-	if CanAutoReconnect(true, false, true, 8) {
-		t.Fatal("8회 넘으면 중단")
+	if !CanAutoReconnect(true, false, true, 4) {
+		t.Fatal("4회까지는 계속 재연결")
+	}
+	if CanAutoReconnect(true, false, true, 5) {
+		t.Fatal("5회 넘으면 중단")
 	}
 	if CanAutoReconnect(false, false, true, 0) {
 		t.Fatal("설정이 꺼져 있으면 중단")
