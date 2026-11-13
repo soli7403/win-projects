@@ -40,4 +40,4 @@
 - [ ] 의존성에 기존 코드·BrightTerm 이 없다
 - [ ] `docs/clean-room-log.md` 의 위반이 모두 조치되었다
 - [ ] 명세에 코드 표현이 옮겨지지 않았다 (샘플 검토)
-- [ ] `LICENSE`(kai 단독 MIT, D8)·정보 화면 표기를 전문가와 확인했다
+- [ ] `LICENSE`(kai 단독 MIT)·`THIRD_PARTY_NOTICES.md`(BrightTerm v1.1.0 MIT 고지, D63)·정보 화면 표기를 전문가와 확인했다

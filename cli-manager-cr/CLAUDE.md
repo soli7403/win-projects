@@ -23,7 +23,7 @@
 
 **강제 수단**: [.claude/settings.json](./.claude/settings.json) 의 `permissions.deny` 로 위 경로 읽기를 막는다 (최선의 방어일 뿐, 우회될 수 있으니 규칙을 지킨다). 위반(실수로 열람 포함)을 발견하면 `docs/clean-room-log.md` 에 기록하고 해당 부분은 명세 작성자가 다시 쓰게 한다.
 
-> 법적 효력은 보장되지 않는다. 실제 배포·고지 정리 전에 전문가 확인을 받는다. `LICENSE` 는 **kai 단독 MIT**(결정 D8)이며 이 프로젝트에는 원본 코드가 없다는 전제다. clean-room 위반이 발견되면 그 부분을 다시 쓰기 전까지 이 전제가 깨진 것으로 보고 `docs/clean-room-log.md` 에 기록한다.
+> 법적 효력은 보장되지 않는다. 실제 배포·고지 정리 전에 전문가 확인을 받는다. `LICENSE` 는 **kai 단독 MIT**이고, 참고한 BrightTerm v1.1.0(MIT)의 고지는 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)와 정보 화면에 둔다(결정 D63, D8 대체). 이 프로젝트에는 원본 코드가 없다는 전제다. clean-room 위반이 발견되면 그 부분을 다시 쓰기 전까지 이 전제가 깨진 것으로 보고 `docs/clean-room-log.md` 에 기록한다.
 
 ---
 

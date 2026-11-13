@@ -19,3 +19,4 @@
 | 일자 | 내용 | 조치 |
 |---|---|---|
 | 2026-11-12 | 원본(`cli-manager`)을 읽은 세션이 사용자 지시(D54)로 이 폴더의 구현 코드를 쓰기 시작함 — 역할 분리 규칙과 충돌. 이 세션은 `cli-manager` 파일을 이 폴더로 복사하지 않고, 이 폴더의 기존 코드 구조와 `spec/` 에 맞춰 새로 쓴다 | 사용자 결정으로 진행. 이 세션이 쓴 부분은 배포 전 법적 확인 대상. 필요하면 해당 부분을 clean 구현자가 `spec/behavior/file-panel.md` 만 보고 다시 쓴다 |
+| 2026-11-13 | 고지(D63)를 넣으려고 사용자 허락을 받아 `cli-manager/third_party/brightterm-v1.1.0/LICENSE` **한 파일만** 읽음(코드 아님, MIT 원문). 다른 파일은 열지 않음(파일 이름 확인용 목록 조회만) | 원문을 `THIRD_PARTY_NOTICES.md`·`frontend/src/lib/notices.ts` 에 그대로 옮김 |

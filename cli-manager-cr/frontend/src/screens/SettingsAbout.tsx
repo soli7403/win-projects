@@ -1,5 +1,5 @@
 // 설정 8 · 정보·단축키. 근거: spec/ui/settings.md §8, spec/behavior/shortcuts.md §4, spec/acceptance G6·G7.
-// 결정 D8: "원본" 필드는 두지 않는다.
+// 결정 D63(D8 대체): 참고한 프로젝트(BrightTerm v1.1.0, MIT)의 고지를 "참고한 프로젝트" 필드에 보인다.
 import { useEffect, useState } from 'react';
 import { ToggleRow } from '../ui/Controls';
 import { LogoMark } from '../ui/Logo';
@@ -8,6 +8,7 @@ import { getBackend } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { useUpdate } from '../state/update';
 import { useSetting, Group } from './Settings';
+import { REFERENCE_NOTICE } from '../lib/notices';
 
 export function SettingsAbout() {
   const [updateCheck, setUpdateCheck] = useSetting('updateCheck');
@@ -41,6 +42,16 @@ export function SettingsAbout() {
       <div className="set-stack">
         <div className="set-label">라이선스</div>
         <div>MIT · Copyright © 2026 kai</div>
+      </div>
+      <div className="set-stack">
+        <div className="set-label">참고한 프로젝트</div>
+        <div>{REFERENCE_NOTICE.name} — {REFERENCE_NOTICE.summary}</div>
+        <div className="faint" style={{ fontSize: 12 }}>{REFERENCE_NOTICE.note}</div>
+        {/* MIT 고지 전문: 접어 두고 필요할 때 펼친다 */}
+        <details>
+          <summary className="faint" style={{ fontSize: 12, cursor: 'pointer' }}>라이선스 전문 보기</summary>
+          <div className="detail-box" style={{ marginTop: 6 }}>{REFERENCE_NOTICE.license}</div>
+        </details>
       </div>
 
       <Group>
