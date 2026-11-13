@@ -47,10 +47,10 @@ type Target struct {
 	Port         int
 	Username     string // 비면 Prompter.Username 으로 묻는다
 	AuthType     string // password | key | agent | ask
-	Password     string // 보관함에서 읽은 비밀번호 (없으면 "")
-	PrivateKey   []byte // 보관함에서 읽은 개인 키 (없으면 nil)
-	Passphrase   string // 보관함에서 읽은 키 암호 (없으면 "")
-	AllowSave    bool   // 비밀번호 요청에 "보관함에 저장" 을 허용할지
+	Password     string // 볼트에서 읽은 비밀번호 (없으면 "")
+	PrivateKey   []byte // 볼트에서 읽은 개인 키 (없으면 nil)
+	Passphrase   string // 볼트에서 읽은 키 암호 (없으면 "")
+	AllowSave    bool   // 비밀번호 요청에 "암호화해 저장" 을 허용할지
 	KeepaliveSec int
 	TermType     string
 	Jump         *Target // 경유 서버 (없으면 nil)

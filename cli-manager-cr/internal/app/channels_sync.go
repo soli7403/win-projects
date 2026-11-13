@@ -103,11 +103,11 @@ func orderedMaps(mapItems gitsync.Collection, slOrder []string) ([]map[string]an
 	return slOut, nil
 }
 
-// askPassword 는 "저장소 볼트 받기"의 마스터 비밀번호를 묻는다 (ui.request password, 저장 허용 안 함).
+// askPassword 는 "저장소 데이터 받기"의 앱 잠금 비밀번호를 묻는다 (ui.request password, 저장 허용 안 함).
 func (pService *Service) askPassword() (string, bool) {
 	rawAnswer, bOk := pService.pRouter.Asker().Ask("password", map[string]any{
 		"sessionTitle": "git 동기화",
-		"prompt":       "저장소 보관함의 마스터 비밀번호",
+		"prompt":       "저장소 데이터의 앱 잠금 비밀번호",
 		"username":     "",
 		"allowSave":    false,
 	})

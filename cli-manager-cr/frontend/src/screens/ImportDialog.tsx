@@ -153,7 +153,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
       await useApp.getState().refreshVault();
       pushToast({
         kind: 'ok',
-        text: `${r.hosts}개 서버를 가져왔습니다${r.keys > 0 ? ` (키 ${r.keys}개 보관함에 저장)` : ''}`,
+        text: `${r.hosts}개 서버를 가져왔습니다${r.keys > 0 ? ` (키 ${r.keys}개 암호화해 저장)` : ''}`,
       });
       if (r.skipped && r.skipped.length > 0) pushToast({ kind: 'error', text: r.skipped.join('\n') });
       onClose();
@@ -182,7 +182,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
     >
       <div className="set-notice" style={{ lineHeight: 1.6 }}>
         PuTTY 저장 세션(레지스트리), SecureCRT 세션 폴더, <code className="kbdish">~/.ssh/config</code>를 읽어 옵니다. 호스트·포트·사용자·키 파일·포트 포워딩·시리얼 설정·인코딩이 옮겨집니다. 비밀번호는 옮기지 않으므로 처음 연결할 때 한 번 입력하면 저장됩니다.
-        {vaultLocked && ' (보관함이 잠겨 있으면 키 파일은 보관함에 복사되지 않습니다)'}
+        {vaultLocked && ' (앱이 잠겨 있으면 키 파일은 저장되지 않습니다)'}
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

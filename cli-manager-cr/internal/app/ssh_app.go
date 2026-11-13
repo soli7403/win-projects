@@ -158,7 +158,7 @@ func forwardsOf(record hostRecord) []sshconn.Forward {
 func (pService *Service) afterSshLogin(record hostRecord, conn *sshconn.Conn, notify func(string)) {
 	if conn.Asked.Asked && conn.Asked.Save && pService.pVault.Status().M_bUnlocked {
 		if pService.saveCredentialForHost(record, conn) {
-			notify("비밀번호를 보관함에 저장했습니다")
+			notify("비밀번호를 암호화해 저장했습니다")
 		}
 	}
 	pService.patchHost(record.M_szId, map[string]any{"lastUsedAt": time.Now().UnixMilli()})

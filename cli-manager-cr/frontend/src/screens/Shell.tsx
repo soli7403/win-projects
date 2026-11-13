@@ -17,24 +17,16 @@ import { SnippetsPanel } from './SnippetsPanel';
 import { Sidebar } from './Sidebar';
 import { UpdateBadge } from '../ui/UpdateBadge';
 
-/** 왼쪽 위 아이콘 묶음: 서버 목록 · 스니펫 · 잠그기 · 설정. 서버 목록이 열려 있으면 가로, 접혀 있으면 세로 막대. */
+/** 왼쪽 위 아이콘 묶음: 서버 목록 · 명령 모음 · 일괄 입력 · 설정 (앱 잠그기는 오른쪽 아래 상태 표시줄, D67). 서버 목록이 열려 있으면 가로, 접혀 있으면 세로 막대. */
 export function ToolRow({ vertical }: { vertical: boolean }) {
   const sidebarOpen = useUi((s) => s.sidebarOpen);
   const toggle = useUi((s) => s.toggleSidebar);
-  const vaultOpen = useApp((s) => !!s.vault?.unlocked);
   const snippetsOpen = useUi((s) => s.snippetsOpen);
   const pushToast = useApp((s) => s.pushToast);
   const linkInput = useUi((s) => s.linkInput);
   const toggleLink = () => {
     useUi.getState().toggleLinkInput();
     pushToast({ kind: 'info', text: linkInput ? '일괄 입력을 껐습니다 — 창마다 따로 입력합니다' : '일괄 입력을 켰습니다 — 보이는 모든 창에 같이 입력됩니다' });
-  };
-  const lock = async () => {
-    try {
-      await getBackend().invoke('vault.lock');
-    } catch (e) {
-      pushToast({ kind: 'error', text: errorMessage(e) });
-    }
   };
   return (
     <div className={`toolrow${vertical ? ' vertical' : ''}`}>
@@ -73,11 +65,6 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
       >
         {linkInput ? <Link size={16} /> : <Unlink size={16} />}
       </button>
-      {vaultOpen && (
-        <button className="icon-btn" title="바로 잠그기" aria-label="바로 잠그기" onClick={lock}>
-          <LockIcon size={16} />
-        </button>
-      )}
       <button className="icon-btn" title="설정" aria-label="설정" onClick={() => useUi.getState().openSettings()}>
         <Settings size={16} />
       </button>
@@ -156,12 +143,12 @@ export function StatusBar() {
       {savedHost && <span className="faint">{savedHost.encoding.toUpperCase()}</span>}
       {entry && size && <span className="faint">{`${size.cols}×${size.rows}`}</span>}
       {open ? (
-        <button className="link-btn" title="누르면 보관함을 잠급니다" onClick={lock}>
-          <LockOpen size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />보관함 열림
+        <button className="link-btn" title="누르면 앱을 잠급니다" onClick={lock}>
+          <LockOpen size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />잠금 해제됨
         </button>
       ) : (
-        <span title="보관함 잠김">
-          <LockIcon size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />보관함 잠김
+        <span title="앱 잠김">
+          <LockIcon size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />앱 잠김
         </span>
       )}
     </footer>

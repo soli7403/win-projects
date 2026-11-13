@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { passwordScore, strengthBarWidth, STRENGTH_COLORS, STRENGTH_LABELS } from './password';
 
-describe('마스터 비밀번호 강도 (spec/ui/lock.md §2, acceptance L4)', () => {
+describe('앱 잠금 비밀번호 강도 (spec/ui/lock.md §2, acceptance L4)', () => {
   it('Abcdefgh1!x2 는 매우 강함, 막대 100%, 색 #10b981', () => {
     const s = passwordScore('Abcdefgh1!x2');
     expect(STRENGTH_LABELS[s]).toBe('매우 강함');

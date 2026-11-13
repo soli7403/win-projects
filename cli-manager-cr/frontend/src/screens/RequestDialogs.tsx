@@ -70,7 +70,7 @@ function PasswordView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { k
         {req.allowSave && (
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', opacity: vaultOpen ? 1 : 0.5 }}>
             <input type="checkbox" disabled={!vaultOpen} checked={vaultOpen && save} onChange={(e) => setSave(e.target.checked)} />
-            보관함에 저장하고 다음부터 자동 로그인{vaultOpen ? '' : ' (보관함 잠김)'}
+            암호화해 저장하고 다음부터 자동 로그인{vaultOpen ? '' : ' (앱 잠김)'}
           </label>
         )}
       </form>

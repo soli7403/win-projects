@@ -407,7 +407,7 @@ export function HostEditor({ hostId, groupId }: Props) {
         )}
         {curTab === 'auth' && isSsh && (
           <>
-            {!vaultOpen && <div className="notice warn">보관함이 잠겨 있습니다. 비밀번호나 키를 저장하려면 먼저 잠금을 해제하세요.</div>}
+            {!vaultOpen && <div className="notice warn">앱이 잠겨 있습니다. 비밀번호나 키를 저장하려면 먼저 잠금을 해제하세요.</div>}
             <Field label="인증 방식">
               <Segmented value={authType} options={AUTHS} onChange={setAuthType} label="인증 방식" />
             </Field>
@@ -445,7 +445,7 @@ export function HostEditor({ hostId, groupId }: Props) {
                     <span className="faint small">{keyStatus || (original?.credentialId ? '저장된 키 사용 중' : '선택된 키 없음')}</span>
                   </div>
                 </Field>
-                <Field label="또는 키 내용 붙여넣기" help="OpenSSH, PEM, PuTTY PPK v2 지원. 키 내용은 보관함에 암호화되어 저장됩니다.">
+                <Field label="또는 키 내용 붙여넣기" help="OpenSSH, PEM, PuTTY PPK v2 지원. 키 내용은 암호화되어 저장됩니다.">
                   <textarea className="input mono" rows={4} style={{ height: 'auto', padding: 8 }} placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" value={privateKey} onChange={(e) => setPrivateKey(e.target.value)} />
                 </Field>
                 <Field label="키 암호 (있으면)">

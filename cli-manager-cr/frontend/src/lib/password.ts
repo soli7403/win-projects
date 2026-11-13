@@ -1,4 +1,4 @@
-// 마스터 비밀번호 강도. 근거: spec/ui/lock.md §2.
+// 앱 잠금 비밀번호 강도. 근거: spec/ui/lock.md §2.
 
 export const STRENGTH_LABELS = ['매우 약함', '약함', '보통', '강함', '매우 강함'] as const;
 export const STRENGTH_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#10b981'] as const;

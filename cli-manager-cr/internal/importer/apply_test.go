@@ -76,7 +76,7 @@ func TestApplyLockedVaultUsesAgent(t *testing.T) {
 		t.Fatal(errApply)
 	}
 	if len(keys.slSaved) != 0 || out.Hosts[0]["authType"] != "agent" || out.Hosts[0]["credentialId"] != nil {
-		t.Fatalf("잠긴 보관함에 키가 복사됨: %+v", out.Hosts[0])
+		t.Fatalf("잠긴 볼트에 키가 복사됨: %+v", out.Hosts[0])
 	}
 	if len(out.Groups) != 0 || out.Hosts[0]["groupId"] != nil {
 		t.Fatal("폴더 이름이 비면 최상위여야 함")

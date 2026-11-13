@@ -1,4 +1,4 @@
-// Package vault 는 vault.json (마스터 비밀번호로 감싼 볼트 키, 복구 코드, 계정 항목) 을 다룬다 (data/vault.md).
+// Package vault 는 vault.json (앱 잠금 비밀번호로 감싼 볼트 키, 복구 코드, 계정 항목) 을 다룬다 (data/vault.md).
 package vault
 
 import (
@@ -18,20 +18,20 @@ const G_cszVaultKeyAad = "vault-key"
 // G_cszOsUnlockKind 는 OS 잠금 해제 방식 이름이다 (data/vault.md §7).
 const G_cszOsUnlockKind = "windows"
 
-// G_ciMinPasswordLen 은 마스터 비밀번호 최소 글자 수다.
+// G_ciMinPasswordLen 은 앱 잠금 비밀번호 최소 글자 수다.
 const G_ciMinPasswordLen = 8
 
 // ErrLocked 는 볼트가 잠겨 있을 때 돌려준다.
-var ErrLocked = errors.New("보관함이 잠겨 있습니다")
+var ErrLocked = errors.New("앱이 잠겨 있습니다")
 
 // ErrNoVault 는 볼트 파일이 없을 때 돌려준다.
-var ErrNoVault = errors.New("보관함 없음")
+var ErrNoVault = errors.New("앱 잠금 비밀번호가 설정되지 않음")
 
 // ErrAlreadySetup 은 이미 볼트가 있을 때 돌려준다.
-var ErrAlreadySetup = errors.New("이미 보관함이 설정되어 있습니다")
+var ErrAlreadySetup = errors.New("이미 앱 잠금 비밀번호가 설정되어 있습니다")
 
-// ErrPasswordShort 는 마스터 비밀번호가 짧을 때 돌려준다.
-var ErrPasswordShort = errors.New("마스터 비밀번호는 8자 이상이어야 합니다")
+// ErrPasswordShort 는 앱 잠금 비밀번호가 짧을 때 돌려준다.
+var ErrPasswordShort = errors.New("앱 잠금 비밀번호는 8자 이상이어야 합니다")
 
 // Vault 는 볼트 파일의 메모리 사본과, 열려 있을 때만 가지는 볼트 키를 가진다.
 type Vault struct {
@@ -118,7 +118,7 @@ func (pv *Vault) notifyItems() {
 	}
 }
 
-// validPassword 는 마스터 비밀번호 길이(문자 수)를 검사한다.
+// validPassword 는 앱 잠금 비밀번호 길이(문자 수)를 검사한다.
 func validPassword(szPassword string) error {
 	if utf8.RuneCountInString(szPassword) < G_ciMinPasswordLen {
 		return ErrPasswordShort

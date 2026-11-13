@@ -153,18 +153,18 @@ export function Lock({ overlay = false }: LockProps) {
             <h1><LockIcon size={18} style={{ verticalAlign: '-3px', marginRight: 6 }} />DariTerm 잠김</h1>
             <p className="desc">
               {overlay
-                ? '세션은 계속 연결되어 있습니다. 마스터 비밀번호를 입력하면 다시 사용할 수 있습니다.'
-                : '저장된 서버 계정을 열려면 마스터 비밀번호를 입력하세요.'}
+                ? '세션은 계속 연결되어 있습니다. 앱 잠금 비밀번호를 입력하면 다시 사용할 수 있습니다.'
+                : '저장된 서버 계정을 열려면 앱 잠금 비밀번호를 입력하세요.'}
             </p>
             <input
               className="input"
               type="password"
-              placeholder="마스터 비밀번호"
+              placeholder="앱 잠금 비밀번호"
               autoComplete="off"
               autoFocus
               value={pw}
               onChange={(e) => setPw(e.target.value)}
-              aria-label="마스터 비밀번호"
+              aria-label="앱 잠금 비밀번호"
             />
             <div className="err-text" role="alert">{error}</div>
             <div className="lock-actions">
@@ -189,17 +189,17 @@ export function Lock({ overlay = false }: LockProps) {
           <form key="setup" onSubmit={submitSetup} style={formStyle}>
             <h1>DariTerm 처음 설정</h1>
             <p className="desc">
-              서버 ID·비밀번호·키는 이 마스터 비밀번호로 AES-256 암호화되어 이 PC에만 저장됩니다. 마스터 비밀번호는 어디에도 전송되지 않습니다.
+              서버 ID·비밀번호·키는 이 앱 잠금 비밀번호로 AES-256 암호화되어 이 PC에만 저장됩니다. 앱 잠금 비밀번호는 어디에도 전송되지 않습니다.
             </p>
             <input
               className="input"
               type="password"
-              placeholder="마스터 비밀번호 (8자 이상)"
+              placeholder="앱 잠금 비밀번호 (8자 이상)"
               autoComplete="new-password"
               autoFocus
               value={pw}
               onChange={(e) => setPw(e.target.value)}
-              aria-label="마스터 비밀번호 (8자 이상)"
+              aria-label="앱 잠금 비밀번호 (8자 이상)"
             />
             {pw && (
               <div>
@@ -220,7 +220,7 @@ export function Lock({ overlay = false }: LockProps) {
             />
             <div className="err-text" role="alert">{error}</div>
             <button className="btn primary" type="submit" disabled={busy}>
-              {busy ? '암호화 키 생성 중...' : '보관함 만들기'}
+              {busy ? '암호화 키 생성 중...' : '앱 잠금 비밀번호 만들기'}
             </button>
           </form>
         )}
@@ -229,7 +229,7 @@ export function Lock({ overlay = false }: LockProps) {
           <div key="recovery" style={formStyle}>
             <h1><KeyRound size={18} style={{ verticalAlign: '-3px', marginRight: 6 }} />복구 코드</h1>
             <p className="desc">
-              마스터 비밀번호를 잊었을 때 이 코드로만 복구할 수 있습니다. 인쇄하거나 안전한 곳에 적어 두세요. 이 화면을 닫으면 다시 볼 수 없습니다.
+              앱 잠금 비밀번호를 잊었을 때 이 코드로만 복구할 수 있습니다. 인쇄하거나 안전한 곳에 적어 두세요. 이 화면을 닫으면 다시 볼 수 없습니다.
             </p>
             <div className="recovery-box selectable">{formatRecoveryCode(recoveryCode)}</div>
             <div className="center-row">
@@ -249,7 +249,7 @@ export function Lock({ overlay = false }: LockProps) {
           <form key="recover" onSubmit={submitRecover} style={formStyle}>
             <h1>복구 코드로 비밀번호 다시 정하기</h1>
             <p className="desc">
-              보관함을 만들 때 받은 24자리 복구 코드와 새 마스터 비밀번호를 입력하세요. 저장된 계정은 그대로 유지됩니다.
+              앱 잠금 비밀번호를 만들 때 받은 24자리 복구 코드와 새 앱 잠금 비밀번호를 입력하세요. 저장된 계정은 그대로 유지됩니다.
             </p>
             <input
               className="input mono"
@@ -262,11 +262,11 @@ export function Lock({ overlay = false }: LockProps) {
             <input
               className="input"
               type="password"
-              placeholder="새 마스터 비밀번호"
+              placeholder="새 앱 잠금 비밀번호"
               autoComplete="new-password"
               value={newPw}
               onChange={(e) => setNewPw(e.target.value)}
-              aria-label="새 마스터 비밀번호"
+              aria-label="새 앱 잠금 비밀번호"
             />
             <input
               className="input"

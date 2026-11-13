@@ -9,10 +9,10 @@ const store = (over: Partial<Store>): Store => ({
 });
 
 describe('첫 실행 가져오기 제안 (shell.md §6-5)', () => {
-  it('보관함이 열리고 서버 0개이고 기록이 없으면 제안', () => {
+  it('볼트가 열리고 서버 0개이고 기록이 없으면 제안', () => {
     expect(shouldSuggestImport(store({}), true)).toBe(true);
   });
-  it('보관함이 잠겨 있거나 서버가 있으면 제안하지 않음', () => {
+  it('볼트가 잠겨 있거나 서버가 있으면 제안하지 않음', () => {
     expect(shouldSuggestImport(store({}), false)).toBe(false);
     expect(shouldSuggestImport(null, true)).toBe(false);
     expect(shouldSuggestImport(store({ hosts: [{ id: 'h' } as Store['hosts'][number]] }), true)).toBe(false);

@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 )
 
-// wrapKeyWithPassword 는 새 salt 로 마스터 비밀번호 키를 만들어 볼트 키를 감싼다.
+// wrapKeyWithPassword 는 새 salt 로 앱 잠금 비밀번호 키를 만들어 볼트 키를 감싼다.
 func wrapKeyWithPassword(bKey []byte, szPassword string) (kdfParams, cipherBlob, error) {
 	paramsKdf, _, errParams := newKdfParams()
 	if errParams != nil {
@@ -68,7 +68,7 @@ func (pv *Vault) Setup(szPassword string) (string, error) {
 	return szCode, nil
 }
 
-// Unlock 은 마스터 비밀번호로 볼트를 연다. 틀리면 false (상태 변화 없음).
+// Unlock 은 앱 잠금 비밀번호로 볼트를 연다. 틀리면 false (상태 변화 없음).
 func (pv *Vault) Unlock(szPassword string) bool {
 	pv.mtxData.Lock()
 	if pv.pfile == nil {

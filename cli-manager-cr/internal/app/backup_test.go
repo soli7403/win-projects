@@ -61,10 +61,10 @@ func TestBackupRoundTrip(t *testing.T) {
 		t.Fatal("가져온 저장 데이터가 없음")
 	}
 	if szStatus := szRouterCall(pDst, "vault.status", "[]"); !strings.Contains(szStatus, `"unlocked":false`) || !strings.Contains(szStatus, `"initialized":true`) {
-		t.Fatalf("가져온 보관함은 잠긴 상태여야 함: %s", szStatus)
+		t.Fatalf("가져온 볼트는 잠긴 상태여야 함: %s", szStatus)
 	}
 	if !strings.Contains(szRouterCall(pDst, "vault.unlock", `["correct-horse-1"]`), "true") {
-		t.Fatal("가져온 보관함을 마스터 비밀번호로 열지 못함")
+		t.Fatal("가져온 볼트를 앱 잠금 비밀번호로 열지 못함")
 	}
 
 	szBad := filepath.Join(dir, "bad.json")

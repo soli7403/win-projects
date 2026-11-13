@@ -43,7 +43,7 @@ export function QuickPalette() {
         { kind: 'cmd', key: 'c-settings', label: '설정 열기', run: () => useUi.getState().openSettings() },
         { kind: 'cmd', key: 'c-theme', label: `테마 전환 (${store?.settings.theme === 'dark' ? '라이트' : '다크'})`, run: () => toggleTheme() },
         { kind: 'cmd', key: 'c-grid', label: '모든 탭을 바둑판으로', run: () => useWorkspace.getState().gridTabs() },
-        { kind: 'cmd', key: 'c-lock', label: '보관함 잠그기', run: () => void getBackend().invoke('vault.lock').catch((e) => useApp.getState().pushToast({ kind: 'error', text: errorMessage(e) })) },
+        { kind: 'cmd', key: 'c-lock', label: '앱 잠그기', run: () => void getBackend().invoke('vault.lock').catch((e) => useApp.getState().pushToast({ kind: 'error', text: errorMessage(e) })) },
       ];
       return cmds.filter((c) => c.kind === 'cmd' && c.label.toLowerCase().includes(word));
     }

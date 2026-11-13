@@ -19,7 +19,7 @@ export function SettingsSecurity() {
 
   return (
     <>
-      <Field label="자동 잠금 (분)" help="이 시간 동안 입력이 없거나 Windows 잠금·절전 시 보관함을 잠급니다. 연결된 세션은 유지됩니다. 0이면 끕니다">
+      <Field label="자동 잠금 (분)" help="이 시간 동안 입력이 없거나 Windows 잠금·절전 시 앱을 잠급니다. 연결된 세션은 유지됩니다. 0이면 끕니다">
         <NumberField label="자동 잠금 (분)" value={autoLock} min={0} max={1440} fallback={0} onCommit={(v) => void saveSettings({ autoLockMinutes: v })} />
       </Field>
 
@@ -27,7 +27,7 @@ export function SettingsSecurity() {
         <Group>
           <ToggleRow
             title="Windows 로그인으로 열기"
-            desc="마스터 비밀번호 대신 현재 Windows 계정(DPAPI)으로 보관함을 엽니다"
+            desc="앱 잠금 비밀번호 대신 현재 Windows 계정(DPAPI)으로 잠금을 해제합니다"
             checked={!!vault.osUnlockEnabled}
             onChange={async (on) => {
               try {
@@ -43,7 +43,7 @@ export function SettingsSecurity() {
       )}
 
       <div>
-        <div className="set-section-title">마스터 비밀번호 변경</div>
+        <div className="set-section-title">앱 잠금 비밀번호 변경</div>
         <ChangePassword />
       </div>
 
@@ -128,7 +128,7 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
     const n = usersOf(c.id).length;
     const ok = await confirm({
       title: '계정 삭제',
-      body: `"${c.name}" 계정을 보관함에서 삭제할까요?${n > 0 ? ` ${n}개 서버가 연결할 때 비밀번호를 다시 묻게 됩니다.` : ''}`,
+      body: `"${c.name}" 계정을 삭제할까요?${n > 0 ? ` ${n}개 서버가 연결할 때 비밀번호를 다시 묻게 됩니다.` : ''}`,
       okText: '삭제',
       danger: true,
     });

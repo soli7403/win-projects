@@ -8,7 +8,7 @@ describe('가짜 백엔드', () => {
     await expect(b.invoke('no.such')).rejects.toThrow('구현되지 않은 채널: no.such');
   });
 
-  it('보관함 설정 후 복구 코드는 24자 영숫자이며 잠금 해제가 동작한다', async () => {
+  it('볼트 설정 후 복구 코드는 24자 영숫자이며 잠금 해제가 동작한다', async () => {
     const b = createFakeBackend();
     const res = await b.invoke<{ recoveryCode: string }>('vault.setup', ['pw-12345678']);
     expect(res.recoveryCode.replace(/-/g, '')).toHaveLength(24);

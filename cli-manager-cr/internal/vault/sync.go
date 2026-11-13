@@ -76,7 +76,7 @@ func (pv *Vault) ReplaceItems(slItems []ItemRecord) error {
 	return pv.saveLocked()
 }
 
-// UnwrapHeaderKey 는 헤더(JSON)의 wrapped 를 마스터 비밀번호로 풀어 볼트 키를 돌려준다 (data/vault.md §8).
+// UnwrapHeaderKey 는 헤더(JSON)의 wrapped 를 앱 잠금 비밀번호로 풀어 볼트 키를 돌려준다 (data/vault.md §8).
 // 비밀번호가 맞지 않거나 헤더가 깨졌으면 bOk=false 다. 볼트 상태는 바꾸지 않는다.
 func UnwrapHeaderKey(headerRaw []byte, szPassword string) ([]byte, bool) {
 	var file vaultFile

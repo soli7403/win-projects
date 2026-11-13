@@ -108,12 +108,12 @@ export function validateHostForm(input: {
   if (isNet && !input.host.trim()) return { tab: 'basic', message: '호스트 주소를 입력하세요' };
   if (input.protocol === 'serial' && !input.serialPath.trim()) return { tab: 'basic', message: '시리얼 포트를 선택하세요' };
   if (isNet && input.hasSecret && !input.vaultOpen) {
-    return { tab: 'auth', message: '보관함이 잠겨 있어 비밀번호를 저장할 수 없습니다' };
+    return { tab: 'auth', message: '앱이 잠겨 있어 비밀번호를 저장할 수 없습니다' };
   }
   if (input.protocol === 'ssh' && input.jumpDirect) {
     if (!input.jumpAddress.trim()) return { tab: 'adv', message: '경유 서버 주소를 입력하세요' };
     if (input.jumpHasSecret && !input.vaultOpen) {
-      return { tab: 'adv', message: '보관함이 잠겨 있어 경유 서버 자격 증명을 저장할 수 없습니다' };
+      return { tab: 'adv', message: '앱이 잠겨 있어 경유 서버 자격 증명을 저장할 수 없습니다' };
     }
   }
   return null;

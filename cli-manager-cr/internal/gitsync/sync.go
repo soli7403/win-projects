@@ -36,10 +36,10 @@ const G_ciSyncMaxAttempts = 2
 // 명세 문구 (data/sync-backup.md §5.4).
 const (
 	g_cszMsgCredentialInUrl = "저장소 주소에 비밀번호·토큰을 넣지 마세요 — 이 PC 의 git 자격 증명 도우미/SSH 키를 사용합니다"
-	g_cszMsgLocked          = "보관함을 연 뒤에 동기화할 수 있습니다"
+	g_cszMsgLocked          = "잠금을 해제한 뒤에 동기화할 수 있습니다"
 	g_cszMsgNoGit           = "git 이 설치되어 있지 않습니다"
-	g_cszMsgMismatch        = "저장소의 보관함이 이 PC 의 보관함과 다릅니다"
-	g_cszMsgPasswordFail    = "마스터 비밀번호가 맞지 않거나 취소되었습니다"
+	g_cszMsgMismatch        = "저장소의 암호화 데이터가 이 PC 와 다릅니다"
+	g_cszMsgPasswordFail    = "앱 잠금 비밀번호가 맞지 않거나 취소되었습니다"
 	g_cszMsgParseFail       = "동기화 파일 해석 실패"
 )
 
@@ -84,7 +84,7 @@ type Deps struct {
 	M_szDataDir string
 	M_store     LocalStore
 	M_vault     VaultOps
-	// M_fnAskPassword 는 "저장소 볼트 받기"에서 마스터 비밀번호를 받는다 (취소·빈 값이면 bOk=false).
+	// M_fnAskPassword 는 "저장소 데이터 받기"에서 앱 잠금 비밀번호를 받는다 (취소·빈 값이면 bOk=false).
 	M_fnAskPassword func() (string, bool)
 	M_fnNow         func() time.Time
 }

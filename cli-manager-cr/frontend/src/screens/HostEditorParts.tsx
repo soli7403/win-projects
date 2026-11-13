@@ -208,7 +208,7 @@ export function JumpDirectCard({
       {authType === 'password' ? (
         <Field
           label="비밀번호"
-          help={hasSaved ? '저장됨 — 바꾸려면 새로 입력' : '보관함에 암호화해 저장 ("{표시 이름} 경유 서버")'}
+          help={hasSaved ? '저장됨 — 바꾸려면 새로 입력' : '암호화해 저장 ("{표시 이름} 경유 서버")'}
         >
           <input className="input" type="password" placeholder={hasSaved ? '••••••••  (저장됨)' : '비밀번호'} value={password} onChange={(e) => onPassword(e.target.value)} />
         </Field>
