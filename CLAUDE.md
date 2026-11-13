@@ -13,7 +13,7 @@
 | `<project>/.claude/` | wip/, plan/, known-issues.md, 프로젝트 전용 agents/skills |
 | `<project>/docs/` | 프로젝트 개별 문서 (README.md 인덱스, commands-history.md 등) |
 
-신규 프로젝트: `<project>/` 생성 후 CLAUDE.md, docs/README.md, .claude/{wip,plan,known-issues.md}를 만든다 (`cli-manager` 참고).
+신규 프로젝트: `<project>/` 생성 후 CLAUDE.md, docs/README.md, .claude/{wip,plan,known-issues.md}를 만든다 (`cli-manager-cr` 참고).
 
 ---
 
@@ -101,7 +101,7 @@
 
 1. `<project>/` 생성: `CLAUDE.md`, `docs/`, `.claude/{known-issues.md,wip/archive/,plan/}`, `go.mod`, `Makefile`, `cmd/`, `internal/`, `deploy/`
 2. `<project>/CLAUDE.md` 머리에 "공통 규칙은 ../CLAUDE.md" 링크, 아래 §11 표에 행 추가
-3. `<project>/.claude/settings.json` 은 `cli-manager` 것을 복사 (공통 hooks 를 `../.claude/hooks` 로 호출)
+3. `<project>/.claude/settings.json` 은 `cli-manager-cr` 것을 복사 (공통 hooks 를 `../.claude/hooks` 로 호출)
 4. 프로젝트 문서는 `<project>/docs/` 에만, 공통 문서는 `win-projects/docs/` 에만 둔다
 5. 비밀값 파일은 처음부터 `.gitignore` 로 제외
 6. 서비스 작업을 시작하면 먼저 그 프로젝트의 `CLAUDE.md` 를 읽는다
@@ -110,8 +110,9 @@
 
 | 프로젝트 | 상태 | 역할 | 진입점 |
 |---|---|---|---|
-| cli-manager | **수정 중단** (2026-11-12 사용자 지시 — 소스 수정·빌드는 cli-manager-cr 에서만) | BrightTerm v1.1.0 이식물 | [cli-manager/CLAUDE.md](./cli-manager/CLAUDE.md) |
-| cli-manager-cr | 명세 단계 | cli-manager 의 clean-room 독자 재작성 (명세 기반, 구현자는 기존 코드 열람 금지) | [cli-manager-cr/CLAUDE.md](./cli-manager-cr/CLAUDE.md) |
+| cli-manager-cr | **사용 중** (제품명 DariTerm) | BrightTerm v1.1.0(MIT) 동작을 참고한 clean-room 독자 재작성. 소스 수정·빌드는 여기서만 | [cli-manager-cr/CLAUDE.md](./cli-manager-cr/CLAUDE.md) |
+
+> `cli-manager`(BrightTerm v1.1.0 이식물, 옛 TermGo)는 2026-11-13 사용자 지시로 폴더를 삭제했다. git 이력에는 남아 있지만 **clean-room 규칙상 이력에서도 열람·복원하지 않는다**.
 
 **KI 번호는 레포 전체에서 이어진다.** 다음 번호: KI-001.
 공통 항목은 `.claude/known-issues.md`, 프로젝트 항목은 `<project>/.claude/known-issues.md`.

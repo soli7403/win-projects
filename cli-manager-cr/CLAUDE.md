@@ -10,7 +10,7 @@
 목적: 라이선스·소유권 정리. 구현자가 원본 코드의 표현을 보지 않은 채 **명세(`spec/`)만 보고** 구현한다.
 
 **구현자(이 폴더에서 시작한 세션)는 다음을 열람·검색·복사·참조하지 않는다.**
-- `../cli-manager/**` 전체 (코드, `third_party/`, `docs/porting-brief.md`, 빌드 산출물 `frontend/dist`, `build/bin` 포함)
+- `../cli-manager/**` 전체 (코드, `third_party/`, `docs/porting-brief.md`, 빌드 산출물 `frontend/dist`, `build/bin` 포함). **이 폴더는 2026-11-13 삭제됐다(D65). git 이력에서 열람·복원(`git show`·`git checkout` 등)하는 것도 같은 금지 대상이다.**
 - BrightTerm 저장소(`Yeosup/BrightTerm`)의 **모든 태그·브랜치** (v1.1.0 포함)
 - `spec/` 에 없는 내용을 기존 코드에서 "확인"하는 행위 — 명세가 모호하면 **추측하지 말고** `spec/QUESTIONS.md` 에 질문을 적고 멈춘다. 답은 명세 작성자가 `spec/` 에 반영한다.
 

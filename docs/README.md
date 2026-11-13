@@ -6,5 +6,5 @@
 |---|---|
 | [11_coding-standard.md](./11_coding-standard.md) | Go 코딩 표준 (명명 규칙 등) |
 
-프로젝트 docs 인덱스 템플릿: [../cli-manager/docs/README.md](../cli-manager/docs/README.md)
+프로젝트 docs 인덱스 템플릿: [../cli-manager-cr/docs/README.md](../cli-manager-cr/docs/README.md)
 | [12_engineering-rules.md](./12_engineering-rules.md) | 구현 공통 규칙 (설정·데이터·외부 호출·배포) |
