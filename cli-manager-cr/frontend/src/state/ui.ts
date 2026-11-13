@@ -51,6 +51,9 @@ interface UiState {
   /** 서버 목록 아래 절반의 스니펫 패널 열림. */
   snippetsOpen: boolean;
   setSnippetsOpen: (open: boolean) => void;
+  /** 왼쪽 열에서 스니펫 패널이 차지하는 높이 비율(%). 경계를 끌어 바꾸며 이 PC 에만 기억한다. */
+  snippetRatio: number;
+  setSnippetRatio: (pct: number) => void;
   /** 모든 창 동시 입력(쇠사슬 아이콘). 켜지면 입력이 화면에 보이는 모든 창으로 간다. 시작할 때 항상 꺼짐 (behavior/terminal.md 동시 입력). */
   linkInput: boolean;
   toggleLinkInput: () => void;
@@ -87,6 +90,35 @@ interface UiState {
   settleDialog: (value: unknown) => void;
 }
 
+/** 스니펫 패널 높이 비율 기본값·범위(%). 서버 목록이 더 길게 보이도록 기본은 3분의 1 남짓. */
+export const SNIPPET_RATIO_DEFAULT = 35;
+const SNIPPET_RATIO_MIN = 15;
+const SNIPPET_RATIO_MAX = 80;
+const SNIPPET_RATIO_KEY = 'dariterm.snippetRatio';
+
+export function clampSnippetRatio(pct: number): number {
+  if (!Number.isFinite(pct)) return SNIPPET_RATIO_DEFAULT;
+  return Math.min(SNIPPET_RATIO_MAX, Math.max(SNIPPET_RATIO_MIN, pct));
+}
+
+// 저장소가 막혀 있어도(사생활 모드 등) 기본값으로 동작한다.
+function loadSnippetRatio(): number {
+  try {
+    const raw = globalThis.localStorage?.getItem(SNIPPET_RATIO_KEY);
+    return raw ? clampSnippetRatio(Number(raw)) : SNIPPET_RATIO_DEFAULT;
+  } catch {
+    return SNIPPET_RATIO_DEFAULT;
+  }
+}
+
+function saveSnippetRatio(pct: number): void {
+  try {
+    globalThis.localStorage?.setItem(SNIPPET_RATIO_KEY, String(Math.round(pct)));
+  } catch {
+    /* 저장 실패는 무시 — 다음 실행 때 기본값 */
+  }
+}
+
 export const useUi = create<UiState>((set, get) => ({
   settings: { open: false, section: 'appearance' },
   openSettings: (section = 'appearance') => set({ settings: { open: true, section } }),
@@ -99,6 +131,12 @@ export const useUi = create<UiState>((set, get) => ({
   toggleSftp: (group) => set((s) => ({ sftpOpen: group === 0 ? [!s.sftpOpen[0], s.sftpOpen[1]] : [s.sftpOpen[0], !s.sftpOpen[1]] })),
   snippetsOpen: false,
   setSnippetsOpen: (open) => set({ snippetsOpen: open }),
+  snippetRatio: loadSnippetRatio(),
+  setSnippetRatio: (pct) => {
+    const v = clampSnippetRatio(pct);
+    saveSnippetRatio(v);
+    set({ snippetRatio: v });
+  },
   linkInput: false,
   toggleLinkInput: () => set((s) => ({ linkInput: !s.linkInput })),
   preview: null,

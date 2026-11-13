@@ -9,7 +9,7 @@ import { PaneTree } from './Panes';
 import { useWorkspace, isSplit } from '../state/workspace';
 import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
-import { useUi } from '../state/ui';
+import { useUi, SNIPPET_RATIO_DEFAULT } from '../state/ui';
 import { Welcome } from './Welcome';
 import { PanelHost, SftpDock } from './RightPanel';
 import { CopyJobs } from './CopyJobs';
@@ -221,8 +221,45 @@ function GroupDivider({ containerRef }: { containerRef: React.RefObject<HTMLDivE
   );
 }
 
+/** 서버 목록과 스니펫 패널 사이 경계: 위아래로 끌어 스니펫 높이 비율을 바꾼다. 두 번 누르면 기본값. */
+function SnippetDivider({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) {
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const box = containerRef.current;
+    if (!box) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      const r = box.getBoundingClientRect();
+      if (r.height <= 0) return;
+      // 스니펫은 아래쪽이므로 (열 바닥 − 포인터) 가 스니펫 높이.
+      useUi.getState().setSnippetRatio(((r.bottom - ev.clientY) / r.height) * 100);
+    };
+    const up = () => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  };
+  return (
+    <div
+      className="snippet-divider"
+      role="separator"
+      aria-orientation="horizontal"
+      aria-label="서버 목록·스니펫 경계"
+      onPointerDown={onDown}
+      onDoubleClick={() => useUi.getState().setSnippetRatio(SNIPPET_RATIO_DEFAULT)}
+    />
+  );
+}
+
 export function Shell() {
   const sidebarOpen = useUi((s) => s.sidebarOpen);
+  const snippetRatio = useUi((s) => s.snippetRatio);
+  const leftRef = useRef<HTMLDivElement>(null);
   const split = useWorkspace((s) => isSplit(s.tabs));
   const ratio = useWorkspace((s) => s.groupRatio);
   const canSplit = useWorkspace((s) => s.tabs.length >= 2);
@@ -236,12 +273,22 @@ export function Shell() {
         {sidebarOpen ? (
           <div className="leftcol">
             <ToolRow vertical={false} />
-            <Sidebar />
-            {snippetsOpen && (
-              <div className="snippet-dock" aria-label="스니펫">
-                <SnippetsPanel />
-              </div>
-            )}
+            {/* 서버 목록 + 스니펫이 나눠 쓰는 영역. 비율은 SnippetDivider 로 바꾼다. */}
+            <div
+              className="leftcol-body"
+              ref={leftRef}
+              style={{ '--side-flex': snippetsOpen ? 100 - snippetRatio : 1 } as React.CSSProperties}
+            >
+              <Sidebar />
+              {snippetsOpen && (
+                <>
+                  <SnippetDivider containerRef={leftRef} />
+                  <div className="snippet-dock" aria-label="스니펫" style={{ flex: `${snippetRatio} 1 0` }}>
+                    <SnippetsPanel />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         ) : (
           <div className="rail">
