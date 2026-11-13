@@ -10,9 +10,10 @@ import { effectiveColor } from '../lib/hosts';
 import { openFolderGrid, openHost } from '../state/actions';
 import { HOST_MIME } from './Panes';
 import { focusActiveTerminal } from './TerminalView';
+import { rangeSelection, toggleSelection } from '../lib/multiSelect';
 import {
   canDropGroup, clampSidebarWidth, connectedCountByHost, countHostsIn, duplicateHostRecord, effectiveGroupId, folderDeletePlan, fullTarget,
-  matchesQuery, moveHost, sidebarSubtitle, sortGroups, sortHosts,
+  matchesQuery, moveHosts, sidebarSubtitle, sortGroups, sortHosts,
 } from '../lib/tree';
 import { EnvPill } from '../ui/Controls';
 import { ENV_INFO } from '../lib/defaults';
@@ -67,6 +68,18 @@ const ENV_COLOR = Object.fromEntries(Object.entries(ENV_INFO).map(([k, v]) => [k
 const PROTOCOL_ICON: Record<Protocol, typeof Terminal> = { ssh: Terminal, telnet: Network, serial: Usb, local: Monitor };
 const INDENT = 14;
 
+/** 여러 서버를 끌 때 커서 옆에 "서버 N개" 표시(브라우저 기본 끌기 그림 대신). */
+function setDragBadge(e: DragEvent<HTMLElement>, text: string): void {
+  if (typeof e.dataTransfer.setDragImage !== 'function') return;
+  const el = document.createElement('div');
+  el.className = 'drag-badge';
+  el.textContent = text;
+  document.body.appendChild(el);
+  e.dataTransfer.setDragImage(el, 10, 10);
+  // 브라우저가 그림을 뜬 뒤 지운다.
+  setTimeout(() => el.remove(), 0);
+}
+
 export function Sidebar() {
   const store = useApp((s) => s.store);
   const patchStore = useApp((s) => s.patchStore);
@@ -78,7 +91,12 @@ export function Sidebar() {
   const confirm = useUi((s) => s.confirm);
   const [query, setQuery] = useState('');
   // 끌어 놓기: 끌고 있는 항목과 놓을 대상(폴더 id, 최상위는 'root').
-  const dragRef = useRef<{ kind: 'host' | 'group'; id: string } | null>(null);
+  // 서버는 여러 개를 함께 끌 수 있다(ids), 폴더는 하나씩.
+  const dragRef = useRef<{ kind: 'host'; ids: string[] } | { kind: 'group'; id: string } | null>(null);
+  // 서버 여러 개 선택(D59). 2개 이상이면 "여러 개 선택 상태" — 메뉴는 삭제만, 끌면 모두 옮긴다.
+  const [multi, setMulti] = useState<string[]>([]);
+  // Shift+클릭 범위의 기준(마지막으로 그냥/Ctrl+클릭한 서버).
+  const anchorRef = useRef<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   // 서버별 열린 세션 수(§5 연결 점·개수).
@@ -105,8 +123,13 @@ export function Sidebar() {
     setDropTarget(null);
     if (!d) return;
     if (d.kind === 'host') {
-      const next = moveHost(hosts, d.id, targetId);
-      if (next !== hosts) void patchStore({ hosts: next });
+      const next = moveHosts(hosts, d.ids, targetId);
+      if (next === hosts) return;
+      void patchStore({ hosts: next });
+      if (d.ids.length > 1) {
+        const where = targetId ? `"${groups.find((x) => x.id === targetId)?.name ?? ''}" 폴더` : '최상위';
+        pushToast({ kind: 'info', text: `서버 ${d.ids.length}개를 ${where}(으)로 옮겼습니다` });
+      }
       return;
     }
     const cur = groups.find((x) => x.id === d.id);
@@ -119,6 +142,11 @@ export function Sidebar() {
   const width = store?.settings.sidebarWidth ?? 260;
 
   const matched = useMemo(() => hosts.filter((h) => matchesQuery(h, groups, query)), [hosts, groups, query]);
+  // 지워진 서버는 선택에서 뺀다. 2개 이상일 때만 여러 개 선택 상태.
+  const multiSel = multi.filter((id) => hosts.some((h) => h.id === id));
+  const multiOn = multiSel.length >= 2;
+  // 화면에 보이는 서버 목록(선택 가능한 행)의 순서. 그리는 동안 채워지고 Shift+클릭 범위에 쓴다.
+  const order: string[] = [];
 
   // 폴더 펼침/접힘 토글은 저장한다(collapsed).
   const toggleFolder = (g: Group) => {
@@ -130,6 +158,50 @@ export function Sidebar() {
     if (!ok) return;
     await patchStore({ hosts: hosts.filter((x) => x.id !== h.id) });
     if (selected === h.id) setSelected(null);
+  };
+
+  /** 여러 서버 삭제(D59): 이름 목록(최대 10개)을 보여 주고 확인 후 지운다. */
+  const removeHosts = async (ids: string[]) => {
+    const names = hosts.filter((x) => ids.includes(x.id)).map((x) => x.alias || x.host);
+    const ok = await confirm({
+      title: '서버 삭제',
+      body: `선택한 서버 ${names.length}개를 삭제할까요?`,
+      detail: names.slice(0, 10).join('\n') + (names.length > 10 ? `\n… 외 ${names.length - 10}개` : ''),
+      okText: '삭제',
+      danger: true,
+    });
+    if (!ok) return;
+    await patchStore({ hosts: hosts.filter((x) => !ids.includes(x.id)) });
+    setMulti([]);
+    if (selected && ids.includes(selected)) setSelected(null);
+    pushToast({ kind: 'info', text: `서버 ${names.length}개를 삭제했습니다` });
+  };
+
+  /**
+   * 서버 행 클릭의 선택 처리. Ctrl+클릭 = 넣고 빼기, Shift+클릭 = 범위, 그냥 클릭 = 하나만.
+   * 여러 개 선택(Ctrl/Shift)이면 true — 호출자는 세션으로 옮겨 가지 않는다(포커스를 사이드바에 남김).
+   */
+  const selectByClick = (e: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }, id: string): boolean => {
+    if (e.ctrlKey || e.metaKey) {
+      const base = multiSel.length ? multiSel : selected ? [selected] : [];
+      const next = toggleSelection(base, id);
+      setMulti(next);
+      setSelected(next.includes(id) ? id : next[next.length - 1] ?? null);
+      anchorRef.current = id;
+      return true;
+    }
+    if (e.shiftKey) {
+      const range = rangeSelection(order, anchorRef.current ?? selected, id);
+      if (range) {
+        setMulti(range);
+        setSelected(id);
+        return true;
+      }
+    }
+    setMulti([]);
+    setSelected(id);
+    anchorRef.current = id;
+    return false;
   };
 
   const duplicateHost = async (h: Host) => {
@@ -211,6 +283,12 @@ export function Sidebar() {
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const h = hosts.find((x) => x.id === selected);
     if (e.key === 'Escape' && searching) setQuery('');
+    else if (e.key === 'Escape' && multiOn) setMulti([]);
+    // 여러 개 선택 상태에서는 Delete(일괄 삭제)만 받는다.
+    if (multiOn && !(e.target instanceof HTMLInputElement)) {
+      if (e.key === 'Delete') void removeHosts(multiSel);
+      return;
+    }
     if (e.key === 'Enter' && searching) {
       const first = matched[0];
       if (first) void openHost(first.id);
@@ -243,7 +321,9 @@ export function Sidebar() {
   const hostRow = (h: Host, depth: number, opts: { selectable?: boolean } = { selectable: true }) => {
     const Icon = PROTOCOL_ICON[h.protocol];
     const color = effectiveColor(h, groups);
-    const isSel = opts.selectable && selected === h.id;
+    const inMulti = !!opts.selectable && multiOn && multiSel.includes(h.id);
+    const isSel = opts.selectable && (multiOn ? inMulti : selected === h.id);
+    if (opts.selectable) order.push(h.id);
     return (
       <div
         key={`${opts.selectable ? 'h' : 'fav'}-${h.id}`}
@@ -253,23 +333,43 @@ export function Sidebar() {
         aria-selected={isSel}
         draggable={opts.selectable}
         onDragStart={(e: DragEvent<HTMLDivElement>) => {
-          dragRef.current = { kind: 'host', id: h.id };
+          // 선택된 서버 중 하나를 끌면 선택한 서버 모두를 옮긴다. 선택 밖의 서버를 끌면 그 하나만.
+          const ids = inMulti ? multiSel : [h.id];
+          dragRef.current = { kind: 'host', ids };
           e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData(HOST_MIME, h.id);
-          e.dataTransfer.setData('text/plain', h.id);
+          e.dataTransfer.setData('text/plain', ids.join(','));
+          if (ids.length === 1) {
+            // 칸으로 끌어 놓아 접속하기(panes §7)는 서버 하나일 때만.
+            e.dataTransfer.setData(HOST_MIME, h.id);
+          } else {
+            setDragBadge(e, `서버 ${ids.length}개`);
+          }
         }}
         onDragEnd={() => {
           dragRef.current = null;
           setDropTarget(null);
         }}
         title={`${h.alias}\n${fullTarget(h)}${h.notes ? `\n${h.notes}` : ''}`}
-        onClick={() => {
-          if (opts.selectable) setSelected(h.id);
+        onClick={(e) => {
+          if (opts.selectable && selectByClick(e, h.id)) return;
+          if (!opts.selectable) setMulti([]);
           focusOpenSessionOf(h.id);
+        }}
+        // Shift+클릭 때 글자가 끌려 선택되지 않게 한다.
+        onMouseDown={(e) => {
+          if (e.shiftKey) e.preventDefault();
         }}
         onDoubleClick={() => openSmart(h.id)}
         onContextMenu={(e) => {
           e.preventDefault();
+          // 여러 개 선택한 서버 위에서 우클릭하면 메뉴는 삭제 하나뿐(D59).
+          if (inMulti) {
+            openMenu(e.clientX, e.clientY, [
+              { label: `삭제 (${multiSel.length}개)`, danger: true, onSelect: () => void removeHosts(multiSel) },
+            ]);
+            return;
+          }
+          setMulti([]);
           setSelected(h.id);
           openMenu(e.clientX, e.clientY, hostMenu(h));
         }}
@@ -390,9 +490,18 @@ export function Sidebar() {
         </div>
       </div>
 
+      {multiOn && (
+        <div className="side-multi" role="status">
+          <span>서버 {multiSel.length}개 선택</span>
+          <span className="faint small">끌어서 폴더로 옮기기 · 우클릭 삭제</span>
+          <button className="link-btn" onClick={() => setMulti([])}>선택 해제</button>
+        </div>
+      )}
+
       <div
         className="side-tree"
         role="tree"
+        aria-multiselectable
         onDragOver={(e) => {
           if (!dragRef.current) return;
           e.preventDefault();

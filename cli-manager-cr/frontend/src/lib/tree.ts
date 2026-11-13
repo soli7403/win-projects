@@ -89,6 +89,13 @@ export function canDropGroup(groups: Group[], dragGroupId: string, targetGroupId
   return !descendantGroupIds(groups, dragGroupId).has(targetGroupId);
 }
 
+/** 여러 서버를 한 번에 폴더(또는 최상위)로 옮긴 결과(D59). 모두 이미 그 폴더에 있으면 같은 배열을 돌려준다. */
+export function moveHosts(hosts: Host[], hostIds: string[], targetGroupId: string | null): Host[] {
+  const ids = new Set(hostIds);
+  if (!hosts.some((h) => ids.has(h.id) && (h.groupId ?? null) !== targetGroupId)) return hosts;
+  return hosts.map((h) => (ids.has(h.id) ? { ...h, groupId: targetGroupId } : h));
+}
+
 /** 서버를 폴더(또는 최상위)로 옮긴 결과. 이미 그 폴더에 있으면 같은 배열을 돌려준다. */
 export function moveHost(hosts: Host[], hostId: string, targetGroupId: string | null): Host[] {
   const h = hosts.find((x) => x.id === hostId);

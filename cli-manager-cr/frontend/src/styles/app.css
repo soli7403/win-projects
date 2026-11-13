@@ -258,6 +258,10 @@ button { font: inherit; color: inherit; }
 .side-row .strip { position: absolute; left: 0; top: 7px; width: 3px; height: 16px; border-radius: 2px; }
 .side-row .side-name { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .side-row .side-sub { overflow: hidden; text-overflow: ellipsis; min-width: 0; margin-left: auto; }
+/* 서버 여러 개 선택 상태 줄(D59) */
+.side-multi { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 10px 6px; padding: 6px 10px; border-radius: 7px; background: var(--accent-soft); font-size: 12px; }
+.side-multi .link-btn { margin-left: auto; }
+.drag-badge { position: fixed; top: -100px; left: -100px; padding: 4px 10px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; }
 .side-resize { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; z-index: 5; }
 .side-resize:hover { background: var(--accent-soft); }
 
