@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
+	"termgo/internal/dialog"
 	"termgo/internal/importer"
 	"termgo/internal/vault"
 )
@@ -37,8 +38,26 @@ func (pService *Service) registerImport() {
 	pRouter.Handle("import.scan", func(slArgs []json.RawMessage) (any, error) {
 		szHome, _ := os.UserHomeDir()
 		slCands := importer.ScanPutty(importer.ReadPuttySessions)
+		slCands = append(slCands, importer.ScanSecureCrt("")...)
 		slCands = append(slCands, importer.ScanSshConfig(szHome)...)
 		return slCands, nil
+	})
+	pRouter.Handle("import.scanSecureCrt", func(slArgs []json.RawMessage) (any, error) {
+		szDir := ""
+		if len(slArgs) > 0 {
+			szDir, _ = argString(slArgs, 0)
+		}
+		if szDir == "" {
+			szPicked, errPick := dialog.ChooseDir("SecureCRT 설정 폴더 선택", importer.SecureCrtConfigDir(), false)
+			if errPick != nil {
+				return nil, errPick
+			}
+			if szPicked == "" {
+				return nil, nil
+			}
+			szDir = szPicked
+		}
+		return importer.ScanSecureCrt(szDir), nil
 	})
 	pRouter.Handle("import.scanAws", func(slArgs []json.RawMessage) (any, error) {
 		szProfile := ""

@@ -47,11 +47,14 @@ type Candidate struct {
 	M_szKeyFile string    `json:"keyFile,omitempty"`
 	M_szJumpVia string    `json:"jumpVia,omitempty"`
 	M_szNote    string    `json:"note,omitempty"`
+	// M_slFolderPath 는 넣을 폴더 아래에 만들 하위 폴더 이름들이다 (SecureCRT, import.md §1.5).
+	M_slFolderPath []string `json:"folderPath,omitempty"`
 }
 
-// G_cszSourcePutty, G_cszSourceSshConfig, G_cszSourceAws 는 후보 출처 이름이다.
+// G_cszSourcePutty, G_cszSourceSecureCrt, G_cszSourceSshConfig, G_cszSourceAws 는 후보 출처 이름이다.
 const (
 	G_cszSourcePutty     = "putty"
+	G_cszSourceSecureCrt = "securecrt"
 	G_cszSourceSshConfig = "ssh-config"
 	G_cszSourceAws       = "aws"
 )

@@ -231,6 +231,10 @@ export function createFakeBackend(): Backend {
       { source: 'putty', name: 'prod-web02', host: { alias: 'prod-web02', protocol: 'ssh', host: '10.1.1.2', port: 22, username: 'ubuntu', authType: 'password', keepaliveSec: 30 } },
       { source: 'ssh-config', name: 'bastion', host: { alias: 'bastion', protocol: 'ssh', host: '203.0.113.9', port: 22, username: 'ec2-user', authType: 'key', keepaliveSec: 30 }, keyFile: '~/.ssh/bastion.pem' },
       { source: 'putty', name: 'serial-lab', host: { alias: 'serial-lab', protocol: 'serial', host: '', port: 0, authType: 'password', serial: { path: '/dev/ttyUSB0', baudRate: 115200 } } },
+      { source: 'securecrt', name: 'gw_tunneling', folderPath: ['lab', 'tunnel'], host: { alias: 'gw_tunneling', protocol: 'ssh', host: '203.0.113.5', port: 22, username: 'ops', authType: 'password', keepaliveSec: 30 } },
+    ],
+    'import.scanSecureCrt': () => [
+      { source: 'securecrt', name: 'web01', folderPath: ['MDS'], host: { alias: 'web01', protocol: 'ssh', host: '10.0.0.13', port: 22, username: 'ops', authType: 'password', keepaliveSec: 30 } },
     ],
     'import.scanAws': () => [
       { source: 'aws', name: 'app-01', host: { alias: 'app-01', protocol: 'ssh', host: '10.0.3.5', port: 22, username: 'ubuntu', authType: 'key', keepaliveSec: 30 }, jumpVia: '203.0.113.9', note: 'ap-northeast-2 · 키 파일 없음: app.pem' },

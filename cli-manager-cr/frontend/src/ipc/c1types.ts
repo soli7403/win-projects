@@ -1,5 +1,5 @@
 // 설정·가져오기·동기화·업데이트 화면의 IPC 페이로드 타입. 근거: spec/ipc.md §2, spec/import.md §4.
-export type ImportSource = 'putty' | 'ssh-config' | 'aws';
+export type ImportSource = 'putty' | 'securecrt' | 'ssh-config' | 'aws';
 
 /** 후보 안의 서버 정보(data/store.md 서버 필드의 부분 집합). spec/ipc.md "가져오기 후보 객체". 모든 필드는 없을 수 있다. */
 export interface ImportHost {
@@ -26,6 +26,8 @@ export interface ImportCandidate {
   keyFile?: string;
   jumpVia?: string;
   note?: string;
+  /** 넣을 폴더 아래에 만들 하위 폴더 이름들(SecureCRT, spec/import.md §1.5). */
+  folderPath?: string[];
 }
 
 export interface ImportApplyResult {

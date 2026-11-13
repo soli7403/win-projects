@@ -7,7 +7,7 @@ import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
 import { DEFAULT_SETTINGS } from '../lib/defaults';
 import type { Store } from '../ipc/types';
-import { ImportDialog, hostOf, sameHostExists } from './ImportDialog';
+import { ImportDialog, hostOf, sameHostExists, folderPrefix } from './ImportDialog';
 
 const SAMPLE = [
   {
@@ -30,12 +30,13 @@ const SAMPLE = [
   { source: 'putty', name: 'broken-entry' },
 ];
 
-function mockBackend(scan: unknown) {
+function mockBackend(scan: unknown, crt: unknown = null) {
   const calls: [string, unknown[]][] = [];
   const b: Backend = {
     async invoke(channel: string, args: unknown[] = []): Promise<any> {
       calls.push([channel, args]);
       if (channel === 'import.scan') return scan;
+      if (channel === 'import.scanSecureCrt') return crt;
       if (channel === 'import.apply') return { hosts: (args[0] as unknown[]).length, keys: 0, skipped: [] };
       if (channel === 'store.get') return structuredClone(useApp.getState().store);
       if (channel === 'vault.status') return { initialized: true, unlocked: true, osUnlockAvailable: false, osUnlockEnabled: false };
@@ -117,7 +118,63 @@ describe('가져오기 대화상자: 실제 후보 구조', () => {
   });
 });
 
+const CRT = [
+  { source: 'securecrt', name: 'gw_tunneling', folderPath: ['mds-테스트', 'inner'], host: { alias: 'gw_tunneling', protocol: 'ssh', host: '203.0.113.5', port: 22, username: 'ops', authType: 'password' } },
+];
+
+describe('가져오기 대화상자: SecureCRT (spec/import.md §1.5, dialogs.md §5)', () => {
+  it('자동 검색에 SecureCRT 후보만 있으면 폴더 이름 기본값은 SecureCRT, 이름 앞에 폴더 경로를 보인다', async () => {
+    mockBackend(CRT);
+    render(<ImportDialog />);
+    expect(await screen.findByText('gw_tunneling')).toBeTruthy();
+    expect(screen.getByText('mds-테스트/inner/')).toBeTruthy();
+    expect(screen.getAllByText('SecureCRT').length).toBeGreaterThan(0);
+    expect((screen.getByLabelText('넣을 폴더 이름') as HTMLInputElement).value).toBe('SecureCRT');
+  });
+
+  it('폴더 선택 결과는 SecureCRT 후보만 대체하고 folderPath 를 그대로 apply 에 보낸다', async () => {
+    const calls = mockBackend([SAMPLE[0], ...CRT], [{ ...CRT[0], name: 'picked', folderPath: ['MDS'] }]);
+    render(<ImportDialog />);
+    await screen.findByText('gw_tunneling');
+    expect((screen.getByLabelText('넣을 폴더 이름') as HTMLInputElement).value).toBe('PuTTY 가져오기');
+    fireEvent.click(screen.getByRole('button', { name: /SecureCRT 폴더 선택/ }));
+    expect(await screen.findByText('picked')).toBeTruthy();
+    expect(screen.queryByText('gw_tunneling')).toBeNull();
+    expect(screen.getByText('prod-web02')).toBeTruthy();
+    expect((screen.getByLabelText('넣을 폴더 이름') as HTMLInputElement).value).toBe('SecureCRT');
+    fireEvent.click(screen.getByRole('button', { name: '2개 가져오기' }));
+    await waitFor(() => expect(calls.some(([c]) => c === 'import.apply')).toBe(true));
+    const apply = calls.find(([c]) => c === 'import.apply')!;
+    expect((apply[1][0] as { folderPath?: string[] }[])[1].folderPath).toEqual(['MDS']);
+    expect(apply[1][1]).toBe('SecureCRT');
+  });
+
+  it('폴더 선택을 취소(null)하면 후보가 그대로다', async () => {
+    const calls = mockBackend(CRT, null);
+    render(<ImportDialog />);
+    await screen.findByText('gw_tunneling');
+    fireEvent.click(screen.getByRole('button', { name: /SecureCRT 폴더 선택/ }));
+    await waitFor(() => expect(calls.some(([c]) => c === 'import.scanSecureCrt')).toBe(true));
+    expect(screen.getByText('gw_tunneling')).toBeTruthy();
+    expect(useApp.getState().toasts.length).toBe(0);
+  });
+
+  it('폴더에 세션이 없으면 정보 토스트', async () => {
+    mockBackend(CRT, []);
+    render(<ImportDialog />);
+    await screen.findByText('gw_tunneling');
+    fireEvent.click(screen.getByRole('button', { name: /SecureCRT 폴더 선택/ }));
+    await waitFor(() => expect(useApp.getState().toasts.some((t) => t.text === '선택한 폴더에서 SecureCRT 세션을 찾지 못했습니다')).toBe(true));
+  });
+});
+
 describe('후보 방어 읽기 헬퍼', () => {
+  it('folderPrefix 는 빈 이름을 빼고 / 로 잇는다', () => {
+    expect(folderPrefix({ folderPath: ['a', ' ', 'b'] })).toBe('a/b/');
+    expect(folderPrefix({})).toBe('');
+    expect(folderPrefix({ folderPath: 'x' as never })).toBe('');
+  });
+
   it('hostOf 는 host 가 없거나 문자열이면 빈 객체를 준다', () => {
     expect(hostOf({ source: 'putty', name: 'x' } as never)).toEqual({});
     expect(hostOf({ source: 'putty', name: 'x', host: 'oops' } as never)).toEqual({});

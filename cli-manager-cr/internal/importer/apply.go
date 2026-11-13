@@ -102,7 +102,11 @@ func ApplyCandidates(slCands []Candidate, szFolderName string, slGroups []map[st
 	slNewHosts := []map[string]any{}
 	mapJumpPending := map[string]string{}
 	for _, cand := range slCands {
-		mapHost, szHostId, errBuild := buildHost(cand, szGroupId, len(out.Hosts)+len(slNewHosts), keys, &out.Result)
+		szHostGroup, errPath := ensureFolderPath(&out.Groups, szGroupId, cand.M_slFolderPath)
+		if errPath != nil {
+			return out, errPath
+		}
+		mapHost, szHostId, errBuild := buildHost(cand, szHostGroup, len(out.Hosts)+len(slNewHosts), keys, &out.Result)
 		if errBuild != nil {
 			return out, errBuild
 		}
@@ -135,6 +139,50 @@ func ApplyCandidates(slCands []Candidate, szFolderName string, slGroups []map[st
 
 	out.Hosts = append(out.Hosts, slNewHosts...)
 	return out, nil
+}
+
+// findChildGroup 은 부모(빈 문자열이면 최상위) 아래 이름이 같은 폴더 id 를 찾는다.
+func findChildGroup(slGroups []map[string]any, szParentId string, szName string) string {
+	if szParentId == "" {
+		return findTopGroup(slGroups, szName)
+	}
+	for _, mapGroup := range slGroups {
+		szParent, _ := mapGroup["parentId"].(string)
+		if szValue, _ := mapGroup["name"].(string); szParent == szParentId && szValue == szName {
+			szId, _ := mapGroup["id"].(string)
+			return szId
+		}
+	}
+	return ""
+}
+
+// ensureFolderPath 는 szBaseId 아래에 하위 폴더 경로를 찾거나 만들고 마지막 폴더 id 를 돌려준다 (import.md §4 하위 폴더).
+// 빈 이름은 건너뛴다. 새 폴더의 정렬 키는 그때의 폴더 수다.
+func ensureFolderPath(pGroups *[]map[string]any, szBaseId string, slPath []string) (string, error) {
+	szCurrent := szBaseId
+	for _, szName := range slPath {
+		szName = strings.TrimSpace(szName)
+		if szName == "" {
+			continue
+		}
+		if szFound := findChildGroup(*pGroups, szCurrent, szName); szFound != "" {
+			szCurrent = szFound
+			continue
+		}
+		szNewId, errId := uid.New()
+		if errId != nil {
+			return "", errId
+		}
+		*pGroups = append(*pGroups, map[string]any{
+			"id":       szNewId,
+			"parentId": nilIfEmpty(szCurrent),
+			"name":     szName,
+			"env":      G_cszDefaultGroupEnv,
+			"sort":     len(*pGroups),
+		})
+		szCurrent = szNewId
+	}
+	return szCurrent, nil
 }
 
 // findHostByAddress 는 주소가 같은 서버 id 를 찾는다 (자기 자신 제외).

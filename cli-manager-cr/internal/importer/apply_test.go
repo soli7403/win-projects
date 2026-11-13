@@ -82,3 +82,50 @@ func TestApplyLockedVaultUsesAgent(t *testing.T) {
 		t.Fatal("폴더 이름이 비면 최상위여야 함")
 	}
 }
+
+// TestApplyFolderPath 는 folderPath 로 하위 폴더를 만들고 같은 이름 폴더를 다시 쓰는지 확인한다 (import.md §4 하위 폴더).
+func TestApplyFolderPath(t *testing.T) {
+	slGroups := []map[string]any{
+		{"id": "g-top", "parentId": nil, "name": "SecureCRT", "env": "none", "sort": 0},
+		{"id": "g-mds", "parentId": "g-top", "name": "MDS", "env": "none", "sort": 1},
+	}
+	slCands := []Candidate{
+		{M_szSource: G_cszSourceSecureCrt, M_szName: "a", M_host: HostDraft{M_szHost: "10.0.0.1"}, M_slFolderPath: []string{"MDS"}},
+		{M_szSource: G_cszSourceSecureCrt, M_szName: "b", M_host: HostDraft{M_szHost: "10.0.0.2"}, M_slFolderPath: []string{"mds-테스트", "inner"}},
+		{M_szSource: G_cszSourceSecureCrt, M_szName: "c", M_host: HostDraft{M_szHost: "10.0.0.3"}, M_slFolderPath: []string{"mds-테스트", " "}},
+		{M_szSource: G_cszSourceSecureCrt, M_szName: "d", M_host: HostDraft{M_szHost: "10.0.0.4"}},
+	}
+	out, errApply := ApplyCandidates(slCands, "SecureCRT", slGroups, nil, nil)
+	if errApply != nil {
+		t.Fatal(errApply)
+	}
+	if len(out.Groups) != 4 {
+		t.Fatalf("새 폴더는 mds-테스트, inner 두 개여야 함: %+v", out.Groups)
+	}
+	mapByName := map[string]map[string]any{}
+	for _, mapGroup := range out.Groups {
+		mapByName[mapGroup["name"].(string)] = mapGroup
+	}
+	szTest, _ := mapByName["mds-테스트"]["id"].(string)
+	if mapByName["mds-테스트"]["parentId"] != "g-top" || mapByName["inner"]["parentId"] != szTest {
+		t.Fatalf("부모 연결 불일치: %+v", out.Groups)
+	}
+	slWant := []any{"g-mds", mapByName["inner"]["id"], szTest, "g-top"}
+	for iIndex, mapHost := range out.Hosts {
+		if mapHost["groupId"] != slWant[iIndex] {
+			t.Fatalf("%d 번째 서버 폴더 불일치: %v != %v", iIndex, mapHost["groupId"], slWant[iIndex])
+		}
+		if slTags, _ := mapHost["tags"].([]string); len(slTags) != 1 || slTags[0] != "securecrt" {
+			t.Fatalf("태그 불일치: %v", mapHost["tags"])
+		}
+	}
+
+	// 넣을 폴더가 비면 최상위부터 만든다.
+	outRoot, errRoot := ApplyCandidates(slCands[:1], "", nil, nil, nil)
+	if errRoot != nil {
+		t.Fatal(errRoot)
+	}
+	if len(outRoot.Groups) != 1 || outRoot.Groups[0]["parentId"] != nil || outRoot.Hosts[0]["groupId"] != outRoot.Groups[0]["id"] {
+		t.Fatalf("최상위 생성 불일치: %+v / %+v", outRoot.Groups, outRoot.Hosts)
+	}
+}
