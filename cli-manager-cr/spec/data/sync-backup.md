@@ -4,13 +4,11 @@
 
 ## 1. 데이터 폴더와 파일
 
-- 데이터 폴더: 환경 변수 `DARITERM_DATA`(없으면 옛 `TERMGO_DATA`)가 있으면 그 경로, 없으면 `<사용자 설정 폴더>\DariTerm\data`(Windows: `%APPDATA%\DariTerm\data`). 없으면 만든다(권한 소유자 전용).
-  - **이전 (2026-11-12, 제품 이름 TermGo → DariTerm)**: 새 폴더가 없고 옛 `<사용자 설정 폴더>\TermGo\data` 가 있으면 시작할 때 통째로 복사해 온다. 임시 폴더에 다 복사한 뒤 이름을 바꾸므로, 실패하면 새 폴더를 만들지 않고 시작 오류가 난다. 옛 폴더는 백업으로 그대로 둔다. 새 폴더가 이미 있으면 복사하지 않는다.
-  - 동기화 형식 이름·파일 이름, 백업 파일 안의 앱 식별자, 볼트 암호화의 연관 데이터 문자열은 호환을 위해 이름 변경 전 값(`termgo…`)을 그대로 쓴다.
+- 데이터 폴더: 환경 변수 `DARITERM_DATA`가 있으면 그 경로, 없으면 `<사용자 설정 폴더>\DariTerm\data`(Windows: `%APPDATA%\DariTerm\data`). 없으면 만든다(권한 소유자 전용).
 - 파일 목록: `store.json`(data/store.md), `vault.json`(data/vault.md), `window.json`(창 상태), `update.json`(마지막 안내 버전), `sync-base.json`·`sync-repo/`(git 동기화), `logs/`(세션 로그).
 - **저장 방식(JSON 파일 공통)**: 들여쓰기 2칸으로 직렬화 → 기존 내용을 `<파일>.bak` 으로 복사 → `<파일>.tmp` 에 쓰고 이름을 바꿔 교체. 파일 권한은 소유자 전용. 읽을 때 본 파일이 읽히지 않거나 JSON 이 깨져 있으면 `.bak` 을 시도하고, 둘 다 없으면 "없음".
 - **"없음"과 "깨짐"을 구분한다.** `store.json`: 본 파일·`.bak` 모두 **없으면** 빈 저장소로 시작, **존재하지만 둘 다 읽을 수 없으면(깨짐)** 앱이 오류 메시지를 보이고 시작하지 않는다(데이터를 덮어쓰지 않기 위해). `vault.json`: 둘 다 없으면 미초기화 상태. **둘 다 깨졌으면 미초기화로 취급하되, 새 볼트를 만들기 전에 깨진 파일을 `vault.json.corrupt-<YYYYMMDD-HHmmss>` 로 옮겨 보존**한다(사용자 데이터를 잃지 않게 하는 이 프로젝트의 선택, 결정 S1).
-- 다른 OS 의 기본 데이터 폴더: 운영체제의 사용자 설정 폴더(`os.UserConfigDir` 에 해당) 아래 `TermGo/data`.
+- 다른 OS 의 기본 데이터 폴더: 운영체제의 사용자 설정 폴더(`os.UserConfigDir` 에 해당) 아래 `DariTerm/data`.
 
 ## 2. store.json 저장 규칙
 
@@ -25,11 +23,11 @@
 ## 3. 백업 파일
 
 사용자가 저장 위치를 고르는 대화상자로 내보낸다.
-- 기본 파일 이름 `termgo-backup-YYYY-MM-DD.tgbackup`, 기본 폴더는 문서 폴더, 필터 "백업 (*.tgbackup)". **가져오기**는 `*.tgbackup`, `*.btbackup`, `*.json` 을 모두 받는다.
+- 기본 파일 이름 `dariterm-backup-YYYY-MM-DD.dtbackup`, 기본 폴더는 문서 폴더, 필터 "백업 (*.dtbackup)". **가져오기**는 `*.dtbackup`, 원본 앱의 `*.btbackup`, `*.json` 을 받는다.
 - 내용(JSON, 들여쓰기 2칸, 권한 소유자 전용): 
   | 필드 | 값 |
   |---|---|
-  | app | 새로 쓸 때 `termgo` (읽을 때는 `termgo` 와 `brightterm` 둘 다 인정, 그 외는 오류 "백업 파일이 아닙니다") |
+  | app | 새로 쓸 때 `dariterm` (읽을 때는 `dariterm` 과 원본 앱의 `brightterm` 을 인정, 그 외는 오류 "백업 파일이 아닙니다") |
   | version | 1 |
   | exportedAt | 밀리초 타임스탬프 |
   | store | store.json 최상위 객체 전체(설정은 병합 전 저장 값 그대로가 아니라 읽기 요청이 돌려주는 형태) |
@@ -45,11 +43,11 @@
 
 **목적**: 서버·폴더·스니펫·저장된 계정(볼트 항목)을 비공개 git 저장소로 여러 PC 에서 맞춘다. **설정·호스트 키는 동기화하지 않는다.**
 
-### 5.1 저장소에 올라가는 파일 (`termgo-sync.json`, 저장소 루트 하나)
+### 5.1 저장소에 올라가는 파일 (`dariterm-sync.json`, 저장소 루트 하나)
 ```
-{ "format": "termgo-sync-1",
+{ "format": "dariterm-sync-1",
   "vault":   <볼트 헤더: data/vault.md §8>,
-  "payload": { "iv": ..., "tag": ..., "ct": ... } }   // 볼트 키로 암호화, AAD = "termgo-sync"
+  "payload": { "iv": ..., "tag": ..., "ct": ... } }   // 볼트 키로 암호화, AAD = "dariterm-sync"
 ```
 payload 평문(JSON): `{ groups, hosts, snippets, creds }` — 각각 **id → 항목 JSON** 맵. `creds` 는 볼트 항목(암호화된 비밀 + 이름·종류·사용자 이름) 전체. 파일에는 항목 이름·서버 주소·계정 이름이 평문으로 나가지 않는다(볼트 헤더는 항목 없음).
 쓸 때는 들여쓰기 1칸. 읽을 때 `format` 이 다르거나 JSON 이 깨지면 오류 "동기화 파일 형식을 알 수 없습니다".
@@ -81,7 +79,7 @@ payload 평문(JSON): `{ groups, hosts, snippets, creds }` — 각각 **id → �
    - payload 를 현재 볼트 키로 복호화한다. **실패하면 상태 `vault-mismatch`**, 메시지 "저장소의 암호화 데이터가 이 PC 와 다릅니다"(사용자가 받기/덮어쓰기를 고른다). 해석 실패면 오류 "동기화 파일 해석 실패".
 4. 병합: 원격이 있으면 (기준, 이 PC, 원격)을 병합, 없으면 이 PC 값 그대로.
 5. 병합 결과가 이 PC 현재 데이터와 다르거나 "저장소 데이터 받기" 모드면 이 PC 에 반영한다: 볼트 항목 전체 교체, `groups`/`hosts`/`snippets` 를 병합 결과로 교체(**기존 배열의 순서를 최대한 유지**하고 새 항목은 id 오름차순으로 뒤에 붙임). 이 PC 가 바뀌었으면 "변경됨".
-6. 원격이 없거나 병합 결과가 원격과 다르면 저장소 파일을 새로 쓰고 **그 파일만** 커밋해서 푸시한다. 커밋 작성자 `TermGo <termgo@localhost>`, 메시지 `TermGo sync`. 바뀐 게 없으면 커밋하지 않는다. 푸시 대상은 `HEAD:refs/heads/<브랜치>`. 푸시가 실패하면 1회 재시도, 그래도 실패하면 오류.
+6. 원격이 없거나 병합 결과가 원격과 다르면 저장소 파일을 새로 쓰고 **그 파일만** 커밋해서 푸시한다. 커밋 작성자 `DariTerm <dariterm@localhost>`, 메시지 `DariTerm sync`. 바뀐 게 없으면 커밋하지 않는다. 푸시 대상은 `HEAD:refs/heads/<브랜치>`. 푸시가 실패하면 1회 재시도, 그래도 실패하면 오류.
 7. 기준 파일을 병합 결과로 저장하고 마지막 성공 시각을 **메모리에만** 기록한다(파일에 저장하지 않음). 결과 상태 `ok`(+ 마지막 동기화 시각, 변경됨 여부).
 
 git 호출 규칙: 사용자 입력을 기다리는 프롬프트로 멈추지 않도록 터미널 프롬프트·askpass·자격 증명 도우미 상호작용을 끄고(`GIT_TERMINAL_PROMPT=0`, `GIT_ASKPASS` 비움, `GCM_INTERACTIVE=never`, 로케일 C), Windows 에서는 콘솔 창을 띄우지 않는다. git 오류 메시지는 끝 3줄을 ` / ` 로 이어 `git <명령>: <내용>` 으로 보여 준다. 앱은 git 자격 증명을 저장하지 않는다.

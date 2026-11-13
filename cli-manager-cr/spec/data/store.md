@@ -68,7 +68,7 @@
 | 키 | 기본값 | 설명 |
 |---|---|---|
 | theme | `dark` | `dark` / `light` (앱 외형) |
-| terminalTheme | `TermGo Dark` | 터미널 색 테마 이름 (ui/tokens.md) |
+| terminalTheme | `DariTerm Dark` | 터미널 색 테마 이름 (ui/tokens.md) |
 | fontFamily | `'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace` | |
 | fontSize | 14 | 허용 8~32 |
 | lineHeight | 1.15 | |
@@ -83,7 +83,7 @@
 | dangerousPatterns | 아래 목록 | 정규식 문자열 배열 |
 | autoReconnect | true | |
 | autoLockMinutes | 15 | 0 이면 자동 잠금 없음 |
-| uploadDir | `~/.dariterm/uploads` (2026-11-12 전 기본값 `~/.termgo/uploads` — 이미 저장된 값은 그대로) | 붙여넣기 이미지·파일 업로드 폴더 |
+| uploadDir | `~/.dariterm/uploads`  | 붙여넣기 이미지·파일 업로드 폴더 |
 | uploadCleanupDays | 7 | |
 | maxVerticalSplits | 3 | 탭 하나의 최대 칸 수(상하 분할 한도), 1~5 ([../ui/panes.md](../ui/panes.md) §2) |
 | transferTempDir | `""` | 서버 ↔ 서버 복사 때 거쳐 가는 이 PC 임시 폴더. 빈 값 = OS 임시 폴더 아래 dariterm-transfer ([../behavior/file-panel.md](../behavior/file-panel.md) §4) |
@@ -103,7 +103,7 @@
 dangerousPatterns 기본 목록(정규식 원문, 순서 유지):
 `rm\s+-[a-zA-Z]*r[a-zA-Z]*f`, `rm\s+-[a-zA-Z]*f[a-zA-Z]*r`, `\breboot\b`, `\bshutdown\b`, `\bhalt\b`, `\bpoweroff\b`, `mkfs`, `dd\s+if=`, `\bDROP\s+(TABLE|DATABASE)\b`, `\bTRUNCATE\b`, `systemctl\s+(stop|restart)`
 
-호환 규칙: 저장된 `terminalTheme` 이 `BrightTerm ` 으로 시작하면 `TermGo ` 로 시작하도록 접두어를 바꿔 읽는다.
+호환 규칙: 원본 앱(BrightTerm)의 store.json 을 열 때 그 이름이 든 값을 바꾸고 파일에도 저장한다. `terminalTheme` 이 `BrightTerm ` 으로 시작하면 `DariTerm ` 으로, `uploadDir` 경로 안의 폴더 이름 한 칸이 정확히 `.brightterm` 이면 `.dariterm` 으로. 화면도 저장값 테마 이름의 `BrightTerm ` 접두어를 같은 규칙으로 읽는다.
 
 ## 5. 저장 레이아웃 (layout)
 
