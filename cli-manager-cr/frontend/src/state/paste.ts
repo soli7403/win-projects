@@ -45,7 +45,7 @@ export async function uploadAndInsert(
       return;
     }
     if (isSftp) {
-      pushToast({ kind: 'info', text: `${info?.title ?? '서버'} 서버로 전송 중...` });
+      pushToast({ kind: 'info', text: `${label} 서버로 전송 중...` });
       const paths = await getBackend().invoke<string[]>('sftp.uploadForPrompt', [sessionId, original]);
       pushToast({ kind: 'ok', text: `${label} 전송 완료 → ${paths.join(', ')}` });
       insertPaths(targets, paths);

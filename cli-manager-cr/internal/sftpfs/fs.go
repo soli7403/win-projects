@@ -182,6 +182,11 @@ func (pFs *Fs) Mkdir(szPath string) error {
 	return pFs.be.Mkdir(szPath)
 }
 
+// MkdirAll 은 중간 폴더까지 만든다. 이미 있으면 nil 이다.
+func (pFs *Fs) MkdirAll(szPath string) error {
+	return pFs.be.MkdirAll(szPath)
+}
+
 // Rename 은 이름을 바꾼다 (이동도 같은 호출).
 func (pFs *Fs) Rename(szOld string, szNew string) error {
 	return pFs.be.Rename(szOld, szNew)

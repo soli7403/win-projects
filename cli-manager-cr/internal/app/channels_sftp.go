@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -292,8 +293,9 @@ func (pService *Service) registerSftp() {
 			return nil, errArg
 		}
 		szDir := pService.remoteUploadDir(svc)
-		// 이미 있으면 실패하는 것이 정상이므로 오류는 무시한다 (없을 때의 실패는 업로드 단계에서 드러난다).
-		_ = svc.Fs.Mkdir(szDir)
+		if errDir := ensureUploadDir(svc.Fs, szDir); errDir != nil {
+			return nil, errDir
+		}
 		slOut, errUp := pService.uploadPrompt(svc, origin, szDir)
 		if errUp == nil {
 			go func() {
@@ -383,6 +385,15 @@ func (pService *Service) remoteUploadDir(svc *sftpfs.Service) string {
 		}
 	}
 	return szDir
+}
+
+// ensureUploadDir 는 서버 업로드 폴더를 중간 폴더까지 만든다 (behavior/terminal.md §5 "없으면 자동으로 만든다").
+// 기본값 ~/.dariterm/uploads 처럼 상위 폴더도 없을 수 있어 한 단계만 만드는 Mkdir 로는 부족하다.
+func ensureUploadDir(pFs *sftpfs.Fs, szDir string) error {
+	if errMk := pFs.MkdirAll(szDir); errMk != nil {
+		return fmt.Errorf("업로드 폴더를 만들지 못했습니다 (%s): %w", szDir, errMk)
+	}
+	return nil
 }
 
 // decodeBuffer 는 {"__b64": "..."} 로 감싼 바이트를 푼다.
