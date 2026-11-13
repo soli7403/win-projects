@@ -161,7 +161,7 @@ export function Sidebar() {
 
   const hostMenu = (h: Host): MenuItem[] => [
     { label: '새 탭에서 연결', shortcut: 'Enter', onSelect: () => void openHost(h.id) },
-    { label: '오른쪽으로 분할해 연결', onSelect: () => void openHost(h.id, { kind: 'split', dir: 'row' }) },
+    { label: '오른쪽으로 분할해 연결', onSelect: () => void openHost(h.id, { kind: 'rightGroup' }) },
     { label: '아래로 분할해 연결', onSelect: () => void openHost(h.id, { kind: 'split', dir: 'col' }) },
     { label: '위치 골라서 연결…', onSelect: () => useUi.getState().openLocation(h.id) },
     { separator: true },
@@ -194,7 +194,7 @@ export function Sidebar() {
     if (!h || e.target instanceof HTMLInputElement) return;
     if (e.key === 'F2') openEditor({ kind: 'host', hostId: h.id, groupId: null });
     if (e.key === 'Delete') void removeHost(h);
-    if (e.key === 'Enter') void openHost(h.id, e.ctrlKey ? { kind: 'split', dir: 'row' } : e.shiftKey ? { kind: 'split', dir: 'col' } : { kind: 'tab' });
+    if (e.key === 'Enter') void openHost(h.id, e.ctrlKey ? { kind: 'rightGroup' } : e.shiftKey ? { kind: 'split', dir: 'col' } : { kind: 'tab' });
   };
 
   const onResizeDown = (e: RPointerEvent<HTMLDivElement>) => {
@@ -263,7 +263,7 @@ export function Sidebar() {
         ) : null}
         {hoverId === h.id && opts.selectable && (
           <span style={{ display: 'inline-flex', gap: 2 }}>
-            <button className="btn small-btn" title="분할로 연결" onClick={(e) => { e.stopPropagation(); void openHost(h.id, { kind: 'split', dir: 'row' }); }}>분할로 연결</button>
+            <button className="btn small-btn" title="분할로 연결" onClick={(e) => { e.stopPropagation(); void openHost(h.id, { kind: 'rightGroup' }); }}>분할로 연결</button>
             <button className="btn small-btn" title="하나 더 연결" onClick={(e) => { e.stopPropagation(); void openHost(h.id); }}>하나 더 연결</button>
           </span>
         )}

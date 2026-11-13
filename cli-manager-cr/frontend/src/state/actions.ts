@@ -26,10 +26,13 @@ export function canSplitMore(root: LayoutNode, max = maxVerticalSplits()): boole
   return paneIds(root).length < max;
 }
 
-/** 저장된 서버 또는 즉석 접속을 연다. where: 새 탭, 또는 포커스 칸 기준 분할/빈 칸 채우기. */
+/** 저장된 서버 또는 즉석 접속을 연다. where: 새 탭, 오른쪽 그룹의 새 탭, 또는 포커스 칸 기준 분할/빈 칸 채우기. */
 export async function openHost(
   hostId: string | null,
-  where: { kind: 'tab' } | { kind: 'split'; dir: Dir; before?: boolean; paneId?: string | null } = { kind: 'tab' },
+  where:
+    | { kind: 'tab' }
+    | { kind: 'rightGroup' }
+    | { kind: 'split'; dir: Dir; before?: boolean; paneId?: string | null } = { kind: 'tab' },
   adhoc?: unknown,
 ): Promise<void> {
   const info = await openSessionFor(hostId, adhoc);
@@ -37,6 +40,14 @@ export async function openHost(
   const ws = useWorkspace.getState();
   if (where.kind === 'tab') {
     ws.openInNewTab(info);
+    return;
+  }
+  if (where.kind === 'rightGroup') {
+    // 화면을 좌우로 나눠 오른쪽 그룹에 새 탭으로 연다 — 탭 막대 오른쪽에 그 서버 이름 탭이 생긴다 (D56).
+    // 탭이 이것 하나뿐이면 나눌 상대가 없으므로 그냥 새 탭이다.
+    ws.openInNewTab(info);
+    const nt = useWorkspace.getState().activeTabId;
+    if (nt) useWorkspace.getState().moveTabToGroup(nt, 1);
     return;
   }
   // 분할 대상이 없으면 새 탭. 포커스 칸이 빈 칸이면 그 칸을 채운다.
