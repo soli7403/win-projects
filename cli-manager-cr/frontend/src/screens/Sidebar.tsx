@@ -150,16 +150,38 @@ export function Sidebar() {
     }
   };
 
+  // 폴더 삭제(D58): ① 폴더 삭제 확인(취소하면 아무것도 안 함) → ② 안에 서버가 있으면 서버도 지울지 묻는다.
+  // ②에서 [아니오]는 지금까지처럼 서버를 상위 폴더로 옮기고, [취소]·X·Esc·바깥 클릭은 삭제 자체를 취소한다.
   const deleteFolder = async (g: Group) => {
+    const count = countHostsIn(groups, hosts, g.id);
+    const parentName = g.parentId ? groups.find((x) => x.id === g.parentId)?.name : undefined;
+    const moveTo = parentName ? `"${parentName}" 폴더` : '최상위';
     const ok = await confirm({
       title: '폴더 삭제',
-      body: `"${g.name}" 폴더를 삭제할까요? 안의 서버는 상위 폴더로 옮겨집니다.`,
+      body: count > 0 ? `"${g.name}" 폴더를 삭제할까요?` : `"${g.name}" 폴더를 삭제할까요? 안의 서버는 상위 폴더로 옮겨집니다.`,
       okText: '삭제',
       danger: true,
     });
     if (!ok) return;
-    const plan = folderDeletePlan(groups, hosts, g.id);
+    let withHosts = false;
+    if (count > 0) {
+      const ans = await useUi.getState().ask({
+        title: '폴더 안의 서버',
+        body: `"${g.name}" 폴더 안의 서버 ${count}개(하위 폴더 포함)도 모두 삭제할까요?`,
+        detail: `[아니오]를 누르면 폴더만 삭제하고 서버는 ${moveTo}(으)로 옮깁니다. [취소]하면 아무것도 삭제하지 않습니다.`,
+        okText: '서버까지 삭제',
+        noText: '아니오 (폴더만 삭제)',
+        danger: true,
+      });
+      if (ans === null) return;
+      withHosts = ans === 'yes';
+    }
+    const plan = folderDeletePlan(groups, hosts, g.id, withHosts);
     await patchStore({ groups: plan.groups, hosts: plan.hosts });
+    if (withHosts) {
+      if (selected && !plan.hosts.some((x) => x.id === selected)) setSelected(null);
+      pushToast({ kind: 'info', text: `"${g.name}" 폴더와 서버 ${count}개를 삭제했습니다` });
+    }
   };
 
   const hostMenu = (h: Host): MenuItem[] => [

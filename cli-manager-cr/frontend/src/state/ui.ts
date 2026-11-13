@@ -9,6 +9,15 @@ export interface ConfirmOptions {
   danger?: boolean;
 }
 
+/** 예/아니오/취소 세 갈래 질문. 아니오도 뜻이 있는 동작일 때 쓴다(예: 폴더만 삭제). */
+export interface AskOptions extends ConfirmOptions {
+  /** [아니오] 단추 문구. */
+  noText: string;
+}
+
+/** ask 결과: 'yes' = 확인 단추, 'no' = 아니오 단추, null = 취소·Esc·X·바깥 클릭. */
+export type AskResult = 'yes' | 'no' | null;
+
 export interface PromptOptions {
   title: string;
   label?: string;
@@ -18,6 +27,7 @@ export interface PromptOptions {
 
 type DialogReq =
   | { kind: 'confirm'; opts: ConfirmOptions; resolve: (v: boolean) => void }
+  | { kind: 'ask'; opts: AskOptions; resolve: (v: AskResult) => void }
   | { kind: 'prompt'; opts: PromptOptions; resolve: (v: string | null) => void };
 
 export interface MenuItem {
@@ -86,6 +96,8 @@ interface UiState {
   confirm: (opts: ConfirmOptions) => Promise<boolean>;
   /** 입력 대화상자. 취소=null. */
   prompt: (opts: PromptOptions) => Promise<string | null>;
+  /** 세 갈래 질문. 취소·Esc·X·바깥 클릭은 null — 아니오와 구분된다. */
+  ask: (opts: AskOptions) => Promise<AskResult>;
   /** 맨 앞 대화상자를 끝낸다(호스트가 호출). */
   settleDialog: (value: unknown) => void;
 }
@@ -163,11 +175,14 @@ export const useUi = create<UiState>((set, get) => ({
     new Promise<boolean>((resolve) => set((s) => ({ dialogs: [...s.dialogs, { kind: 'confirm', opts, resolve }] }))),
   prompt: (opts) =>
     new Promise<string | null>((resolve) => set((s) => ({ dialogs: [...s.dialogs, { kind: 'prompt', opts, resolve }] }))),
+  ask: (opts) =>
+    new Promise<AskResult>((resolve) => set((s) => ({ dialogs: [...s.dialogs, { kind: 'ask', opts, resolve }] }))),
   settleDialog(value) {
     const [first, ...rest] = get().dialogs;
     if (!first) return;
     set({ dialogs: rest });
     if (first.kind === 'confirm') first.resolve(value === true);
+    else if (first.kind === 'ask') first.resolve(value === 'yes' || value === 'no' ? value : null);
     else first.resolve(typeof value === 'string' ? value : null);
   },
 }));

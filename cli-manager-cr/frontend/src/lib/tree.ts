@@ -96,13 +96,24 @@ export function moveHost(hosts: Host[], hostId: string, targetGroupId: string | 
   return hosts.map((x) => (x.id === hostId ? { ...x, groupId: targetGroupId } : x));
 }
 
-/** 폴더 삭제 계획(§8, B7): 하위 폴더까지 지우고, 안의 서버는 삭제된 폴더의 상위 폴더로 옮긴다. */
-export function folderDeletePlan(groups: Group[], hosts: Host[], folderId: string): { groups: Group[]; hosts: Host[] } {
+/**
+ * 폴더 삭제 계획(§8, B7): 하위 폴더까지 지운다. 안의 서버(하위 폴더 포함)는
+ * withHosts 면 함께 지우고, 아니면 삭제된 폴더의 상위 폴더(최상위면 폴더 없음)로 옮긴다.
+ */
+export function folderDeletePlan(
+  groups: Group[],
+  hosts: Host[],
+  folderId: string,
+  withHosts = false,
+): { groups: Group[]; hosts: Host[] } {
   const doomed = descendantGroupIds(groups, folderId);
   const target = groups.find((g) => g.id === folderId)?.parentId ?? null;
+  const inside = (h: Host) => !!h.groupId && doomed.has(h.groupId);
   return {
     groups: groups.filter((g) => !doomed.has(g.id)),
-    hosts: hosts.map((h) => (h.groupId && doomed.has(h.groupId) ? { ...h, groupId: target } : h)),
+    hosts: withHosts
+      ? hosts.filter((h) => !inside(h))
+      : hosts.map((h) => (inside(h) ? { ...h, groupId: target } : h)),
   };
 }
 

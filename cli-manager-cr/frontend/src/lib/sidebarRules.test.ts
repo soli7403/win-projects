@@ -57,6 +57,17 @@ describe('사이드바 규칙', () => {
     expect(rootPlan.hosts[0].groupId).toBeNull();
   });
 
+  it('B7b: 서버까지 삭제를 고르면 폴더·하위 폴더 안의 서버만 지우고 나머지는 그대로', () => {
+    const top = g('p', null, '상위');
+    const mid = g('m', 'p', '중간');
+    const deep = g('d', 'm', '깊이');
+    const hosts = [h('1', 'a', 'm'), h('2', 'b', 'd'), h('3', 'c', 'p'), h('4', 'z', null)];
+    const plan = folderDeletePlan([top, mid, deep], hosts, 'm', true);
+    expect(plan.groups.map((x) => x.id)).toEqual(['p']);
+    expect(plan.hosts.map((x) => x.id)).toEqual(['3', '4']);
+    expect(plan.hosts.find((x) => x.id === '3')?.groupId).toBe('p');
+  });
+
   it('B8: 복제는 새 id, " (복사본)", 최근 사용 기록 없음', () => {
     const src = h('1', 'web', null, { lastUsedAt: 123 });
     const copy = duplicateHostRecord(src, 'new', 9);
