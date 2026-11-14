@@ -50,6 +50,10 @@ export const DEFAULT_SETTINGS: Settings = {
   osc52Copy: true,
   sidebarWidth: 260,
   rightPanelWidth: 340,
+  usage: '',
+  usageSince: 0,
+  licenseKey: '',
+  domainNoticeDone: false,
 };
 
 /** label 은 문구 키(D75) — 그릴 때 t() 로 바꾼다. */

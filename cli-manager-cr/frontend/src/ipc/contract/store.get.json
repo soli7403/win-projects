@@ -24,11 +24,13 @@
       "\\bTRUNCATE\\b",
       "systemctl\\s+(stop|restart)"
     ],
+    "domainNoticeDone": false,
     "fontFamily": "'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace",
     "fontSize": 14,
     "guardDangerousOnProd": true,
     "insertPathQuote": true,
     "language": "",
+    "licenseKey": "",
     "lineHeight": 1.15,
     "maxVerticalSplits": 3,
     "osc52Copy": true,
@@ -47,7 +49,9 @@
     "transferTempDir": "",
     "updateCheck": true,
     "uploadCleanupDays": 7,
-    "uploadDir": "~/.dariterm/uploads"
+    "uploadDir": "~/.dariterm/uploads",
+    "usage": "",
+    "usageSince": 0
   },
   "snippets": [],
   "version": 1

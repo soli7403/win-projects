@@ -60,6 +60,11 @@ func contractNormalize(anyValue any, szKey string) any {
 			return 0
 		}
 		return v
+	case bool:
+		if szKey == "domainJoined" {
+			return false // PC 마다 다르다
+		}
+		return v
 	}
 	return anyValue
 }
@@ -130,6 +135,8 @@ func TestContractChannels(t *testing.T) {
 	defer pService.pSessions.CloseAll()
 
 	contractCheck(t, "app.info", contractInvoke(t, pService, "app.info", "[]"))
+	contractCheck(t, "license.check.none", contractInvoke(t, pService, "license.check", `[""]`))
+	contractCheck(t, "license.check.invalid", contractInvoke(t, pService, "license.check", `["DT1.abc.def"]`))
 	contractCheck(t, "store.get", contractInvoke(t, pService, "store.get", "[]"))
 	contractCheck(t, "store.patch", contractInvoke(t, pService, "store.patch", `[{"snippets":null}]`))
 	contractCheck(t, "store.get.afterNullPatch", contractInvoke(t, pService, "store.get", "[]"))

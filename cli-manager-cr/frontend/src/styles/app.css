@@ -20,6 +20,7 @@ button { font: inherit; color: inherit; }
 .faint { color: var(--fg-3); }
 .small { font-size: 11.5px; }
 .err-text { color: var(--danger); font-size: 12px; min-height: 16px; }
+.warn-text { color: var(--warn); }
 
 /* 버튼 */
 .btn {
@@ -171,6 +172,11 @@ button { font: inherit; color: inherit; }
 }
 .lang-item:hover { background: var(--hover); }
 .lang-item.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); font-weight: 600; }
+/* 첫 실행 용도 선택(D78) */
+.usage-list { display: flex; flex-direction: column; gap: 6px; }
+.usage-item { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; }
+.usage-item .usage-title { font-weight: 600; }
+.usage-item .usage-desc { font-size: 12px; color: var(--fg-2); font-weight: 400; line-height: 1.5; }
 .lock-actions { display: flex; flex-direction: column; gap: 10px; }
 .lock-actions .btn { justify-content: center; }
 .center-row { display: flex; justify-content: center; }

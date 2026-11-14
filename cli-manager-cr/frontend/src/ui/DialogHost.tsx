@@ -6,7 +6,7 @@ import { t } from '../i18n';
 
 function ConfirmView({ opts }: { opts: ConfirmOptions }) {
   const settle = useUi((s) => s.settleDialog);
-  const cancel = () => settle(false);
+  const cancel = () => settle(!!opts.noCancel);
   const ok = () => settle(true);
   return (
     <Modal
@@ -15,7 +15,7 @@ function ConfirmView({ opts }: { opts: ConfirmOptions }) {
       onClose={cancel}
       foot={
         <>
-          <button className="btn" onClick={cancel} autoFocus={!!opts.danger}>{t('common.cancel')}</button>
+          {!opts.noCancel && <button className="btn" onClick={cancel} autoFocus={!!opts.danger}>{t('common.cancel')}</button>}
           <button className={opts.danger ? 'btn danger' : 'btn primary'} onClick={ok} autoFocus={!opts.danger}>
             {opts.okText ?? t('common.ok')}
           </button>

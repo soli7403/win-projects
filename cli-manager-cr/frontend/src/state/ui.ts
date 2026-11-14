@@ -7,6 +7,8 @@ export interface ConfirmOptions {
   detail?: string;
   okText?: string;
   danger?: boolean;
+  /** 알림 전용: [취소] 없이 [확인]만. 닫아도 확인과 같다. */
+  noCancel?: boolean;
 }
 
 /** 예/아니오/취소 세 갈래 질문. 아니오도 뜻이 있는 동작일 때 쓴다(예: 폴더만 삭제). */

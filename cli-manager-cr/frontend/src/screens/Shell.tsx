@@ -18,6 +18,7 @@ import { Sidebar } from './Sidebar';
 import { UpdateBadge } from '../ui/UpdateBadge';
 // 이 파일은 t 를 지역 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
 import { relabel, t as tr, type MsgId } from '../i18n';
+import { usageShort, useUsageView } from './LicensePanel';
 
 /** 왼쪽 위 아이콘 묶음: 서버 목록 · 명령 모음 · 일괄 입력 · 설정 (앱 잠그기는 오른쪽 아래 상태 표시줄, D67). 서버 목록이 열려 있으면 가로, 접혀 있으면 세로 막대. */
 export function ToolRow({ vertical }: { vertical: boolean }) {
@@ -106,6 +107,7 @@ export function StatusBar() {
     return !!t?.broadcast;
   });
   const connected = entry?.info.state === 'connected';
+  const usage = useUsageView();
   const now = useNow(connected && !!entry?.info.connectedAt);
   const size = useWorkspace((s) => (focusSid ? s.sizes[focusSid] : undefined));
   const savedHost = useApp((s) => (entry?.info.hostId ? s.store?.hosts.find((h) => h.id === entry.info.hostId) : undefined));
@@ -144,6 +146,10 @@ export function StatusBar() {
       {imageHint && <span className="faint" title={imageTip}>{tr('shell.imageHint')}</span>}
       {savedHost && <span className="faint">{savedHost.encoding.toUpperCase()}</span>}
       {entry && size && <span className="faint">{`${size.cols}×${size.rows}`}</span>}
+      {/* 사용 형태(D78): 개인용 / 업무용 평가 n일 / 회사 이름(사용 허가 수). 누르면 설정 > 정보 */}
+      <button className="link-btn faint" title={tr('lic.usageLabel')} onClick={() => useUi.getState().openSettings('about')}>
+        {usageShort(usage)}
+      </button>
       {open ? (
         <button className="link-btn" title={tr('shell.lockTitle')} onClick={lock}>
           <LockOpen size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />{tr('shell.unlocked')}

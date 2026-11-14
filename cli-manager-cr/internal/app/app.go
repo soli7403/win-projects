@@ -9,6 +9,7 @@ import (
 
 	"dariterm/internal/i18n"
 	"dariterm/internal/ipc"
+	"dariterm/internal/license"
 	"dariterm/internal/session"
 	"dariterm/internal/store"
 	"dariterm/internal/vault"
@@ -67,6 +68,7 @@ func NewService(szDataDir string, emitter ipc.Emitter) (*Service, error) {
 	pService.registerVault()
 	pService.registerCred()
 	pService.registerApp()
+	pService.registerLicense()
 	pService.registerSession()
 	pService.registerShell()
 	pService.registerImport()
@@ -160,6 +162,10 @@ func (pService *Service) registerApp() {
 			"dataDir":  pService.szDataDir,
 			// OS 표시 언어를 지원 언어로 맞춘 값(D75): 첫 실행 언어 선택의 기본값.
 			"osLanguage": i18n.Match(i18n.DetectOS()),
+			// 회사 도메인(AD/Azure AD) 가입 PC 인지(D78): 개인용 안내에만 쓰고 어디에도 보내지 않는다.
+			"domainJoined": license.DomainJoined(),
+			// 업데이트 확인 기능을 쓰는 빌드인지(D80). false 면 화면에서 업데이트 항목을 감춘다.
+			"updateEnabled": UpdateEnabled(),
 		}, nil
 	})
 }

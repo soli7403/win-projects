@@ -11,6 +11,7 @@ import { useUpdate } from '../state/update';
 import { useSetting, Group } from './Settings';
 import { REFERENCE_NOTICE } from '../lib/notices';
 import { aboutLinks, LICENSE_CONTACT, LICENSE_SUMMARY } from '../lib/links';
+import { LicensePanel } from './LicensePanel';
 // 사용 조건 전문: 저장소 루트 LICENSE 를 그대로 싣는다(vite.config 의 server.fs.allow).
 import LICENSE_TEXT from '../../../LICENSE?raw';
 // 오픈소스 고지 전문: 저장소 루트에서 `go run ./tools/notices` 가 만든 복사본(D64).
@@ -20,7 +21,7 @@ import { t } from '../i18n';
 export function SettingsAbout() {
   const [updateCheck, setUpdateCheck] = useSetting('updateCheck');
   const checkNow = useUpdate((s) => s.checkNow);
-  const [info, setInfo] = useState<{ version?: string; dataDir?: string }>({});
+  const [info, setInfo] = useState<{ version?: string; dataDir?: string; updateEnabled?: boolean }>({});
   const pushToast = useApp((s) => s.pushToast);
   const links = aboutLinks();
   const openLink = (url: string) => {
@@ -37,7 +38,7 @@ export function SettingsAbout() {
 
   useEffect(() => {
     getBackend()
-      .invoke<{ version?: string; dataDir?: string }>('app.info')
+      .invoke<{ version?: string; dataDir?: string; updateEnabled?: boolean }>('app.info')
       .then((i) => setInfo(i ?? {}))
       .catch((e) => pushToast({ kind: 'error', text: String(e?.message ?? e) }));
     // pushToast 는 안정적인 참조다.
@@ -56,12 +57,13 @@ export function SettingsAbout() {
 
       <div className="set-stack">
         <div className="set-label">{t('about.developer')}</div>
-        <div>kai</div>
+        <div>YangHun Lee (kai)</div>
       </div>
       <div className="set-stack">
         <div className="set-label">{t('about.license')}</div>
         <div>{t('about.proprietary')}</div>
       </div>
+      <LicensePanel />
       <div className="set-stack">
         <div className="set-label">{t('about.terms')}</div>
         <div>{t('about.termsLine')}</div>
@@ -105,17 +107,20 @@ export function SettingsAbout() {
         </details>
       </div>
 
-      <Group>
-        <ToggleRow
-          title={t('about.updateCheck')}
-          desc={t('about.updateCheckDesc')}
-          checked={updateCheck}
-          onChange={setUpdateCheck}
-        />
-        <div style={{ paddingBottom: 10 }}>
-          <button className="btn small-btn" type="button" onClick={() => void checkNow()}>{t('about.checkNow')}</button>
-        </div>
-      </Group>
+      {/* D80: 업데이트 확인은 배포 저장소가 정해진 빌드에서만 보인다(지금은 꺼짐). */}
+      {info.updateEnabled && (
+        <Group>
+          <ToggleRow
+            title={t('about.updateCheck')}
+            desc={t('about.updateCheckDesc')}
+            checked={updateCheck}
+            onChange={setUpdateCheck}
+          />
+          <div style={{ paddingBottom: 10 }}>
+            <button className="btn small-btn" type="button" onClick={() => void checkNow()}>{t('about.checkNow')}</button>
+          </div>
+        </Group>
+      )}
 
       <div className="set-stack">
         <div className="set-label">{t('about.dataDir')}</div>

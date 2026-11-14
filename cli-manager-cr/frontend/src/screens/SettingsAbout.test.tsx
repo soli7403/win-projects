@@ -37,7 +37,7 @@ describe('정보 화면 — 참고한 프로젝트 고지 (D63)', () => {
     expect(full).toContain('Copyright (c) 2026 Dany Kim');
     expect(full).toContain('The above copyright notice and this permission notice shall be included in all');
     // 내 코드는 독점 라이선스(D64), 오픈소스 구성 요소 고지가 앱 안에 있다.
-    expect(screen.getByText('독점 소프트웨어 · Copyright © 2026 kai. All rights reserved.')).toBeTruthy();
+    expect(screen.getByText('독점 소프트웨어 · Copyright © 2026 YangHun Lee (kai). All rights reserved.')).toBeTruthy();
     const oss = detailText(container, '오픈소스 라이선스 보기');
     expect(oss).toContain('github.com/wailsapp/wails/v2');
     expect(oss).toContain('@xterm/xterm');
@@ -67,6 +67,33 @@ describe('정보 화면 — 사용 조건 (D73)', () => {
     await screen.findByText('사용 조건');
     expect(screen.queryByRole('button', { name: '후원하기' })).toBeNull();
     expect(screen.queryByRole('button', { name: '업무용 라이선스 구매' })).toBeNull();
+  });
+});
+
+describe('정보 화면 — 업데이트 확인 (D80)', () => {
+  function renderWith(updateEnabled: boolean) {
+    setBackend({
+      invoke: async (ch: string) => (ch === 'app.info' ? { version: '1.0.0', dataDir: 'C:\\data', updateEnabled } : undefined) as never,
+      termInput: () => undefined,
+      termResize: () => undefined,
+      reply: () => undefined,
+      on: () => () => undefined,
+    });
+    useApp.setState({ store: { version: 1, groups: [], hosts: [], snippets: [], knownHosts: [], settings: { ...DEFAULT_SETTINGS } } as Store });
+    return render(<SettingsAbout />);
+  }
+
+  it('배포 저장소가 없는 빌드면 업데이트 항목을 감춘다', async () => {
+    renderWith(false);
+    await screen.findByText('데이터 폴더');
+    expect(screen.queryByText('업데이트 자동 확인')).toBeNull();
+    expect(screen.queryByRole('button', { name: '업데이트 확인' })).toBeNull();
+  });
+
+  it('배포 저장소가 있는 빌드면 보인다', async () => {
+    renderWith(true);
+    expect(await screen.findByText('업데이트 자동 확인')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '업데이트 확인' })).toBeTruthy();
   });
 });
 

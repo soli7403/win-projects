@@ -92,8 +92,17 @@ func (pService *Service) autoUpdateCheck() {
 	pService.checkUpdate(false)
 }
 
-// startUpdateLoop 은 시작 5초 뒤 첫 확인, 이후 12시간마다 확인한다.
+// UpdateEnabled 는 업데이트 확인 기능을 쓰는 빌드인지다: 배포 저장소 주소가 있어야 켜진다 (D80).
+// 지금은 공개 릴리스 저장소가 없어 꺼져 있다. 켜려면 G_cszUpdateRepo 를 정한다(빌드 -ldflags -X 또는 이 값).
+func UpdateEnabled() bool {
+	return updateRepo() != ""
+}
+
+// startUpdateLoop 은 시작 5초 뒤 첫 확인, 이후 12시간마다 확인한다. 기능이 꺼진 빌드면 아무것도 하지 않는다.
 func (pService *Service) startUpdateLoop() {
+	if !UpdateEnabled() {
+		return
+	}
 	pState := pService.pUpdate
 	go func() {
 		timerFirst := time.NewTimer(G_cdurUpdateFirst)

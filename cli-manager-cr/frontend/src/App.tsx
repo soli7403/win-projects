@@ -27,12 +27,20 @@ import { ErrorBoundary } from './ui/ErrorBoundary';
 import { isLang, useLang, useT } from './i18n';
 import { setOsLanguage, startLanguageSync } from './state/language';
 import { LanguagePicker } from './screens/LanguagePicker';
+import { UsagePicker } from './screens/UsagePicker';
+import { runStartupNotice, useLicense } from './state/license';
 
 export function App() {
   const t = useT();
   // 언어가 바뀌면 전체를 다시 그린다(다시 마운트하지 않으므로 터미널은 그대로). D75.
   useLang((s) => s.lang);
   const languageSet = useApp((s) => isLang(s.store?.settings.language));
+  const usageSet = useApp((s) => !!s.store?.settings.usage || !!s.store?.settings.licenseKey);
+  const appOpen = useApp((s) => !!s.vault?.unlocked && !s.recoveryPending);
+  // 앱이 열리면(잠금 해제 뒤) 한 번만 라이선스·회사 PC 안내를 보인다. [확인]이면 그대로 쓴다. D78.
+  useEffect(() => {
+    if (appOpen && languageSet && usageSet) void runStartupNotice();
+  }, [appOpen, languageSet, usageSet]);
   const booted = useApp((s) => s.booted);
   const vault = useApp((s) => s.vault);
   const recoveryPending = useApp((s) => s.recoveryPending);
@@ -54,9 +62,11 @@ export function App() {
         b.on('ui.request', (r: UiRequest) => useRequests.getState().push(r)),
       ];
       // OS 언어(백엔드가 알려 줌)는 첫 실행 언어 선택의 기본값과, 고르기 전 화면 언어로 쓴다.
-      const info = await b.invoke<{ osLanguage?: string }>('app.info').catch(() => undefined);
+      const info = await b.invoke<{ osLanguage?: string; domainJoined?: boolean }>('app.info').catch(() => undefined);
       setOsLanguage(info?.osLanguage);
+      useLicense.getState().setDomainJoined(!!info?.domainJoined);
       await useApp.getState().boot();
+      void useLicense.getState().refresh();
       void useUpdate.getState().loadStatus();
     })();
     const stopLanguage = startLanguageSync();
@@ -96,6 +106,8 @@ export function App() {
   if (!booted) return <div className="app" />;
   // 첫 실행: 언어를 먼저 고른다(잠금·설정 화면보다 앞). D75.
   if (!languageSet) return <LanguagePicker />;
+  // 그다음 사용 용도(개인용/업무용). D78.
+  if (!usageSet) return <UsagePicker />;
 
   const locked = !vault?.unlocked || recoveryPending;
   return (

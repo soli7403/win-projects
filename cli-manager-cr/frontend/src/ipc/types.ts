@@ -105,6 +105,14 @@ export interface Settings {
   osc52Copy: boolean;
   sidebarWidth: number;
   rightPanelWidth: number;
+  /** 사용 용도(D78): '' 아직 안 고름 / personal(기한 없음) / business(30일 평가 뒤 라이선스). */
+  usage: '' | 'personal' | 'business';
+  /** 업무용을 고른 시각(ms). 평가 기간 계산에 쓴다. */
+  usageSince: number;
+  /** 업무용 라이선스 키(DT1.…). 비면 없음. */
+  licenseKey: string;
+  /** 회사 PC 안내를 이미 보였는지. */
+  domainNoticeDone: boolean;
   [extra: string]: unknown;
 }
 

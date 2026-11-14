@@ -180,7 +180,14 @@ export function createFakeBackend(): Backend {
       if (at >= 0) creds.splice(at, 1);
       return undefined;
     },
-    'app.info': () => ({ version: '0.1.0-dev', platform: 'windows', dataDir: '(가짜 데이터)' }),
+    'app.info': () => ({ version: '0.1.0-dev', platform: 'windows', dataDir: '(가짜 데이터)', domainJoined: false }),
+    // 가짜 라이선스 확인: "DT1.test" 만 유효(개발·테스트용). 실제 확인은 백엔드 internal/license.
+    'license.check': ([key]) => {
+      const k = String(key ?? '').replace(/\s+/g, '');
+      if (!k) return { state: 'none' };
+      if (k === 'DT1.test') return { state: 'valid', id: 'DT-TEST-0001', org: 'ACME', seats: 5, maxMajor: 1, exp: '' };
+      return { state: 'invalid' };
+    },
     'app.openExternal': () => undefined,
     'app.toggleFullScreen': () => undefined,
     'app.titlebar': () => undefined,

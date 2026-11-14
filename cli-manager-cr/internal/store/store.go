@@ -59,6 +59,11 @@ var g_mapSettingsDefault = map[string]any{
 	"osc52Copy":         true,
 	"sidebarWidth":      260,
 	"rightPanelWidth":   340,
+	// D78: 사용 용도·업무용 라이선스. usage ''=아직 안 고름 / personal / business(30일 평가), usageSince=업무용 고른 시각(ms).
+	"usage":            "",
+	"usageSince":       0,
+	"licenseKey":       "",
+	"domainNoticeDone": false,
 }
 
 // g_slArrayKeys 는 값이 항상 배열이어야 하는 최상위 키다 (data/store.md §1).

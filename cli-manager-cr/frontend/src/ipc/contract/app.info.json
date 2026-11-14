@@ -1,6 +1,8 @@
 {
   "dataDir": "\u003cdir\u003e",
+  "domainJoined": false,
   "osLanguage": "\u003clang\u003e",
   "platform": "\u003cos\u003e",
+  "updateEnabled": false,
   "version": "0.1.0"
 }
