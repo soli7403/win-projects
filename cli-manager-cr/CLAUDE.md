@@ -23,7 +23,7 @@
 
 **강제 수단**: [.claude/settings.json](./.claude/settings.json) 의 `permissions.deny` 로 위 경로 읽기를 막는다 (최선의 방어일 뿐, 우회될 수 있으니 규칙을 지킨다). 위반(실수로 열람 포함)을 발견하면 `docs/clean-room-log.md` 에 기록하고 해당 부분은 명세 작성자가 다시 쓰게 한다.
 
-> 법적 효력은 보장되지 않는다. 실제 배포·고지 정리 전에 전문가 확인을 받는다. `LICENSE` 는 **kai 단독 독점 라이선스(All rights reserved, 소스 비공개)**이고(결정 D64), 사용 허락은 **개인 무료 · 업무용 사용자별 유료**(문의 soli97403@gmail.com)다(D73·D74). 화면·안내 문구는 10개 언어이고 문구는 `locales/<언어>.json` 에만 둔다(D75, spec/behavior/i18n.md), 참고한 BrightTerm v1.1.0(MIT)과 오픈소스 구성 요소의 고지는 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)와 정보 화면에 둔다(D63·D64). 의존성을 바꾸면 `make notices` 로 고지를 다시 만든다. 이 프로젝트에는 원본 코드가 없다는 전제다. clean-room 위반이 발견되면 그 부분을 다시 쓰기 전까지 이 전제가 깨진 것으로 보고 `docs/clean-room-log.md` 에 기록한다.
+> 법적 효력은 보장되지 않는다. 실제 배포·고지 정리 전에 전문가 확인을 받는다. `LICENSE` 는 **YangHun Lee (kai) 단독 독점 라이선스(All rights reserved, 소스 비공개)**이고(결정 D64, 저작권자 표기는 여권 영문 이름 + 평소 이름. 설치 정보의 게시자는 DariTerm, D76), 사용 허락은 **개인 무료 · 업무용 사용자별 유료**(문의 soli97403@gmail.com)다(D73·D74). 화면·안내 문구는 10개 언어이고 문구는 `locales/<언어>.json` 에만 둔다(D75, spec/behavior/i18n.md), 참고한 BrightTerm v1.1.0(MIT)과 오픈소스 구성 요소의 고지는 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)와 정보 화면에 둔다(D63·D64). 의존성을 바꾸면 `make notices` 로 고지를 다시 만든다. 이 프로젝트에는 원본 코드가 없다는 전제다. clean-room 위반이 발견되면 그 부분을 다시 쓰기 전까지 이 전제가 깨진 것으로 보고 `docs/clean-room-log.md` 에 기록한다.
 
 ---
 
@@ -46,6 +46,7 @@
 | [docs/clean-room-protocol.md](./docs/clean-room-protocol.md) | 역할·절차·체크리스트 |
 | [docs/implementer-start.md](./docs/implementer-start.md) | 구현자 새 세션 시작 절차와 첫 메시지 |
 | [docs/decisions.md](./docs/decisions.md) | 결정 기록 |
+| [docs/host-settings/](./docs/host-settings/README.md) | 빌드 PC 에 설치한 도구(NSIS 등), 라이선스 서명 비밀키 위치, 점검·설치 스크립트 |
 | [.claude/known-issues.md](./.claude/known-issues.md) | 알려진 지뢰 |
 
 ## 3. 작업 순서
@@ -61,4 +62,5 @@ go build ./...
 go test -race ./...
 (cd frontend && npx tsc --noEmit)
 wails build    # 프런트(npm run build)까지 함께 빌드 → build/bin/dariterm.exe (wails.json frontend:build)
+make installer # Windows 설치 파일 → build/bin/DariTerm-amd64-installer.exe (NSIS 필요, D76, docs/host-settings/01)
 ```

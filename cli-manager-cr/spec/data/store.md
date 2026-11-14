@@ -68,6 +68,10 @@
 | 키 | 기본값 | 설명 |
 |---|---|---|
 | language | `""` | 화면 언어 id (`en` `ko` `ja` `zh` `tw` `de` `fr` `es` `pt` `ru`). 비면 아직 고르지 않음 → 첫 실행 언어 선택, 그동안 OS 언어 (behavior/i18n.md, D75) |
+| usage | `""` | 사용 용도 `personal` / `business`. 비면 아직 고르지 않음 → 첫 실행 용도 선택 (behavior/license.md, D78) |
+| usageSince | `0` | 업무용을 고른 시각(ms). 30일 평가 계산 |
+| licenseKey | `""` | 업무용 라이선스 키 `DT1.…` (비밀값 아님, 서명으로 위조 방지) |
+| domainNoticeDone | `false` | 회사 PC 안내를 이미 답했는지 |
 | theme | `dark` | `dark` / `light` (앱 외형) |
 | terminalTheme | `DariTerm Dark` | 터미널 색 테마 이름 (ui/tokens.md) |
 | fontFamily | `'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace` | |
