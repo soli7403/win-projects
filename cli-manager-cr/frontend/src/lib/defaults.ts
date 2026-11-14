@@ -1,5 +1,6 @@
 // 기본값과 고정 목록. 근거: spec/data/store.md §4·§6, spec/ui/tokens.md §6.
 import type { EnvKind, Settings } from '../ipc/types';
+import type { MsgId } from '../i18n';
 
 export const DANGEROUS_PATTERNS: string[] = [
   String.raw`rm\s+-[a-zA-Z]*r[a-zA-Z]*f`,
@@ -16,6 +17,7 @@ export const DANGEROUS_PATTERNS: string[] = [
 ];
 
 export const DEFAULT_SETTINGS: Settings = {
+  language: '',
   theme: 'dark',
   terminalTheme: 'DariTerm Dark',
   fontFamily: "'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace",
@@ -50,13 +52,14 @@ export const DEFAULT_SETTINGS: Settings = {
   rightPanelWidth: 340,
 };
 
-export const ENV_INFO: Record<EnvKind, { label: string; color: string }> = {
-  prod: { label: '운영', color: '#ef4444' },
-  stage: { label: '검증', color: '#f59e0b' },
-  perf: { label: '부하 테스트', color: '#a855f7' },
-  dev: { label: '개발', color: '#22c55e' },
-  device: { label: '네트워크 장비', color: '#3b82f6' },
-  none: { label: '기본', color: '#64748b' },
+/** label 은 문구 키(D75) — 그릴 때 t() 로 바꾼다. */
+export const ENV_INFO: Record<EnvKind, { label: MsgId; color: string }> = {
+  prod: { label: 'env.prod', color: '#ef4444' },
+  stage: { label: 'env.stage', color: '#f59e0b' },
+  perf: { label: 'env.perf', color: '#a855f7' },
+  dev: { label: 'env.dev', color: '#22c55e' },
+  device: { label: 'env.device', color: '#3b82f6' },
+  none: { label: 'env.none', color: '#64748b' },
 };
 
 /** 색 선택 팔레트(14색, 순서 유지). 맨 앞의 "자동"은 색 값을 지운다. */

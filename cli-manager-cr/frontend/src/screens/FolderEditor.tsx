@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import type { EnvKind, Group } from '../ipc/types';
 import { ENV_INFO } from '../lib/defaults';
+import { t, type MsgId } from '../i18n';
 import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
 import { Modal } from '../ui/Modal';
@@ -20,13 +21,14 @@ function envOption(v: EnvKind, text: string) {
   );
 }
 
-const ENVS: { value: EnvKind; label: string }[] = [
-  { value: 'none', label: '기본' },
-  { value: 'dev', label: '개발' },
-  { value: 'stage', label: '검증' },
-  { value: 'perf', label: '부하 테스트' },
-  { value: 'prod', label: '운영' },
-  { value: 'device', label: '네트워크 장비' },
+/** 환경 선택 순서. 이름은 ENV_INFO 의 문구 키(D75). */
+const ENVS: { value: EnvKind; label: MsgId }[] = [
+  { value: 'none', label: 'env.none' },
+  { value: 'dev', label: 'env.dev' },
+  { value: 'stage', label: 'env.stage' },
+  { value: 'perf', label: 'env.perf' },
+  { value: 'prod', label: 'env.prod' },
+  { value: 'device', label: 'env.device' },
 ];
 
 export function FolderEditor({ folderId, parentId }: { folderId: string | null; parentId: string | null }) {
@@ -61,32 +63,32 @@ export function FolderEditor({ folderId, parentId }: { folderId: string | null; 
 
   return (
     <Modal
-      title={original ? '폴더 수정' : '새 폴더'}
+      title={original ? t('folder.edit') : t('quick.newFolder')}
       size="sm"
       onClose={closeEditor}
       foot={
         <>
-          <button className="btn" onClick={closeEditor}>취소</button>
-          <button className="btn primary" disabled={!canSave} onClick={() => void save()}>저장</button>
+          <button className="btn" onClick={closeEditor}>{t('common.cancel')}</button>
+          <button className="btn primary" disabled={!canSave} onClick={() => void save()}>{t('common.save')}</button>
         </>
       }
     >
       <form onSubmit={(e) => void save(e)} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Field label="이름">
-          <input className="input" autoFocus placeholder="예: 헤펠레코리아" value={name} onChange={(e) => setName(e.target.value)} />
+        <Field label={t('snip.name')}>
+          <input className="input" autoFocus placeholder={t('folder.namePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="상위 폴더">
+        <Field label={t('folder.parent')}>
           <select className="input" value={parent} onChange={(e) => setParent(e.target.value)}>
-            <option value="">(최상위)</option>
+            <option value="">{t('folder.root')}</option>
             {choices.map((g) => (
               <option key={g.id} value={g.id}>{groupPath(groups, g.id)}</option>
             ))}
           </select>
         </Field>
-        <Field label="환경" help="폴더 안의 서버가 이 환경 색을 물려받습니다">
-          <Segmented value={env} options={ENVS.map((o) => ({ value: o.value, label: envOption(o.value, o.label) }))} onChange={setEnv} label="환경" />
+        <Field label={t('folder.env')} help={t('folder.envHelp')}>
+          <Segmented value={env} options={ENVS.map((o) => ({ value: o.value, label: envOption(o.value, t(o.label)) }))} onChange={setEnv} label={t('folder.env')} />
         </Field>
-        <Field label="색상">
+        <Field label={t('color.label')}>
           <ColorPicker value={color} onChange={setColor} />
         </Field>
       </form>

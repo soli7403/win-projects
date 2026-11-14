@@ -15,14 +15,16 @@ import {
 } from '../lib/hostForm';
 import { applyHost, buildHostFromForm } from '../lib/hostSave';
 import { ForwardsTable, JumpDirectCard, SerialFields } from './HostEditorParts';
+import { t } from '../i18n';
 
 type Tab = 'basic' | 'auth' | 'adv' | 'fwd';
 
-const PROTOCOLS: { value: Protocol; label: string }[] = [
+// 선택 목록은 그릴 때 언어에 맞춰 만든다(D75).
+const PROTOCOLS = (): { value: Protocol; label: string }[] => [
   { value: 'ssh', label: 'SSH' },
   { value: 'telnet', label: 'Telnet' },
-  { value: 'serial', label: '시리얼 (COM/RS-485)' },
-  { value: 'local', label: '로컬 (이 PC)' },
+  { value: 'serial', label: t('proto.serial') },
+  { value: 'local', label: t('proto.local') },
 ];
 /** 환경 옵션 앞의 색 점(spec §1.1.5). */
 function envOption(v: EnvKind, text: string) {
@@ -34,23 +36,23 @@ function envOption(v: EnvKind, text: string) {
   );
 }
 
-const ENVS: { value: EnvKind; label: string }[] = [
-  { value: 'none', label: '기본' },
-  { value: 'dev', label: '개발' },
-  { value: 'stage', label: '검증' },
-  { value: 'perf', label: '부하 테스트' },
-  { value: 'prod', label: '운영' },
-  { value: 'device', label: '네트워크 장비' },
+const ENVS = (): { value: EnvKind; label: string }[] => [
+  { value: 'none', label: t('env.none') },
+  { value: 'dev', label: t('env.dev') },
+  { value: 'stage', label: t('env.stage') },
+  { value: 'perf', label: t('env.perf') },
+  { value: 'prod', label: t('env.prod') },
+  { value: 'device', label: t('env.device') },
 ];
-const AUTHS: { value: AuthType; label: string }[] = [
-  { value: 'password', label: '비밀번호' },
-  { value: 'key', label: '키 파일' },
-  { value: 'agent', label: 'SSH 에이전트 (Pageant)' },
-  { value: 'ask', label: '접속할 때마다 입력' },
+const AUTHS = (): { value: AuthType; label: string }[] => [
+  { value: 'password', label: t('cred.password') },
+  { value: 'key', label: t('host.keyFile') },
+  { value: 'agent', label: t('auth.agent') },
+  { value: 'ask', label: t('auth.ask') },
 ];
-const ENCODINGS: { value: string; label: string }[] = [
+const ENCODINGS = (): { value: string; label: string }[] => [
   { value: 'utf-8', label: 'UTF-8' },
-  { value: 'cp949', label: 'CP949 / EUC-KR (구형 장비)' },
+  { value: 'cp949', label: t('enc.cp949') },
   { value: 'shift_jis', label: 'Shift_JIS' },
   { value: 'latin1', label: 'Latin-1' },
 ];
@@ -199,14 +201,14 @@ export function HostEditor({ hostId, groupId }: Props) {
       const r = await getBackend().invoke<{ path: string; text: string } | null>('dialog.readKeyFile');
       if (!r) return;
       if (isPpkV3(r.text)) {
-        setError(PPK_V3_MESSAGE);
+        setError(t(PPK_V3_MESSAGE));
         return;
       }
       if (target === 'own') {
         setPrivateKey(r.text);
         setKeyStatus(r.path);
       } else {
-        setJump((j) => ({ ...j, keyText: r.text, keyStatus: '키를 불러왔습니다' }));
+        setJump((j) => ({ ...j, keyText: r.text, keyStatus: t('host.keyLoaded') }));
       }
     } catch (e) {
       setError(errorMessage(e));
@@ -294,29 +296,29 @@ export function HostEditor({ hostId, groupId }: Props) {
 
   const folders = sortGroups(groups);
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'basic', label: '일반' },
-    ...(isSsh ? [{ id: 'auth' as Tab, label: '로그인' }] : []),
-    { id: 'adv', label: '고급' },
-    ...(isSsh ? [{ id: 'fwd' as Tab, label: '포트 포워딩' }] : []),
+    { id: 'basic', label: t('host.tabBasic') },
+    ...(isSsh ? [{ id: 'auth' as Tab, label: t('host.tabAuth') }] : []),
+    { id: 'adv', label: t('host.tabAdv') },
+    ...(isSsh ? [{ id: 'fwd' as Tab, label: t('host.tabFwd') }] : []),
   ];
   const curTab = tabs.some((t) => t.id === tab) ? tab : 'basic';
   const shellOptions = [
-    { value: '', label: `기본 (${shells[0]?.label ?? '기본 셸'})` },
+    { value: '', label: t('host.defaultShell', { name: shells[0]?.label ?? t('host.defaultShellName') }) },
     ...shells.map((s) => ({ value: s.path, label: s.label })),
   ];
-  const credOptions = creds.map((c) => ({ value: c.id, label: `${c.name}${c.username ? ` (${c.username})` : ''} · ${c.kind === 'key' ? '키' : '비밀번호'}` }));
+  const credOptions = creds.map((c) => ({ value: c.id, label: `${c.name}${c.username ? ` (${c.username})` : ''} · ${c.kind === 'key' ? t('cred.key') : t('cred.password')}` }));
 
   return (
     <Modal
-      title={original ? `서버 수정 · ${original.alias}` : '서버 추가'}
+      title={original ? t('host.editTitle', { name: original.alias }) : t('sb.addServer')}
       size="md"
       onClose={closeEditor}
       foot={
         <>
           <div className="err-text" style={{ marginRight: 'auto' }}>{error}</div>
-          <button className="btn" onClick={closeEditor}>취소</button>
-          <button className="btn primary" disabled={busy} onClick={() => void save()}>저장</button>
-          <button className="btn primary" disabled={busy} onClick={() => void save(true)}>저장하고 연결</button>
+          <button className="btn" onClick={closeEditor}>{t('common.cancel')}</button>
+          <button className="btn primary" disabled={busy} onClick={() => void save()}>{t('common.save')}</button>
+          <button className="btn primary" disabled={busy} onClick={() => void save(true)}>{t('host.saveConnect')}</button>
         </>
       }
     >
@@ -344,21 +346,21 @@ export function HostEditor({ hostId, groupId }: Props) {
       <div style={{ minHeight: 380, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {curTab === 'basic' && (
           <>
-            <Field label="프로토콜">
-              <Segmented value={protocol} options={PROTOCOLS} onChange={changeProtocol} label="프로토콜" />
+            <Field label={t('host.protocol')}>
+              <Segmented value={protocol} options={PROTOCOLS()} onChange={changeProtocol} label={t('host.protocol')} />
             </Field>
-            <Field label="표시 이름 (탭과 목록에 보임)">
-              <input className="input" autoFocus placeholder="예: 운영-WEB01" value={alias} onChange={(e) => setAlias(e.target.value)} />
+            <Field label={t('host.alias')}>
+              <input className="input" autoFocus placeholder={t('host.aliasPlaceholder')} value={alias} onChange={(e) => setAlias(e.target.value)} />
             </Field>
             {isLocal && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <Field label="시작 폴더" help="비워 두면 홈 폴더에서 열립니다">
+                <Field label={t('host.startDir')} help={t('host.startDirHelp')}>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <input className="input mono" style={{ flex: 1 }} placeholder="C:\Work\프로젝트" value={localCwd} onChange={(e) => setLocalCwd(e.target.value)} />
-                    <button type="button" className="icon-btn" title="폴더 선택" aria-label="폴더 선택" onClick={() => void pickDir()}>…</button>
+                    <input className="input mono" style={{ flex: 1 }} placeholder={t('host.startDirPlaceholder')} value={localCwd} onChange={(e) => setLocalCwd(e.target.value)} />
+                    <button type="button" className="icon-btn" title={t('host.pickDir')} aria-label={t('host.pickDir')} onClick={() => void pickDir()}>…</button>
                   </div>
                 </Field>
-                <Field label="셸">
+                <Field label={t('host.shell')}>
                   <select className="input" value={localShell} onChange={(e) => setLocalShell(e.target.value)}>
                     {shellOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
@@ -367,13 +369,13 @@ export function HostEditor({ hostId, groupId }: Props) {
             )}
             {isNet && (
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 14 }}>
-                <Field label="주소 (IP 또는 도메인)">
-                  <input className="input mono" placeholder="10.0.0.11  또는  user@host:22" value={host} onChange={(e) => onHostChange(e.target.value)} />
+                <Field label={t('host.address')}>
+                  <input className="input mono" placeholder={t('host.addressPlaceholder')} value={host} onChange={(e) => onHostChange(e.target.value)} />
                 </Field>
-                <Field label="포트">
+                <Field label={t('fwd.port')}>
                   <input className="input" inputMode="numeric" value={port} onChange={(e) => setPort(e.target.value.replace(/\D/g, ''))} />
                 </Field>
-                <Field label="사용자 이름">
+                <Field label={t('host.username')}>
                   <input className="input" placeholder="root" value={username} onChange={(e) => setUsername(e.target.value)} />
                 </Field>
               </div>
@@ -382,82 +384,82 @@ export function HostEditor({ hostId, groupId }: Props) {
               <SerialFields value={serial} ports={ports} onChange={setSerial} onRefresh={refreshPorts} />
             )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <Field label="폴더">
+              <Field label={t('host.folder')}>
                 <select className="input" value={folder} onChange={(e) => setFolder(e.target.value)}>
-                  <option value="">(최상위)</option>
+                  <option value="">{t('folder.root')}</option>
                   {folders.map((g) => (
                     <option key={g.id} value={g.id}>{groupPath(groups, g.id)}</option>
                   ))}
                 </select>
               </Field>
-              <Field label="태그 (쉼표로 구분)">
+              <Field label={t('host.tags')}>
                 <input className="input" placeholder="web, nginx" value={tags} onChange={(e) => setTags(e.target.value)} />
               </Field>
             </div>
-            <Field label="환경" help="운영 서버는 빨간 테두리로 표시되고 위험 명령 실행 전에 확인을 받습니다">
-              <Segmented value={env} options={ENVS.map((o) => ({ value: o.value, label: envOption(o.value, o.label) }))} onChange={setEnv} label="환경" />
+            <Field label={t('folder.env')} help={t('host.envHelp')}>
+              <Segmented value={env} options={ENVS().map((o) => ({ value: o.value, label: envOption(o.value, o.label) }))} onChange={setEnv} label={t('folder.env')} />
             </Field>
-            <Field label="색상 (지정하지 않으면 환경/폴더 색을 따름)">
+            <Field label={t('host.color')}>
               <ColorPicker value={color} onChange={setColor} />
             </Field>
-            <Field label="메모">
+            <Field label={t('host.memo')}>
               <textarea className="input" rows={2} style={{ height: 'auto', padding: 8 }} value={notes} onChange={(e) => setNotes(e.target.value)} />
             </Field>
           </>
         )}
         {curTab === 'auth' && isSsh && (
           <>
-            {!vaultOpen && <div className="notice warn">앱이 잠겨 있습니다. 비밀번호나 키를 저장하려면 먼저 잠금을 해제하세요.</div>}
-            <Field label="인증 방식">
-              <Segmented value={authType} options={AUTHS} onChange={setAuthType} label="인증 방식" />
+            {!vaultOpen && <div className="notice warn">{t('host.lockedNotice')}</div>}
+            <Field label={t('host.authMethod')}>
+              <Segmented value={authType} options={AUTHS()} onChange={setAuthType} label={t('host.authMethod')} />
             </Field>
             {(authType === 'password' || authType === 'key') && (
-              <Field label="계정 저장 방식">
+              <Field label={t('host.credMode')}>
                 <Segmented
                   value={accountMode}
-                  options={[{ value: 'own', label: '이 서버에만 저장' }, { value: 'shared', label: '저장된 계정 사용' }]}
+                  options={[{ value: 'own', label: t('host.credOwn') }, { value: 'shared', label: t('host.credShared') }]}
                   onChange={setAccountMode}
-                  label="계정 저장 방식"
+                  label={t('host.credMode')}
                 />
               </Field>
             )}
             {accountMode === 'shared' && (authType === 'password' || authType === 'key') && (
-              <Field label="저장된 계정" help="같은 계정을 쓰는 서버 여러 대가 하나의 비밀번호를 공유합니다. 비밀번호를 바꾸면 모두 적용됩니다.">
+              <Field label={t('host.savedCred')} help={t('host.savedCredHelp')}>
                 <select className="input" value={sharedCredId ?? ''} onChange={(e) => setSharedCredId(e.target.value || null)}>
-                  <option value="">선택하세요</option>
+                  <option value="">{t('host.choose')}</option>
                   {credOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
             )}
             {accountMode === 'own' && authType === 'password' && (
               <Field
-                label="비밀번호"
-                help={original?.credentialId ? '저장된 비밀번호가 있습니다. 바꾸려면 새로 입력하세요.' : '비워 두면 처음 연결할 때 묻고, 저장 여부를 선택할 수 있습니다.'}
+                label={t('cred.password')}
+                help={original?.credentialId ? t('host.pwSavedHelp') : t('host.pwEmptyHelp')}
               >
-                <input className="input" type="password" placeholder={original?.credentialId ? '••••••••  (저장됨)' : '비밀번호'} value={password} onChange={(e) => setPassword(e.target.value)} />
+                <input className="input" type="password" placeholder={original?.credentialId ? t('host.savedMask') : t('cred.password')} value={password} onChange={(e) => setPassword(e.target.value)} />
               </Field>
             )}
             {accountMode === 'own' && authType === 'key' && (
               <>
-                <Field label="키 파일">
+                <Field label={t('host.keyFile')}>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <button type="button" className="btn small-btn" onClick={() => void pickKey('own')}>키 파일 선택</button>
-                    <span className="faint small">{keyStatus || (original?.credentialId ? '저장된 키 사용 중' : '선택된 키 없음')}</span>
+                    <button type="button" className="btn small-btn" onClick={() => void pickKey('own')}>{t('host.pickKey')}</button>
+                    <span className="faint small">{keyStatus || (original?.credentialId ? t('host.keyInUse') : t('host.noKey'))}</span>
                   </div>
                 </Field>
-                <Field label="또는 키 내용 붙여넣기" help="OpenSSH, PEM, PuTTY PPK v2 지원. 키 내용은 암호화되어 저장됩니다.">
+                <Field label={t('host.keyPaste')} help={t('host.keyPasteHelp')}>
                   <textarea className="input mono" rows={4} style={{ height: 'auto', padding: 8 }} placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" value={privateKey} onChange={(e) => setPrivateKey(e.target.value)} />
                 </Field>
-                <Field label="키 암호 (있으면)">
+                <Field label={t('host.passphrase')}>
                   <input className="input" type="password" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
                 </Field>
               </>
             )}
             {authType === 'agent' && (
-              <div className="notice info">Windows에서는 Pageant, 그 외에는 SSH_AUTH_SOCK 에이전트를 사용합니다. 에이전트 인증이 실패하면 비밀번호를 묻습니다.</div>
+              <div className="notice info">{t('host.agentNote')}</div>
             )}
             {authType === 'ask' && (
-              <div className="notice info">연결할 때마다 비밀번호를 묻습니다. 입력 창에서 "저장"을 선택하면 다음부터 자동으로 로그인됩니다.</div>
+              <div className="notice info">{t('host.askNote')}</div>
             )}
           </>
         )}
@@ -465,10 +467,10 @@ export function HostEditor({ hostId, groupId }: Props) {
         {curTab === 'adv' && (
           <>
             {isSsh && (
-              <Field label="경유 서버 (ProxyJump)" help="이 서버에 연결하기 전에 먼저 거쳐 갈 서버입니다 (ProxyJump).">
+              <Field label={t('host.jump')} help={t('host.jumpHelp')}>
                 <select className="input" value={jumpChoice} onChange={(e) => setJumpChoice(e.target.value)}>
-                  <option value="">없음</option>
-                  <option value={JUMP_DIRECT}>직접 입력…</option>
+                  <option value="">{t('host.none')}</option>
+                  <option value={JUMP_DIRECT}>{t('host.jumpManual')}</option>
                   {hosts.filter((h) => h.id !== hostId && h.protocol === 'ssh').map((h) => (
                     <option key={h.id} value={h.id}>{`${h.alias} (${h.host})`}</option>
                   ))}
@@ -498,44 +500,44 @@ export function HostEditor({ hostId, groupId }: Props) {
             {tmuxCardShown && (
               <div className="toggle-row">
                 <div>
-                  <div className="t-title">연결 유지 (tmux)</div>
+                  <div className="t-title">{t('host.tmux')}</div>
                   <div className="t-desc">
-                    {'창이나 앱을 닫아도 tmux 안의 프로그램은 계속 실행되고, 다시 열면 그 화면에 그대로 붙습니다. '}
-                    {isLocal && isWindows ? 'Windows 로컬은 WSL 셸일 때만 지원합니다.' : '대상에 tmux 가 있어야 합니다.'}
+                    {t('host.tmuxDesc')}
+                    {isLocal && isWindows ? t('host.tmuxWsl') : t('host.tmuxNeed')}
                   </div>
                 </div>
-                <Switch checked={tmuxOn} onChange={(v) => setKeepSession(v)} label="연결 유지 (tmux)" />
+                <Switch checked={tmuxOn} onChange={(v) => setKeepSession(v)} label={t('host.tmux')} />
               </div>
             )}
             {tmuxCardShown && tmuxOn && (
-              <Field label="tmux 세션 이름" help="비워 두면 서버 표시 이름(또는 로컬 폴더 이름)으로 만듭니다">
+              <Field label={t('host.tmuxName')} help={t('host.tmuxNameHelp')}>
                 <input className="input mono" placeholder={tmuxPlaceholder(alias, protocol, localCwd)} value={tmuxName} onChange={(e) => setTmuxName(e.target.value)} />
               </Field>
             )}
             <Field
-              label={isLocal ? '시작할 때 실행할 명령' : '연결 후 실행할 명령'}
-              help={isLocal ? '예: claude --continue' : '예: cd /var/www && sudo -i'}
+              label={isLocal ? t('host.startCmd') : t('host.afterCmd')}
+              help={isLocal ? t('host.startCmdEx') : t('host.afterCmdEx')}
             >
               <input className="input mono" placeholder={isLocal ? 'claude --continue' : 'cd /var/www && sudo -i'} value={startup} onChange={(e) => setStartup(e.target.value)} />
             </Field>
             {isNet && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-                <Field label="문자 인코딩">
+                <Field label={t('host.encoding')}>
                   <select className="input" value={encoding} onChange={(e) => setEncoding(e.target.value)}>
-                    {ENCODINGS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    {encoding === 'euc-kr' && <option value="euc-kr">CP949 / EUC-KR (구형 장비)</option>}
+                    {ENCODINGS().map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {encoding === 'euc-kr' && <option value="euc-kr">{t('enc.cp949')}</option>}
                   </select>
                 </Field>
-                <Field label="터미널 종류">
+                <Field label={t('host.termType')}>
                   <input className="input mono" value={termType} onChange={(e) => setTermType(e.target.value)} />
                 </Field>
-                <Field label="연결 확인 간격 (초)">
+                <Field label={t('host.keepalive')}>
                   <input className="input" inputMode="numeric" value={keepalive} onChange={(e) => setKeepalive(e.target.value.replace(/\D/g, ''))} />
                 </Field>
               </div>
             )}
             {isLocal && (
-              <Field label="터미널 종류">
+              <Field label={t('host.termType')}>
                 <input className="input mono" value={termType} onChange={(e) => setTermType(e.target.value)} />
               </Field>
             )}

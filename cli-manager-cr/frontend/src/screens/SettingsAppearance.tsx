@@ -6,6 +6,7 @@ import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { saveSettings } from '../state/settings';
 import { NumberField, useSetting, Group } from './Settings';
+import { LANGS, isLang, t, useLang } from '../i18n';
 
 export function SettingsAppearance() {
   const [theme, setTheme] = useSetting('theme');
@@ -19,14 +20,16 @@ export function SettingsAppearance() {
   const [cursorBlink, setCursorBlink] = useSetting('cursorBlink');
   const [bell, setBell] = useSetting('bell');
   const [maxSplits] = useSetting('maxVerticalSplits');
+  const [, setLanguage] = useSetting('language');
+  const lang = useLang((s) => s.lang);
   const pushToast = useApp((s) => s.pushToast);
   const current = resolveTermTheme(termTheme);
 
   // 앱 테마와 터미널 테마 짝 연동(G1): 짝 테마를 쓰고 있을 때만 바꾼다.
-  const changeTheme = (t: 'dark' | 'light') => {
-    setTheme(t);
-    if (t === 'light' && termTheme === 'DariTerm Dark') setTermTheme('DariTerm Light');
-    if (t === 'dark' && termTheme === 'DariTerm Light') setTermTheme('DariTerm Dark');
+  const changeTheme = (next: 'dark' | 'light') => {
+    setTheme(next);
+    if (next === 'light' && termTheme === 'DariTerm Dark') setTermTheme('DariTerm Light');
+    if (next === 'dark' && termTheme === 'DariTerm Light') setTermTheme('DariTerm Dark');
   };
 
   const resetWindow = async () => {
@@ -39,35 +42,44 @@ export function SettingsAppearance() {
 
   return (
     <>
-      <Field label="테마">
+      {/* D75: 화면 언어. 바꾸면 바로 적용(저장 → 언어 연결이 다시 그림) */}
+      <Field label={t('lang.label')} help={t('lang.help')}>
+        <select className="input" aria-label={t('lang.label')} value={lang} onChange={(e) => isLang(e.target.value) && setLanguage(e.target.value)}>
+          {LANGS.map((l) => (
+            <option key={l.id} value={l.id}>{l.name}</option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label={t('appearance.theme')}>
         <Segmented
-          label="테마"
+          label={t('appearance.theme')}
           value={theme}
           onChange={changeTheme}
           options={[
-            { value: 'dark', label: '다크' },
-            { value: 'light', label: '라이트' },
+            { value: 'dark', label: t('appearance.dark') },
+            { value: 'light', label: t('appearance.light') },
           ]}
         />
       </Field>
 
-      <Field label="터미널 색상">
-        <div className="themes" role="radiogroup" aria-label="터미널 색상">
-          {TERM_THEMES.map((t) => {
-            const on = current.name === t.name;
+      <Field label={t('appearance.termColors')}>
+        <div className="themes" role="radiogroup" aria-label={t('appearance.termColors')}>
+          {TERM_THEMES.map((th) => {
+            const on = current.name === th.name;
             return (
               <button
-                key={t.name}
+                key={th.name}
                 type="button"
                 role="radio"
                 aria-checked={on}
                 className={`theme-card${on ? ' on' : ''}`}
-                style={{ background: t.background, color: t.foreground }}
-                onClick={() => void saveSettings({ terminalTheme: t.name })}
+                style={{ background: th.background, color: th.foreground }}
+                onClick={() => void saveSettings({ terminalTheme: th.name })}
               >
-                <span className="tn">{t.name}</span>
+                <span className="tn">{th.name}</span>
                 <span className="ts" style={{ fontSize: 12 }}>
-                  <span style={{ color: t.green }}>user@host</span>:<span style={{ color: t.blue }}>~</span>$ <span style={{ color: t.yellow }}>ls</span> <span style={{ color: t.red }}>err</span>
+                  <span style={{ color: th.green }}>user@host</span>:<span style={{ color: th.blue }}>~</span>$ <span style={{ color: th.yellow }}>ls</span> <span style={{ color: th.red }}>err</span>
                 </span>
               </button>
             );
@@ -76,52 +88,52 @@ export function SettingsAppearance() {
       </Field>
 
       <div className="set-grid c3">
-        <Field label="글꼴" help="설치된 고정폭 글꼴 이름 (예: D2Coding, Cascadia Mono)">
+        <Field label={t('appearance.font')} help={t('appearance.fontHelp')}>
           <FontInput value={fontFamily} onCommit={setFontFamily} />
         </Field>
-        <Field label="글자 크기">
-          <NumberField label="글자 크기" value={fontSize} min={8} max={32} fallback={14} onCommit={(v) => void saveSettings({ fontSize: v })} />
+        <Field label={t('appearance.fontSize')}>
+          <NumberField label={t('appearance.fontSize')} value={fontSize} min={8} max={32} fallback={14} onCommit={(v) => void saveSettings({ fontSize: v })} />
         </Field>
-        <Field label="줄 간격">
-          <NumberField label="줄 간격" value={lineHeight} min={1} max={2} step={0.05} fallback={1.15} onCommit={(v) => void saveSettings({ lineHeight: v })} />
+        <Field label={t('appearance.lineHeight')}>
+          <NumberField label={t('appearance.lineHeight')} value={lineHeight} min={1} max={2} step={0.05} fallback={1.15} onCommit={(v) => void saveSettings({ lineHeight: v })} />
         </Field>
       </div>
 
       <div className="set-grid c2">
         <ToggleRow
-          title="프로그램 창 크기·위치 기억"
-          desc="다음 실행 때 마지막 크기·위치·최대화 상태로 엽니다. 모니터 구성이 바뀌어 화면 밖이면 가운데로 엽니다"
+          title={t('appearance.rememberWindow')}
+          desc={t('appearance.rememberWindowDesc')}
           checked={remember}
           onChange={setRemember}
         />
-        <Field label="프로그램 창 크기">
+        <Field label={t('appearance.windowSize')}>
           <div>
-            <button className="btn" type="button" onClick={() => void resetWindow()}>기본 크기로</button>
+            <button className="btn" type="button" onClick={() => void resetWindow()}>{t('appearance.resetWindow')}</button>
           </div>
         </Field>
       </div>
 
       <div className="set-grid c2">
-        <Field label="커서 모양">
+        <Field label={t('appearance.cursorStyle')}>
           <Segmented
-            label="커서 모양"
+            label={t('appearance.cursorStyle')}
             value={cursorStyle}
             onChange={(v) => void saveSettings({ cursorStyle: v })}
             options={[
-              { value: 'block', label: '블록' },
-              { value: 'bar', label: '막대' },
-              { value: 'underline', label: '밑줄' },
+              { value: 'block', label: t('appearance.cursorBlock') },
+              { value: 'bar', label: t('appearance.cursorBar') },
+              { value: 'underline', label: t('appearance.cursorUnderline') },
             ]}
           />
         </Field>
-        <Field label="기록 줄 수">
-          <NumberField label="기록 줄 수" value={scrollback} min={500} max={200000} fallback={10000} onCommit={(v) => void saveSettings({ scrollback: v })} />
+        <Field label={t('appearance.scrollback')}>
+          <NumberField label={t('appearance.scrollback')} value={scrollback} min={500} max={200000} fallback={10000} onCommit={(v) => void saveSettings({ scrollback: v })} />
         </Field>
       </div>
 
-      <Field label="위아래 창 최대 개수" help="한 탭에서 위아래로 나눌 수 있는 최대 창 수입니다. 도달하면 [아래로 나누기] 버튼이 비활성화됩니다.">
+      <Field label={t('appearance.maxSplits')} help={t('appearance.maxSplitsHelp')}>
         <Segmented
-          label="위아래 창 최대 개수"
+          label={t('appearance.maxSplits')}
           value={String(maxSplits ?? 3) as '1' | '2' | '3' | '4' | '5'}
           onChange={(v) => void saveSettings({ maxVerticalSplits: Number(v) })}
           options={[
@@ -135,8 +147,8 @@ export function SettingsAppearance() {
       </Field>
 
       <Group>
-        <ToggleRow title="커서 깜빡임" checked={cursorBlink} onChange={setCursorBlink} />
-        <ToggleRow title="경고음" checked={bell} onChange={setBell} />
+        <ToggleRow title={t('appearance.cursorBlink')} checked={cursorBlink} onChange={setCursorBlink} />
+        <ToggleRow title={t('appearance.bell')} checked={bell} onChange={setBell} />
       </Group>
     </>
   );
@@ -153,7 +165,7 @@ function FontInput({ value, onCommit }: { value: string; onCommit: (v: string) =
   return (
     <input
       className="input"
-      aria-label="글꼴"
+      aria-label={t('appearance.font')}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {

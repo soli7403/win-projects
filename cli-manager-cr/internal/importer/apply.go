@@ -1,7 +1,7 @@
 package importer
 
 import (
-	"fmt"
+	"dariterm/internal/i18n"
 	"os"
 	"strings"
 
@@ -36,22 +36,22 @@ const G_cszDefaultGroupEnv = "none"
 // envForCandidate 는 후보 이름 접두어와 프로토콜로 환경을 정한다 (import.md §4 환경).
 func envForCandidate(szName string, szProtocol string) string {
 	szLower := strings.ToLower(szName)
-	for _, szPrefix := range []string{"prod", "prd", "live", "운영"} {
+	for _, szPrefix := range []string{"prod", "prd", "live", "운영"} { // i18n-ok 이름 접두 별칭
 		if strings.HasPrefix(szLower, szPrefix) {
 			return "prod"
 		}
 	}
-	for _, szPrefix := range []string{"perf", "성능"} {
+	for _, szPrefix := range []string{"perf", "성능"} { // i18n-ok
 		if strings.HasPrefix(szLower, szPrefix) {
 			return "perf"
 		}
 	}
-	for _, szPrefix := range []string{"stg", "stage", "staging", "func", "기능"} {
+	for _, szPrefix := range []string{"stg", "stage", "staging", "func", "기능"} { // i18n-ok
 		if strings.HasPrefix(szLower, szPrefix) {
 			return "stage"
 		}
 	}
-	for _, szPrefix := range []string{"dev", "test", "개발"} {
+	for _, szPrefix := range []string{"dev", "test", "개발"} { // i18n-ok
 		if strings.HasPrefix(szLower, szPrefix) {
 			return "dev"
 		}
@@ -131,7 +131,7 @@ func ApplyCandidates(slCands []Candidate, szFolderName string, slGroups []map[st
 		}
 		if szTarget == "" {
 			name, _ := mapHost["alias"].(string)
-			out.Result.M_slSkipped = append(out.Result.M_slSkipped, fmt.Sprintf("%s: 경유 서버 %s 를 찾지 못해 직접 연결로 등록", name, szJump))
+			out.Result.M_slSkipped = append(out.Result.M_slSkipped, i18n.T("be.imp.jumpMissing", "name", name, "jump", szJump))
 			continue
 		}
 		slNewHosts[iIndex]["jumpHostId"] = szTarget
@@ -209,9 +209,9 @@ func buildHost(cand Candidate, szGroupId string, iSort int, keys KeyStore, pResu
 	if cand.M_szKeyFile != "" {
 		bKey, errRead := os.ReadFile(cand.M_szKeyFile)
 		if errRead != nil {
-			pResult.M_slSkipped = append(pResult.M_slSkipped, fmt.Sprintf("%s: 키 파일을 읽지 못함 (%s)", cand.M_szName, cand.M_szKeyFile))
+			pResult.M_slSkipped = append(pResult.M_slSkipped, i18n.T("be.imp.keyUnreadable", "name", cand.M_szName, "file", cand.M_szKeyFile))
 		} else if keys != nil && keys.Unlocked() {
-			szCred, errSave := keys.SaveKey(cand.M_szName+" 키", host.M_szUsername, string(bKey))
+			szCred, errSave := keys.SaveKey(i18n.T("be.imp.keyName", "name", cand.M_szName), host.M_szUsername, string(bKey))
 			if errSave != nil {
 				return nil, "", errSave
 			}

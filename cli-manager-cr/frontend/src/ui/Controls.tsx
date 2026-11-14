@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { COLOR_PALETTE, ENV_INFO } from '../lib/defaults';
 import type { EnvKind } from '../ipc/types';
+import { t } from '../i18n';
 
 export function Field({ label, help, children, htmlFor }: { label?: string; help?: string; children: ReactNode; htmlFor?: string }) {
   return (
@@ -96,8 +97,8 @@ export function ColorPicker({ value, onChange }: { value: string | undefined; on
     );
   };
   return (
-    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }} role="group" aria-label="색상">
-      {swatch(undefined, '자동(환경/폴더 색)', true)}
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }} role="group" aria-label={t('color.label')}>
+      {swatch(undefined, t('color.auto'), true)}
       {COLOR_PALETTE.map((c) => swatch(c, c))}
     </div>
   );
@@ -106,7 +107,7 @@ export function ColorPicker({ value, onChange }: { value: string | undefined; on
 export function EnvPill({ env }: { env: EnvKind }) {
   const info = ENV_INFO[env];
   return (
-    <span className="pill" style={{ background: `${info.color}33`, color: info.color }}>{info.label}</span>
+    <span className="pill" style={{ background: `${info.color}33`, color: info.color }}>{t(info.label)}</span>
   );
 }
 

@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { useUi, type AskOptions, type ConfirmOptions, type PromptOptions } from '../state/ui';
 import { Modal } from './Modal';
+import { t } from '../i18n';
 
 function ConfirmView({ opts }: { opts: ConfirmOptions }) {
   const settle = useUi((s) => s.settleDialog);
@@ -14,9 +15,9 @@ function ConfirmView({ opts }: { opts: ConfirmOptions }) {
       onClose={cancel}
       foot={
         <>
-          <button className="btn" onClick={cancel} autoFocus={!!opts.danger}>취소</button>
+          <button className="btn" onClick={cancel} autoFocus={!!opts.danger}>{t('common.cancel')}</button>
           <button className={opts.danger ? 'btn danger' : 'btn primary'} onClick={ok} autoFocus={!opts.danger}>
-            {opts.okText ?? '확인'}
+            {opts.okText ?? t('common.ok')}
           </button>
         </>
       }
@@ -38,10 +39,10 @@ function AskView({ opts }: { opts: AskOptions }) {
       onClose={cancel}
       foot={
         <>
-          <button className="btn" onClick={cancel} autoFocus>취소</button>
+          <button className="btn" onClick={cancel} autoFocus>{t('common.cancel')}</button>
           <button className="btn" onClick={() => settle('no')}>{opts.noText}</button>
           <button className={opts.danger ? 'btn danger' : 'btn primary'} onClick={() => settle('yes')}>
-            {opts.okText ?? '확인'}
+            {opts.okText ?? t('common.ok')}
           </button>
         </>
       }
@@ -67,8 +68,8 @@ function PromptView({ opts }: { opts: PromptOptions }) {
       onClose={cancel}
       foot={
         <>
-          <button className="btn" type="button" onClick={cancel}>취소</button>
-          <button className="btn primary" type="submit" form="prompt-form">{opts.okText ?? '확인'}</button>
+          <button className="btn" type="button" onClick={cancel}>{t('common.cancel')}</button>
+          <button className="btn primary" type="submit" form="prompt-form">{opts.okText ?? t('common.ok')}</button>
         </>
       }
     >

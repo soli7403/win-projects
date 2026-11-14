@@ -2,6 +2,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { X } from 'lucide-react';
+import { t } from '../i18n';
 
 interface ModalProps {
   title: string;
@@ -63,7 +64,7 @@ export function Modal({
           {Icon && <Icon size={18} color={iconColor} />}
           <span className="title" id={labelledBy}>{title}</span>
           {!hideClose && (
-            <button className="icon-btn" onClick={onClose} aria-label="닫기" title="닫기">
+            <button className="icon-btn" onClick={onClose} aria-label={t('common.close')} title={t('common.close')}>
               <X size={16} />
             </button>
           )}

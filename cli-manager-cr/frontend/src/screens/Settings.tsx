@@ -15,16 +15,17 @@ import { SettingsSecurity } from './SettingsSecurity';
 import { SettingsBackup } from './SettingsBackup';
 import { SettingsAbout } from './SettingsAbout';
 import '../styles/settings.css';
+import { t, type MsgId } from '../i18n';
 
-const SECTIONS: { id: SettingsSection; label: string; icon: typeof Palette }[] = [
-  { id: 'appearance', label: '화면', icon: Palette },
-  { id: 'input', label: '입력', icon: Keyboard },
-  { id: 'files', label: '파일 전송', icon: ImageUp },
-  { id: 'connection', label: '연결', icon: Plug },
-  { id: 'sync', label: 'git 동기화', icon: RefreshCw },
-  { id: 'security', label: '보안', icon: Shield },
-  { id: 'backup', label: '백업', icon: Archive },
-  { id: 'about', label: '정보', icon: Info },
+const SECTIONS: { id: SettingsSection; label: MsgId; icon: typeof Palette }[] = [
+  { id: 'appearance', label: 'settings.sec.appearance', icon: Palette },
+  { id: 'input', label: 'settings.sec.input', icon: Keyboard },
+  { id: 'files', label: 'settings.sec.files', icon: ImageUp },
+  { id: 'connection', label: 'settings.sec.connection', icon: Plug },
+  { id: 'sync', label: 'settings.sec.sync', icon: RefreshCw },
+  { id: 'security', label: 'settings.sec.security', icon: Shield },
+  { id: 'backup', label: 'settings.sec.backup', icon: Archive },
+  { id: 'about', label: 'settings.sec.about', icon: Info },
 ];
 
 /** 숫자 입력: 입력 중에는 글자 그대로 두고, 떠날 때(blur)·Enter 에 범위로 보정해 저장한다. */
@@ -103,9 +104,9 @@ export function Settings() {
     about: <SettingsAbout />,
   };
   return (
-    <Modal title="설정" size="lg" onClose={close} hideClose={false}>
+    <Modal title={t('settings.title')} size="lg" onClose={close} hideClose={false}>
       <div className="set-wrap">
-        <nav className="set-nav" aria-label="설정 구역">
+        <nav className="set-nav" aria-label={t('settings.nav')}>
           {SECTIONS.map((s) => {
             const Icon = s.icon;
             return (
@@ -117,7 +118,7 @@ export function Settings() {
                 onClick={() => setSection(s.id)}
               >
                 <Icon size={15} />
-                {s.label}
+                {t(s.label)}
               </button>
             );
           })}

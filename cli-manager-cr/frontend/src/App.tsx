@@ -24,8 +24,15 @@ import { subscribeUpdateEvents, useUpdate } from './state/update';
 import { Settings } from './screens/Settings';
 import { ImportDialog } from './screens/ImportDialog';
 import { ErrorBoundary } from './ui/ErrorBoundary';
+import { isLang, useLang, useT } from './i18n';
+import { setOsLanguage, startLanguageSync } from './state/language';
+import { LanguagePicker } from './screens/LanguagePicker';
 
 export function App() {
+  const t = useT();
+  // 언어가 바뀌면 전체를 다시 그린다(다시 마운트하지 않으므로 터미널은 그대로). D75.
+  useLang((s) => s.lang);
+  const languageSet = useApp((s) => isLang(s.store?.settings.language));
   const booted = useApp((s) => s.booted);
   const vault = useApp((s) => s.vault);
   const recoveryPending = useApp((s) => s.recoveryPending);
@@ -46,9 +53,13 @@ export function App() {
         subscribeUpdateEvents(),
         b.on('ui.request', (r: UiRequest) => useRequests.getState().push(r)),
       ];
+      // OS 언어(백엔드가 알려 줌)는 첫 실행 언어 선택의 기본값과, 고르기 전 화면 언어로 쓴다.
+      const info = await b.invoke<{ osLanguage?: string }>('app.info').catch(() => undefined);
+      setOsLanguage(info?.osLanguage);
       await useApp.getState().boot();
       void useUpdate.getState().loadStatus();
     })();
+    const stopLanguage = startLanguageSync();
     const stopLayout = startLayoutPersistence();
     const stopImport = startImportSuggestion();
 
@@ -70,6 +81,7 @@ export function App() {
     return () => {
       cancelled = true;
       offs.forEach((off) => off());
+      stopLanguage();
       stopLayout();
       stopImport();
       window.removeEventListener('keydown', onKey, true);
@@ -82,6 +94,8 @@ export function App() {
 
   // 저장 데이터와 볼트 상태를 읽는 동안에는 빈 틀만 보인다.
   if (!booted) return <div className="app" />;
+  // 첫 실행: 언어를 먼저 고른다(잠금·설정 화면보다 앞). D75.
+  if (!languageSet) return <LanguagePicker />;
 
   const locked = !vault?.unlocked || recoveryPending;
   return (
@@ -93,8 +107,8 @@ export function App() {
       {!locked && <QuickPalette />}
       {!locked && <LocationPicker />}
       {!locked && <RequestDialogs />}
-      {!locked && <ErrorBoundary variant="dialog" label="설정" onDismiss={() => useUi.getState().closeSettings()}><Settings /></ErrorBoundary>}
-      {!locked && <ErrorBoundary variant="dialog" label="서버 가져오기" onDismiss={() => useUi.getState().closeImportDialog()}><ImportDialog /></ErrorBoundary>}
+      {!locked && <ErrorBoundary variant="dialog" label={t('settings.title')} onDismiss={() => useUi.getState().closeSettings()}><Settings /></ErrorBoundary>}
+      {!locked && <ErrorBoundary variant="dialog" label={t('import.title')} onDismiss={() => useUi.getState().closeImportDialog()}><ImportDialog /></ErrorBoundary>}
       <DialogHost />
       <ContextMenuHost />
       <Toasts />

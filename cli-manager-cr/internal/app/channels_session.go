@@ -1,9 +1,8 @@
 package app
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -94,7 +93,7 @@ type adhocArgs struct {
 
 // errNotImplemented 는 아직 구현하지 않은 프로토콜의 접속 시도 오류다.
 func errNotImplemented(szProtocol string) error {
-	return fmt.Errorf("이 프로토콜은 아직 구현되지 않았습니다: %s", szProtocol)
+	return i18n.Errorf("be.proto.unsupported", nil, "name", szProtocol)
 }
 
 // registerSession 은 session.* 과 local.tmuxAvailable 채널을 등록한다 (spec/ipc.md §2 세션).
@@ -147,7 +146,7 @@ func (pService *Service) openSession(args sessionOpenArgs) (session.Info, error)
 	}
 	if !bHasSaved {
 		if args.M_pAdhoc == nil {
-			return session.Info{}, errors.New("서버를 찾을 수 없습니다")
+			return session.Info{}, i18n.NewError("be.host.notFound")
 		}
 		record = adhocRecord(*args.M_pAdhoc)
 	}
@@ -228,7 +227,7 @@ func adhocRecord(adhoc adhocArgs) hostRecord {
 		szAlias = adhoc.M_szUsername + "@" + adhoc.M_szHost
 	}
 	if szProtocol == "local" {
-		szAlias = "로컬 터미널"
+		szAlias = i18n.T("host.localTerminal")
 	}
 	return hostRecord{
 		M_szAlias:    szAlias,
@@ -249,7 +248,7 @@ func targetOf(record hostRecord) string {
 		if szCwd == "" {
 			szCwd = "~"
 		}
-		return "로컬 · " + szCwd
+		return i18n.T("host.localTarget", "cwd", szCwd)
 	case "serial":
 		szPath := "?"
 		iBaud := 9600

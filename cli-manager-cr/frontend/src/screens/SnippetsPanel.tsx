@@ -7,6 +7,7 @@ import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
 import type { Snippet } from '../ipc/types';
 import { notifyNoFocus, sendSnippet } from '../lib/termSend';
+import { t } from '../i18n';
 
 function newSnippetId(): string {
   return `sn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -41,9 +42,9 @@ export function SnippetsPanel() {
   const onDelete = async (s: Snippet, ev: MouseEvent) => {
     ev.stopPropagation();
     const ok = await confirm({
-      title: '명령 삭제',
-      body: `"${s.name}"을(를) 삭제할까요?`,
-      okText: '삭제',
+      title: t('snip.deleteTitle'),
+      body: t('snip.deleteBody', { name: s.name }),
+      okText: t('common.delete'),
       danger: true,
     });
     if (ok) await save(snippets.filter((x) => x.id !== s.id));
@@ -61,21 +62,21 @@ export function SnippetsPanel() {
           <input
             className="input snip-search"
             style={{ paddingLeft: 26 }}
-            placeholder="명령 찾기"
-            aria-label="명령 찾기"
+            placeholder={t('snip.search')}
+            aria-label={t('snip.search')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <button className="icon-btn small" title="새 명령" aria-label="새 명령" onClick={() => setEditing('new')}>
+        <button className="icon-btn small" title={t('snip.new')} aria-label={t('snip.new')} onClick={() => setEditing('new')}>
           <Plus size={15} />
         </button>
       </div>
 
       {snippets.length === 0 ? (
         <div className="snip-empty">
-          <div>자주 쓰는 명령을 저장해 두고 클릭 한 번으로 실행하세요.</div>
-          <div className="faint">일괄 입력이 켜진 탭에서는 모든 창에 입력됩니다.</div>
+          <div>{t('snip.empty')}</div>
+          <div className="faint">{t('snip.emptyBroadcast')}</div>
         </div>
       ) : (
         <div className="snip-list">
@@ -83,7 +84,7 @@ export function SnippetsPanel() {
             <div
               key={s.id}
               className="snip-item"
-              title="누르면 지금 창에 입력합니다"
+              title={t('snip.runTitle')}
               role="button"
               tabIndex={0}
               onClick={() => onRun(s)}
@@ -92,14 +93,14 @@ export function SnippetsPanel() {
               }}
             >
               <div className="snip-main">
-                <div className="snip-name">{s.name || '(이름 없음)'}</div>
+                <div className="snip-name">{s.name || t('snip.noName')}</div>
                 <div className="snip-body">{s.body}</div>
               </div>
               <div className="snip-actions">
                 <button
                   className="icon-btn small"
-                  title="수정"
-                  aria-label="수정"
+                  title={t('common.edit')}
+                  aria-label={t('common.edit')}
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditing(s);
@@ -107,7 +108,7 @@ export function SnippetsPanel() {
                 >
                   <Pencil size={13} />
                 </button>
-                <button className="icon-btn small" title="삭제" aria-label="삭제" onClick={(e) => void onDelete(s, e)}>
+                <button className="icon-btn small" title={t('common.delete')} aria-label={t('common.delete')} onClick={(e) => void onDelete(s, e)}>
                   <Trash2 size={13} />
                 </button>
               </div>
@@ -149,26 +150,26 @@ function SnippetEditor({
   };
   return (
     <Modal
-      title={isNew ? '새 명령' : '명령 수정'}
+      title={isNew ? t('snip.new') : t('snip.edit')}
       size="sm"
       onClose={onCancel}
       foot={
         <>
-          <button className="btn" onClick={onCancel}>취소</button>
-          <button className="btn primary" onClick={submit} disabled={!canSave}>저장</button>
+          <button className="btn" onClick={onCancel}>{t('common.cancel')}</button>
+          <button className="btn primary" onClick={submit} disabled={!canSave}>{t('common.save')}</button>
         </>
       }
     >
-      <Field label="이름">
+      <Field label={t('snip.name')}>
         <input
           className="input"
           autoFocus
-          placeholder="예: 로그 보기"
+          placeholder={t('snip.namePlaceholder')}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
       </Field>
-      <Field label="명령" help="여러 줄은 순서대로 입력됩니다">
+      <Field label={t('snip.command')} help={t('snip.commandHelp')}>
         <textarea
           className="input mono"
           rows={5}
@@ -177,7 +178,7 @@ function SnippetEditor({
           onChange={(e) => setBody(e.target.value)}
         />
       </Field>
-      <ToggleRow title="입력하고 바로 실행" checked={sendEnter} onChange={setSendEnter} />
+      <ToggleRow title={t('snip.sendEnter')} checked={sendEnter} onChange={setSendEnter} />
     </Modal>
   );
 }

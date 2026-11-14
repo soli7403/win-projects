@@ -12,6 +12,7 @@ import {
   STRENGTH_LABELS,
   strengthBarWidth,
 } from '../lib/password';
+import { t } from '../i18n';
 
 type Mode = 'unlock' | 'setup' | 'recovery' | 'recover';
 
@@ -64,14 +65,14 @@ export function Lock({ overlay = false }: LockProps) {
     try {
       const ok = await backend().invoke<boolean>('vault.unlock', [pw]);
       if (!ok) {
-        setError('비밀번호가 올바르지 않습니다');
+        setError(t('lock.wrongPw'));
         setPw('');
       } else {
         await refreshVault();
       }
     } catch (err) {
       // Q12: 거짓이 아니라 오류로 실패하면 입력창은 그대로 두고 오류를 붙여 보인다.
-      setError(`잠금 해제에 실패했습니다: ${errorMessage(err)}`);
+      setError(t('lock.unlockFailed', { error: errorMessage(err) }));
     } finally {
       setBusy(false);
     }
@@ -82,10 +83,10 @@ export function Lock({ overlay = false }: LockProps) {
     setError('');
     try {
       const ok = await backend().invoke<boolean>('vault.unlockOs');
-      if (!ok) setError('Windows 자동 잠금해제에 실패했습니다');
+      if (!ok) setError(t('lock.osFailed'));
       else await refreshVault();
     } catch {
-      setError('Windows 자동 잠금해제에 실패했습니다');
+      setError(t('lock.osFailed'));
     } finally {
       setBusy(false);
     }
@@ -94,8 +95,8 @@ export function Lock({ overlay = false }: LockProps) {
   const submitSetup = async (e: FormEvent) => {
     e.preventDefault();
     if (busy) return;
-    if (pw.length < MIN_PW) return setError('8자 이상 입력하세요');
-    if (pw !== pw2) return setError('비밀번호가 일치하지 않습니다');
+    if (pw.length < MIN_PW) return setError(t('lock.min8'));
+    if (pw !== pw2) return setError(t('lock.mismatch'));
     setBusy(true);
     setError('');
     try {
@@ -113,7 +114,7 @@ export function Lock({ overlay = false }: LockProps) {
   const copyCode = async () => {
     try {
       await backend().invoke('clip.writeText', [formatRecoveryCode(recoveryCode)]);
-      pushToast({ kind: 'ok', text: '복구 코드를 복사했습니다' });
+      pushToast({ kind: 'ok', text: t('lock.codeCopied') });
     } catch (err) {
       pushToast({ kind: 'error', text: errorMessage(err) });
     }
@@ -126,13 +127,13 @@ export function Lock({ overlay = false }: LockProps) {
   const submitRecover = async (e: FormEvent) => {
     e.preventDefault();
     if (busy) return;
-    if (newPw.length < MIN_PW) return setError('새 비밀번호는 8자 이상이어야 합니다');
-    if (newPw !== newPw2) return setError('새 비밀번호가 일치하지 않습니다');
+    if (newPw.length < MIN_PW) return setError(t('lock.newMin8'));
+    if (newPw !== newPw2) return setError(t('sec.pwMismatch'));
     setBusy(true);
     setError('');
     try {
       const ok = await backend().invoke<boolean>('vault.recover', [normalizeRecoveryInput(code), newPw]);
-      if (!ok) setError('복구 코드가 올바르지 않습니다');
+      if (!ok) setError(t('lock.badCode'));
       else await refreshVault();
     } catch (err) {
       setError(errorMessage(err));
@@ -145,41 +146,41 @@ export function Lock({ overlay = false }: LockProps) {
 
   return (
     <div className={`lock-screen${overlay ? ' overlay-mode' : ''}`}>
-      <div className="lock-card" role="region" aria-label="잠금 화면">
+      <div className="lock-card" role="region" aria-label={t('lock.screen')}>
         <div className="center-row"><LogoMark size={40} /></div>
 
         {mode === 'unlock' && (
           <form key="unlock" className="lock-form" onSubmit={submitUnlock} style={formStyle}>
-            <h1><LockIcon size={18} style={{ verticalAlign: '-3px', marginRight: 6 }} />DariTerm 잠김</h1>
+            <h1><LockIcon size={18} style={{ verticalAlign: '-3px', marginRight: 6 }} />{t('lock.title')}</h1>
             <p className="desc">
               {overlay
-                ? '세션은 계속 연결되어 있습니다. 앱 잠금 비밀번호를 입력하면 다시 사용할 수 있습니다.'
-                : '저장된 서버 계정을 열려면 앱 잠금 비밀번호를 입력하세요.'}
+                ? t('lock.overlayDesc')
+                : t('lock.desc')}
             </p>
             <input
               className="input"
               type="password"
-              placeholder="앱 잠금 비밀번호"
+              placeholder={t('lock.pw')}
               autoComplete="off"
               autoFocus
               value={pw}
               onChange={(e) => setPw(e.target.value)}
-              aria-label="앱 잠금 비밀번호"
+              aria-label={t('lock.pw')}
             />
             <div className="err-text" role="alert">{error}</div>
             <div className="lock-actions">
               <button className="btn primary" type="submit" disabled={!pw || busy}>
-                {busy ? '확인 중...' : '열기'}
+                {busy ? t('lock.checking') : t('lock.open')}
               </button>
               {vault?.osUnlockEnabled && (
                 <button className="btn" type="button" onClick={unlockOs} disabled={busy}>
-                  <ShieldCheck size={15} />Windows 계정으로 잠금 해제
+                  <ShieldCheck size={15} />{t('lock.osUnlock')}
                 </button>
               )}
             </div>
             <div className="center-row">
               <button className="btn link small-btn" type="button" onClick={() => go('recover')}>
-                비밀번호를 잊으셨나요? 복구 코드로 재설정
+                {t('lock.forgot')}
               </button>
             </div>
           </form>
@@ -187,69 +188,69 @@ export function Lock({ overlay = false }: LockProps) {
 
         {mode === 'setup' && (
           <form key="setup" onSubmit={submitSetup} style={formStyle}>
-            <h1>DariTerm 처음 설정</h1>
+            <h1>{t('setup.title')}</h1>
             <p className="desc">
-              서버 ID·비밀번호·키는 이 앱 잠금 비밀번호로 AES-256 암호화되어 이 PC에만 저장됩니다. 앱 잠금 비밀번호는 어디에도 전송되지 않습니다.
+              {t('setup.desc')}
             </p>
             <input
               className="input"
               type="password"
-              placeholder="앱 잠금 비밀번호 (8자 이상)"
+              placeholder={t('setup.pw')}
               autoComplete="new-password"
               autoFocus
               value={pw}
               onChange={(e) => setPw(e.target.value)}
-              aria-label="앱 잠금 비밀번호 (8자 이상)"
+              aria-label={t('setup.pw')}
             />
             {pw && (
               <div>
                 <div className="strength" aria-hidden="true">
                   <div style={{ width: strengthBarWidth(score), background: STRENGTH_COLORS[score] }} />
                 </div>
-                <div className="faint small" style={{ marginTop: 4 }}>강도: {STRENGTH_LABELS[score]}</div>
+                <div className="faint small" style={{ marginTop: 4 }}>{t('setup.strength', { label: t(STRENGTH_LABELS[score]) })}</div>
               </div>
             )}
             <input
               className="input"
               type="password"
-              placeholder="비밀번호 확인"
+              placeholder={t('setup.pw2')}
               autoComplete="new-password"
               value={pw2}
               onChange={(e) => setPw2(e.target.value)}
-              aria-label="비밀번호 확인"
+              aria-label={t('setup.pw2')}
             />
             <div className="err-text" role="alert">{error}</div>
             <button className="btn primary" type="submit" disabled={busy}>
-              {busy ? '암호화 키 생성 중...' : '앱 잠금 비밀번호 만들기'}
+              {busy ? t('setup.creating') : t('setup.create')}
             </button>
           </form>
         )}
 
         {mode === 'recovery' && (
           <div key="recovery" style={formStyle}>
-            <h1><KeyRound size={18} style={{ verticalAlign: '-3px', marginRight: 6 }} />복구 코드</h1>
+            <h1><KeyRound size={18} style={{ verticalAlign: '-3px', marginRight: 6 }} />{t('recovery.title')}</h1>
             <p className="desc">
-              앱 잠금 비밀번호를 잊었을 때 이 코드로만 복구할 수 있습니다. 인쇄하거나 안전한 곳에 적어 두세요. 이 화면을 닫으면 다시 볼 수 없습니다.
+              {t('recovery.desc')}
             </p>
             <div className="recovery-box selectable">{formatRecoveryCode(recoveryCode)}</div>
             <div className="center-row">
-              <button className="btn" type="button" onClick={copyCode}><Copy size={15} />복사</button>
+              <button className="btn" type="button" onClick={copyCode}><Copy size={15} />{t('common.copy')}</button>
             </div>
             <label className="toggle-row" style={{ cursor: 'pointer' }}>
-              <span>복구 코드를 안전한 곳에 저장했습니다</span>
+              <span>{t('recovery.saved')}</span>
               <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} />
             </label>
             <button className="btn primary" type="button" disabled={!saved} onClick={finishRecovery}>
-              <Check size={15} />시작하기
+              <Check size={15} />{t('recovery.start')}
             </button>
           </div>
         )}
 
         {mode === 'recover' && (
           <form key="recover" onSubmit={submitRecover} style={formStyle}>
-            <h1>복구 코드로 비밀번호 다시 정하기</h1>
+            <h1>{t('recover.title')}</h1>
             <p className="desc">
-              앱 잠금 비밀번호를 만들 때 받은 24자리 복구 코드와 새 앱 잠금 비밀번호를 입력하세요. 저장된 계정은 그대로 유지됩니다.
+              {t('recover.desc')}
             </p>
             <input
               className="input mono"
@@ -257,30 +258,30 @@ export function Lock({ overlay = false }: LockProps) {
               autoFocus
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              aria-label="복구 코드"
+              aria-label={t('recovery.title')}
             />
             <input
               className="input"
               type="password"
-              placeholder="새 앱 잠금 비밀번호"
+              placeholder={t('recover.newPw')}
               autoComplete="new-password"
               value={newPw}
               onChange={(e) => setNewPw(e.target.value)}
-              aria-label="새 앱 잠금 비밀번호"
+              aria-label={t('recover.newPw')}
             />
             <input
               className="input"
               type="password"
-              placeholder="새 비밀번호 확인"
+              placeholder={t('sec.newPwAgain')}
               autoComplete="new-password"
               value={newPw2}
               onChange={(e) => setNewPw2(e.target.value)}
-              aria-label="새 비밀번호 확인"
+              aria-label={t('sec.newPwAgain')}
             />
             <div className="err-text" role="alert">{error}</div>
-            <button className="btn primary" type="submit" disabled={busy}>다시 정하기</button>
+            <button className="btn primary" type="submit" disabled={busy}>{t('recover.submit')}</button>
             <div className="center-row">
-              <button className="btn link small-btn" type="button" onClick={() => go('unlock')}>뒤로</button>
+              <button className="btn link small-btn" type="button" onClick={() => go('unlock')}>{t('common.back')}</button>
             </div>
           </form>
         )}

@@ -16,6 +16,8 @@ import { shortcutFor } from '../lib/keys';
 import { resolveTermTheme } from '../lib/termThemes';
 import { DANGEROUS_PATTERNS } from '../lib/defaults';
 import { clipboardKind, forceImagePaste, insertPaths, uploadAndInsert } from '../state/paste';
+// 이 파일은 t 를 터미널 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
+import { relabel, t as tr } from '../i18n';
 
 interface Props {
   paneId: string;
@@ -116,7 +118,7 @@ export async function pasteFromClipboard(paneId: string, sessionId: string, term
   const text = kind.text ?? '';
   if (!text) return;
   const info = useWorkspace.getState().sessions[sessionId]?.info;
-  const name = info?.title ?? '세션';
+  const name = relabel(info?.title) ?? tr('tab.session');
   const patterns = st?.dangerousPatterns ?? DANGEROUS_PATTERNS;
   const send = () => {
     for (const sid of targets) getBackend().termInput(sid, text);
@@ -124,10 +126,10 @@ export async function pasteFromClipboard(paneId: string, sessionId: string, term
   };
   if (st?.guardDangerousOnProd && info?.env === 'prod' && matchesDangerous(text, patterns)) {
     const ok = await useUi.getState().confirm({
-      title: '운영 서버 위험 명령 붙여넣기',
-      body: `[${name}] 붙여넣을 내용에 위험한 명령이 있습니다.`,
+      title: tr('paste.dangerTitle'),
+      body: tr('paste.dangerBody', { name }),
       detail: text.slice(0, 2000),
-      okText: '붙여넣기',
+      okText: tr('paste.ok'),
       danger: true,
     });
     if (ok) send();
@@ -137,10 +139,10 @@ export async function pasteFromClipboard(paneId: string, sessionId: string, term
   const lines = pasteLineCount(text);
   if (st?.confirmMultilinePaste && lines >= 2 && !term.modes.bracketedPasteMode) {
     const ok = await useUi.getState().confirm({
-      title: '여러 줄 붙여넣기',
-      body: `${lines}줄을 [${name}]에 붙여넣습니다. 각 줄이 명령으로 실행될 수 있습니다.`,
+      title: tr('paste.multiTitle'),
+      body: tr('paste.multiBody', { lines, name }),
       detail: text.slice(0, 2000),
-      okText: '붙여넣기',
+      okText: tr('paste.ok'),
     });
     if (ok) send();
     else term.focus();
@@ -176,7 +178,7 @@ function FindBar({ term, paneId, onClose }: { term: Terminal; paneId: string; on
       <input
         autoFocus
         className="input"
-        placeholder="터미널에서 찾기"
+        placeholder={tr('find.placeholder')}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -194,9 +196,9 @@ function FindBar({ term, paneId, onClose }: { term: Terminal; paneId: string; on
           }
         }}
       />
-      <button className="btn small-btn" onClick={() => next(-1)}>이전</button>
-      <button className="btn small-btn" onClick={() => next(1)}>다음</button>
-      <button className="btn small-btn" onClick={close}>닫기</button>
+      <button className="btn small-btn" onClick={() => next(-1)}>{tr('find.prev')}</button>
+      <button className="btn small-btn" onClick={() => next(1)}>{tr('find.next')}</button>
+      <button className="btn small-btn" onClick={close}>{tr('common.close')}</button>
     </div>
   );
 }
@@ -269,10 +271,10 @@ function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): K
       tracker.reset();
       if (line && matchesDangerous(line, useApp.getState().store?.settings.dangerousPatterns ?? DANGEROUS_PATTERNS)) {
         void useUi.getState().confirm({
-          title: '운영 서버 위험 명령',
-          body: `[${info.title}] 운영 서버에서 실행하려는 명령입니다. 정말 실행할까요?`,
+          title: tr('run.dangerTitle'),
+          body: tr('run.dangerBody', { name: relabel(info.title) }),
           detail: line,
-          okText: '실행',
+          okText: tr('run.ok'),
           danger: true,
         }).then((ok) => {
           if (ok) for (const sid of targetsFor(k.paneId, sessionId)) getBackend().termInput(sid, '\r');

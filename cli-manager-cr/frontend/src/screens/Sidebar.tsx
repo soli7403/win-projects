@@ -20,6 +20,8 @@ import { EnvPill } from '../ui/Controls';
 import { ENV_INFO } from '../lib/defaults';
 import { useWorkspace } from '../state/workspace';
 import { findPane, findPaneBySession, sessionsIn, type LayoutNode } from '../lib/layout';
+// 이 파일은 t 를 탭 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
+import { t as tr } from '../i18n';
 
 /** 이 서버의 열린 칸 목록(모든 탭, 탭 순서대로). */
 function panesOfHost(hostId: string): { tabId: string; paneId: string }[] {
@@ -146,8 +148,8 @@ export function Sidebar() {
       if (next === hosts) return;
       void patchStore({ hosts: next });
       if (d.ids.length > 1) {
-        const where = targetId ? `"${groups.find((x) => x.id === targetId)?.name ?? ''}" 폴더` : '최상위';
-        pushToast({ kind: 'info', text: `서버 ${d.ids.length}개를 ${where}(으)로 옮겼습니다` });
+        const where = targetId ? tr('sb.folderNamed', { name: groups.find((x) => x.id === targetId)?.name ?? '' }) : tr('sb.topLevel');
+        pushToast({ kind: 'info', text: tr('sb.moved', { count: d.ids.length, where }) });
       }
       return;
     }
@@ -173,7 +175,7 @@ export function Sidebar() {
   };
 
   const removeHost = async (h: Host) => {
-    const ok = await confirm({ title: '서버 삭제', body: `"${h.alias}"을(를) 삭제할까요?`, okText: '삭제', danger: true });
+    const ok = await confirm({ title: tr('sb.deleteServer'), body: tr('sb.deleteServerBody', { name: h.alias }), okText: tr('common.delete'), danger: true });
     if (!ok) return;
     await patchStore({ hosts: hosts.filter((x) => x.id !== h.id) });
     if (selected === h.id) setSelected(null);
@@ -183,17 +185,17 @@ export function Sidebar() {
   const removeHosts = async (ids: string[]) => {
     const names = hosts.filter((x) => ids.includes(x.id)).map((x) => x.alias || x.host);
     const ok = await confirm({
-      title: '서버 삭제',
-      body: `선택한 서버 ${names.length}개를 삭제할까요?`,
-      detail: names.slice(0, 10).join('\n') + (names.length > 10 ? `\n… 외 ${names.length - 10}개` : ''),
-      okText: '삭제',
+      title: tr('sb.deleteServer'),
+      body: tr('sb.deleteManyBody', { count: names.length }),
+      detail: names.slice(0, 10).join('\n') + (names.length > 10 ? '\n' + tr('sb.andMoreLine', { count: names.length - 10 }) : ''),
+      okText: tr('common.delete'),
       danger: true,
     });
     if (!ok) return;
     await patchStore({ hosts: hosts.filter((x) => !ids.includes(x.id)) });
     setMulti([]);
     if (selected && ids.includes(selected)) setSelected(null);
-    pushToast({ kind: 'info', text: `서버 ${names.length}개를 삭제했습니다` });
+    pushToast({ kind: 'info', text: tr('sb.deletedMany', { count: names.length }) });
   };
 
   /**
@@ -246,22 +248,22 @@ export function Sidebar() {
   const deleteFolder = async (g: Group) => {
     const count = countHostsIn(groups, hosts, g.id);
     const parentName = g.parentId ? groups.find((x) => x.id === g.parentId)?.name : undefined;
-    const moveTo = parentName ? `"${parentName}" 폴더` : '최상위';
+    const moveTo = parentName ? tr('sb.folderNamed', { name: parentName }) : tr('sb.topLevel');
     const ok = await confirm({
-      title: '폴더 삭제',
-      body: count > 0 ? `"${g.name}" 폴더를 삭제할까요?` : `"${g.name}" 폴더를 삭제할까요? 안의 서버는 상위 폴더로 옮겨집니다.`,
-      okText: '삭제',
+      title: tr('sb.deleteFolder'),
+      body: count > 0 ? tr('sb.deleteFolderBody', { name: g.name }) : tr('sb.deleteFolderMove', { name: g.name }),
+      okText: tr('common.delete'),
       danger: true,
     });
     if (!ok) return;
     let withHosts = false;
     if (count > 0) {
       const ans = await useUi.getState().ask({
-        title: '폴더 안의 서버',
-        body: `"${g.name}" 폴더 안의 서버 ${count}개(하위 폴더 포함)도 모두 삭제할까요?`,
-        detail: `[아니오]를 누르면 폴더만 삭제하고 서버는 ${moveTo}(으)로 옮깁니다. [취소]하면 아무것도 삭제하지 않습니다.`,
-        okText: '서버까지 삭제',
-        noText: '아니오 (폴더만 삭제)',
+        title: tr('sb.folderServers'),
+        body: tr('sb.folderServersBody', { name: g.name, count }),
+        detail: tr('sb.folderServersDetail', { where: moveTo }),
+        okText: tr('sb.deleteWithServers'),
+        noText: tr('sb.folderOnly'),
         danger: true,
       });
       if (ans === null) return;
@@ -271,32 +273,32 @@ export function Sidebar() {
     await patchStore({ groups: plan.groups, hosts: plan.hosts });
     if (withHosts) {
       if (selected && !plan.hosts.some((x) => x.id === selected)) setSelected(null);
-      pushToast({ kind: 'info', text: `"${g.name}" 폴더와 서버 ${count}개를 삭제했습니다` });
+      pushToast({ kind: 'info', text: tr('sb.deletedFolder', { name: g.name, count }) });
     }
   };
 
   const hostMenu = (h: Host): MenuItem[] => [
-    { label: '새 탭으로 열기', shortcut: 'Enter', onSelect: () => void openHost(h.id) },
-    { label: '오른쪽 화면에 열기', onSelect: () => void openHost(h.id, { kind: 'rightGroup' }) },
-    { label: '아래 창으로 열기', onSelect: () => void openHost(h.id, { kind: 'split', dir: 'col' }) },
-    { label: '열 위치 선택…', onSelect: () => useUi.getState().openLocation(h.id) },
+    { label: tr('loc.newTab'), shortcut: 'Enter', onSelect: () => void openHost(h.id) },
+    { label: tr('sb.openRight'), onSelect: () => void openHost(h.id, { kind: 'rightGroup' }) },
+    { label: tr('sb.openBelow'), onSelect: () => void openHost(h.id, { kind: 'split', dir: 'col' }) },
+    { label: tr('sb.chooseLocation'), onSelect: () => useUi.getState().openLocation(h.id) },
     { separator: true },
-    { label: '수정', shortcut: 'F2', onSelect: () => openEditor({ kind: 'host', hostId: h.id, groupId: null }) },
-    { label: '복사본 만들기', onSelect: () => void duplicateHost(h) },
-    { label: h.favorite ? '즐겨찾기에서 빼기' : '즐겨찾기에 추가', onSelect: () => void toggleFavorite(h) },
-    { label: '접속 주소 복사', onSelect: () => void copyAddress(h) },
+    { label: tr('common.edit'), shortcut: 'F2', onSelect: () => openEditor({ kind: 'host', hostId: h.id, groupId: null }) },
+    { label: tr('sb.duplicate'), onSelect: () => void duplicateHost(h) },
+    { label: h.favorite ? tr('sb.unfavorite') : tr('sb.favorite'), onSelect: () => void toggleFavorite(h) },
+    { label: tr('sb.copyAddress'), onSelect: () => void copyAddress(h) },
     { separator: true },
-    { label: '삭제', danger: true, onSelect: () => void removeHost(h) },
+    { label: tr('common.delete'), danger: true, onSelect: () => void removeHost(h) },
   ];
 
   const folderMenu = (g: Group): MenuItem[] => [
-    { label: '폴더 서버 모두 바둑판으로 열기', onSelect: () => void openFolderGrid(g.id) },
+    { label: tr('sb.openFolderGrid'), onSelect: () => void openFolderGrid(g.id) },
     { separator: true },
-    { label: '여기에 서버 추가', onSelect: () => openEditor({ kind: 'host', hostId: null, groupId: g.id }) },
-    { label: '새 하위 폴더', onSelect: () => openEditor({ kind: 'folder', folderId: null, parentId: g.id }) },
-    { label: '폴더 수정', onSelect: () => openEditor({ kind: 'folder', folderId: g.id, parentId: g.parentId }) },
+    { label: tr('sb.addServerHere'), onSelect: () => openEditor({ kind: 'host', hostId: null, groupId: g.id }) },
+    { label: tr('sb.newSubfolder'), onSelect: () => openEditor({ kind: 'folder', folderId: null, parentId: g.id }) },
+    { label: tr('folder.edit'), onSelect: () => openEditor({ kind: 'folder', folderId: g.id, parentId: g.parentId }) },
     { separator: true },
-    { label: '폴더 삭제', danger: true, onSelect: () => void deleteFolder(g) },
+    { label: tr('sb.deleteFolder'), danger: true, onSelect: () => void deleteFolder(g) },
   ];
 
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -361,7 +363,7 @@ export function Sidebar() {
             // 칸으로 끌어 놓아 접속하기(panes §7)는 서버 하나일 때만.
             e.dataTransfer.setData(HOST_MIME, h.id);
           } else {
-            setDragBadge(e, `서버 ${ids.length}개`);
+            setDragBadge(e, tr('sb.dragServers', { count: ids.length }));
           }
         }}
         onDragEnd={() => {
@@ -384,7 +386,7 @@ export function Sidebar() {
           // 여러 개 선택한 서버 위에서 우클릭하면 메뉴는 삭제 하나뿐(D59).
           if (inMulti) {
             openMenu(e.clientX, e.clientY, [
-              { label: `삭제 (${multiSel.length}개)`, danger: true, onSelect: () => void removeHosts(multiSel) },
+              { label: tr('sb.deleteCount', { count: multiSel.length }), danger: true, onSelect: () => void removeHosts(multiSel) },
             ]);
             return;
           }
@@ -407,8 +409,8 @@ export function Sidebar() {
         ) : null}
         {hoverId === h.id && opts.selectable && (
           <span style={{ display: 'inline-flex', gap: 2 }}>
-            <button className="btn small-btn" title="옆에 열기" onClick={(e) => { e.stopPropagation(); void openHost(h.id, { kind: 'rightGroup' }); }}>옆에 열기</button>
-            <button className="btn small-btn" title="새로 열기" onClick={(e) => { e.stopPropagation(); void openHost(h.id); }}>새로 열기</button>
+            <button className="btn small-btn" title={tr('sb.openBeside')} onClick={(e) => { e.stopPropagation(); void openHost(h.id, { kind: 'rightGroup' }); }}>{tr('sb.openBeside')}</button>
+            <button className="btn small-btn" title={tr('sb.openNew')} onClick={(e) => { e.stopPropagation(); void openHost(h.id); }}>{tr('sb.openNew')}</button>
           </span>
         )}
       </div>
@@ -494,30 +496,30 @@ export function Sidebar() {
   const noMatch = searching && matched.length === 0 && hosts.length > 0;
 
   return (
-    <aside className="sidebar" style={{ width }} aria-label="서버 목록" onKeyDown={onKey} tabIndex={-1}>
+    <aside className="sidebar" style={{ width }} aria-label={tr('shell.servers')} onKeyDown={onKey} tabIndex={-1}>
       <div className="side-head">
         <div className="search-box">
           <Search size={14} />
           <input
             className="search-input"
-            placeholder="서버 찾기"
+            placeholder={tr('sb.search')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="서버 찾기"
+            aria-label={tr('sb.search')}
           />
         </div>
         <div className="side-btns">
-          <button className="btn small-btn" onClick={() => openEditor({ kind: 'host', hostId: null, groupId: null })}><Plus size={13} />서버 추가</button>
-          <button className="btn small-btn" onClick={() => openEditor({ kind: 'folder', folderId: null, parentId: null })}><FolderPlus size={13} />폴더 추가</button>
-          <button className="btn small-btn" title="PuTTY / SSH config 가져오기" onClick={() => useUi.getState().openImportDialog()}><Download size={13} />가져오기</button>
+          <button className="btn small-btn" onClick={() => openEditor({ kind: 'host', hostId: null, groupId: null })}><Plus size={13} />{tr('sb.addServer')}</button>
+          <button className="btn small-btn" onClick={() => openEditor({ kind: 'folder', folderId: null, parentId: null })}><FolderPlus size={13} />{tr('sb.addFolder')}</button>
+          <button className="btn small-btn" title={tr('quick.import')} onClick={() => useUi.getState().openImportDialog()}><Download size={13} />{tr('sb.import')}</button>
         </div>
       </div>
 
       {multiOn && (
         <div className="side-multi" role="status">
-          <span>서버 {multiSel.length}개 선택</span>
-          <span className="faint small">끌어서 폴더로 옮기기 · 우클릭 삭제</span>
-          <button className="link-btn" onClick={() => setMulti([])}>선택 해제</button>
+          <span>{tr('sb.selected', { count: multiSel.length })}</span>
+          <span className="faint small">{tr('sb.selectedHint')}</span>
+          <button className="link-btn" onClick={() => setMulti([])}>{tr('sb.clearSelection')}</button>
         </div>
       )}
 
@@ -541,30 +543,30 @@ export function Sidebar() {
       >
         {!searching && favorites.length > 0 && (
           <>
-            <div className="side-section"><Star size={12} /> 즐겨찾기</div>
+            <div className="side-section"><Star size={12} /> {tr('sb.favorites')}</div>
             {favorites.map((h) => hostRow(h, 0, { selectable: false }))}
           </>
         )}
         {showRecent && (
           <>
-            <div className="side-section"><Clock size={12} /> 최근 사용</div>
+            <div className="side-section"><Clock size={12} /> {tr('sb.recent')}</div>
             {recent.map((h) => hostRow(h, 0, { selectable: false }))}
           </>
         )}
-        <div className="side-section">서버{hosts.length > 0 ? ` · ${hosts.length}` : ''}</div>
+        <div className="side-section">{tr('sb.servers')}{hosts.length > 0 ? ` · ${hosts.length}` : ''}</div>
         {rootGroups.map((g) => folderRow(g, 0))}
         {looseHosts.map((h) => hostRow(h, 0))}
         {hosts.length === 0 && (
           <div className="faint small" style={{ padding: '8px 10px', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-            {'아직 저장된 서버가 없습니다.\n+ 서버로 추가하거나\n가져오기로 PuTTY 세션을 불러오세요.'}
+            {tr('sb.empty')}
           </div>
         )}
         {noMatch && (
-          <div className="faint small" style={{ padding: '8px 10px' }}>{`"${query.trim()}"와 일치하는 서버가 없습니다`}</div>
+          <div className="faint small" style={{ padding: '8px 10px' }}>{tr('sb.noMatch', { query: query.trim() })}</div>
         )}
       </div>
 
-      <div className="side-resize" onPointerDown={onResizeDown} role="separator" aria-orientation="vertical" aria-label="사이드바 너비" />
+      <div className="side-resize" onPointerDown={onResizeDown} role="separator" aria-orientation="vertical" aria-label={tr('sb.width')} />
     </aside>
   );
 }

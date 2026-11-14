@@ -1,29 +1,37 @@
 // 단축키 표(화면 표시용). 근거: spec/behavior/shortcuts.md §4.
-// 시작 화면은 처음 12개, 설정 화면은 전체를 보여 준다.
+// 시작 화면은 처음 12개, 설정 화면은 전체를 보여 준다. name·keysId 는 문구 키(D75), 그릴 때 shortcutText 로 바꾼다.
+import { t, type MsgId } from '../i18n';
 
 export interface ShortcutItem {
-  name: string;
+  name: MsgId;
   keys: string;
+  /** 키 표기에 번역할 말이 있으면(예: 방향키) 그 문구 키. */
+  keysId?: MsgId;
+}
+
+/** 표시용 [이름, 키] 문자열. */
+export function shortcutText(s: ShortcutItem): { name: string; keys: string } {
+  return { name: t(s.name), keys: s.keysId ? t(s.keysId) : s.keys };
 }
 
 export const SHORTCUT_LABELS: ShortcutItem[] = [
-  { name: '빠른 연결 / 명령', keys: 'Ctrl+K' },
-  { name: '새 탭 (빠른 연결)', keys: 'Ctrl+Shift+T' },
-  { name: '새 로컬 터미널', keys: 'Ctrl+Alt+T' },
-  { name: '탭 닫기', keys: 'Ctrl+Shift+W' },
-  { name: '같은 서버를 오른쪽에', keys: 'Ctrl+Shift+D' },
-  { name: '같은 서버를 아래에', keys: 'Ctrl+Shift+E' },
-  { name: '창 이동', keys: 'Alt+방향키' },
-  { name: '창 최대화', keys: 'Ctrl+Shift+Enter' },
-  { name: '탭 이동', keys: 'Ctrl+Tab / Ctrl+1~9' },
-  { name: '붙여넣기 (이미지·파일 자동 업로드)', keys: 'Ctrl+V' },
-  { name: '클립보드 이미지 → 서버', keys: 'Ctrl+Alt+V' },
-  { name: '복사', keys: 'Ctrl+Shift+C / 선택' },
-  { name: '터미널에서 찾기', keys: 'Ctrl+Shift+F' },
-  { name: 'SFTP 창', keys: 'Ctrl+Shift+S' },
-  { name: '일괄 입력', keys: 'Ctrl+Shift+B' },
-  { name: '서버 목록 표시/숨김', keys: 'Ctrl+Shift+L' },
-  { name: '글자 크기', keys: 'Ctrl+= / Ctrl+- / Ctrl+0' },
+  { name: 'sc.quick', keys: 'Ctrl+K' },
+  { name: 'sc.newTab', keys: 'Ctrl+Shift+T' },
+  { name: 'sc.newLocal', keys: 'Ctrl+Alt+T' },
+  { name: 'sc.closeTab', keys: 'Ctrl+Shift+W' },
+  { name: 'sc.splitRight', keys: 'Ctrl+Shift+D' },
+  { name: 'sc.splitDown', keys: 'Ctrl+Shift+E' },
+  { name: 'sc.movePane', keys: '', keysId: 'sc.altArrows' },
+  { name: 'sc.zoomPane', keys: 'Ctrl+Shift+Enter' },
+  { name: 'sc.moveTab', keys: 'Ctrl+Tab / Ctrl+1~9' },
+  { name: 'sc.paste', keys: 'Ctrl+V' },
+  { name: 'sc.pasteImage', keys: 'Ctrl+Alt+V' },
+  { name: 'sc.copy', keys: '', keysId: 'sc.copyKeys' },
+  { name: 'sc.find', keys: 'Ctrl+Shift+F' },
+  { name: 'sc.sftp', keys: 'Ctrl+Shift+S' },
+  { name: 'sc.broadcast', keys: 'Ctrl+Shift+B' },
+  { name: 'sc.sidebar', keys: 'Ctrl+Shift+L' },
+  { name: 'sc.fontSize', keys: 'Ctrl+= / Ctrl+- / Ctrl+0' },
 ];
 
 /** 시작 화면에 보이는 처음 12개. */

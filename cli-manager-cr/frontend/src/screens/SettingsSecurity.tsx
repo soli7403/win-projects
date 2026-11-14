@@ -8,6 +8,7 @@ import { useUi } from '../state/ui';
 import { saveSettings } from '../state/settings';
 import type { CredMeta, Host } from '../ipc/types';
 import { NumberField, useSetting, Group } from './Settings';
+import { t } from '../i18n';
 
 export function SettingsSecurity() {
   const [autoLock] = useSetting('autoLockMinutes');
@@ -19,15 +20,15 @@ export function SettingsSecurity() {
 
   return (
     <>
-      <Field label="자동 잠금 (분)" help="이 시간 동안 입력이 없거나 Windows 잠금·절전 시 앱을 잠급니다. 연결된 세션은 유지됩니다. 0이면 끕니다">
-        <NumberField label="자동 잠금 (분)" value={autoLock} min={0} max={1440} fallback={0} onCommit={(v) => void saveSettings({ autoLockMinutes: v })} />
+      <Field label={t('sec.autoLock')} help={t('sec.autoLockHelp')}>
+        <NumberField label={t('sec.autoLock')} value={autoLock} min={0} max={1440} fallback={0} onCommit={(v) => void saveSettings({ autoLockMinutes: v })} />
       </Field>
 
       {vault?.osUnlockAvailable && (
         <Group>
           <ToggleRow
-            title="Windows 로그인으로 열기"
-            desc="앱 잠금 비밀번호 대신 현재 Windows 계정(DPAPI)으로 잠금을 해제합니다"
+            title={t('sec.osUnlock')}
+            desc={t('sec.osUnlockDesc')}
             checked={!!vault.osUnlockEnabled}
             onChange={async (on) => {
               try {
@@ -43,7 +44,7 @@ export function SettingsSecurity() {
       )}
 
       <div>
-        <div className="set-section-title">앱 잠금 비밀번호 변경</div>
+        <div className="set-section-title">{t('sec.changePw')}</div>
         <ChangePassword />
       </div>
 
@@ -59,16 +60,16 @@ function ChangePassword() {
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
 
   const change = async () => {
-    if (next.length < 8) return setResult({ ok: false, text: '새 비밀번호는 8자 이상' });
-    if (next !== again) return setResult({ ok: false, text: '새 비밀번호가 일치하지 않습니다' });
+    if (next.length < 8) return setResult({ ok: false, text: t('sec.pwMin') });
+    if (next !== again) return setResult({ ok: false, text: t('sec.pwMismatch') });
     try {
       const ok = await getBackend().invoke<boolean>('vault.changePassword', [cur, next]);
       if (ok) {
         setCur(''); setNext(''); setAgain('');
-        setResult({ ok: true, text: '변경했습니다' });
+        setResult({ ok: true, text: t('sec.changed') });
       } else {
         setCur(''); setNext(''); setAgain('');
-        setResult({ ok: false, text: '현재 비밀번호가 틀립니다' });
+        setResult({ ok: false, text: t('sec.wrongCurrent') });
       }
     } catch (e) {
       setResult({ ok: false, text: errorMessage(e) });
@@ -78,12 +79,12 @@ function ChangePassword() {
   return (
     <div className="set-stack">
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-        <input className="input" type="password" placeholder="현재 비밀번호" aria-label="현재 비밀번호" value={cur} onChange={(e) => setCur(e.target.value)} />
-        <input className="input" type="password" placeholder="새 비밀번호" aria-label="새 비밀번호" value={next} onChange={(e) => setNext(e.target.value)} />
-        <input className="input" type="password" placeholder="새 비밀번호 확인" aria-label="새 비밀번호 확인" value={again} onChange={(e) => setAgain(e.target.value)} />
+        <input className="input" type="password" placeholder={t('sec.currentPw')} aria-label={t('sec.currentPw')} value={cur} onChange={(e) => setCur(e.target.value)} />
+        <input className="input" type="password" placeholder={t('sec.newPw')} aria-label={t('sec.newPw')} value={next} onChange={(e) => setNext(e.target.value)} />
+        <input className="input" type="password" placeholder={t('sec.newPwAgain')} aria-label={t('sec.newPwAgain')} value={again} onChange={(e) => setAgain(e.target.value)} />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button className="btn" type="button" onClick={() => void change()} disabled={!cur || !next || !again}>변경</button>
+        <button className="btn" type="button" onClick={() => void change()} disabled={!cur || !next || !again}>{t('sec.change')}</button>
         {result && <span className={result.ok ? 'ok-note' : 'danger-note'}>{result.text}</span>}
       </div>
     </div>
@@ -114,7 +115,7 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
   const usersOf = (id: string) => hosts.filter((h) => h.credentialId === id);
 
   const rename = async (c: CredMeta) => {
-    const name = await prompt({ title: '계정 이름', value: c.name, okText: '확인' });
+    const name = await prompt({ title: t('cred.nameTitle'), value: c.name, okText: t('common.ok') });
     if (name === null || !name.trim()) return;
     try {
       await getBackend().invoke('cred.save', [{ id: c.id, name: name.trim(), kind: c.kind }]);
@@ -127,9 +128,9 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
   const remove = async (c: CredMeta) => {
     const n = usersOf(c.id).length;
     const ok = await confirm({
-      title: '계정 삭제',
-      body: `"${c.name}" 계정을 삭제할까요?${n > 0 ? ` ${n}개 서버가 연결할 때 비밀번호를 다시 묻게 됩니다.` : ''}`,
-      okText: '삭제',
+      title: t('cred.deleteTitle'),
+      body: t('cred.deleteBody', { name: c.name }) + (n > 0 ? ' ' + t('cred.deleteUsed', { count: n }) : ''),
+      okText: t('common.delete'),
       danger: true,
     });
     if (!ok) return;
@@ -144,9 +145,9 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
 
   return (
     <div>
-      <div className="set-section-title">저장된 계정 ({creds.length})</div>
+      <div className="set-section-title">{t('cred.saved', { count: creds.length })}</div>
       <Group>
-      {creds.length === 0 && <div className="cred-row"><span className="cred-sub">저장된 계정이 없습니다</span></div>}
+      {creds.length === 0 && <div className="cred-row"><span className="cred-sub">{t('cred.none')}</span></div>}
       {creds.map((c) => {
         const users = usersOf(c.id);
         const shown = users.slice(0, 4).map((h) => h.alias).join(', ');
@@ -157,14 +158,14 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
               <div>
                 <b>{c.name}</b>
                 {c.username && <span className="faint"> ({c.username})</span>}
-                <span className="pill-soft">{c.kind === 'key' ? '키' : '비밀번호'}</span>
+                <span className="pill-soft">{c.kind === 'key' ? t('cred.key') : t('cred.password')}</span>
               </div>
               <div className="cred-sub">
-                {users.length > 0 ? `사용 중: ${shown}${rest > 0 ? ` 외 ${rest}` : ''}` : '사용하는 서버 없음'}
+                {users.length > 0 ? t('cred.usedBy', { names: rest > 0 ? t('drop.andMore', { names: shown, count: rest }) : shown }) : t('cred.unused')}
               </div>
             </div>
-            <button className="btn small-btn" type="button" onClick={() => void rename(c)}>이름</button>
-            <button className="icon-btn" type="button" aria-label="삭제" title="삭제" onClick={() => void remove(c)}>
+            <button className="btn small-btn" type="button" onClick={() => void rename(c)}>{t('cred.rename')}</button>
+            <button className="icon-btn" type="button" aria-label={t('common.delete')} title={t('common.delete')} onClick={() => void remove(c)}>
               <Trash2 size={15} />
             </button>
           </div>

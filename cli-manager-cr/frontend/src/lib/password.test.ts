@@ -4,7 +4,7 @@ import { passwordScore, strengthBarWidth, STRENGTH_COLORS, STRENGTH_LABELS } fro
 describe('앱 잠금 비밀번호 강도 (spec/ui/lock.md §2, acceptance L4)', () => {
   it('Abcdefgh1!x2 는 매우 강함, 막대 100%, 색 #10b981', () => {
     const s = passwordScore('Abcdefgh1!x2');
-    expect(STRENGTH_LABELS[s]).toBe('매우 강함');
+    expect(STRENGTH_LABELS[s]).toBe('pw.veryStrong');
     expect(strengthBarWidth(s)).toBe('100%');
     expect(STRENGTH_COLORS[s]).toBe('#10b981');
   });

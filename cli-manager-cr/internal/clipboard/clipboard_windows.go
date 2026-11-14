@@ -4,8 +4,8 @@
 package clipboard
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/base64"
-	"errors"
 	"os"
 	"os/exec"
 	"strings"
@@ -38,7 +38,7 @@ var (
 )
 
 // ErrNoImage 는 클립보드에 이미지가 없을 때의 오류다.
-var ErrNoImage = errors.New("클립보드에 이미지가 없습니다")
+var ErrNoImage = i18n.NewError("be.clip.noImage")
 
 // openClip 은 클립보드를 열고 닫는 함수를 돌려준다. 열지 못하면 오류.
 func openClip() (func(), error) {
@@ -48,7 +48,7 @@ func openClip() (func(), error) {
 			return func() { g_procCloseClipboard.Call() }, nil
 		}
 	}
-	return nil, errors.New("클립보드를 열 수 없습니다")
+	return nil, i18n.NewError("be.clip.open")
 }
 
 // ReadText 는 유니코드 텍스트를 읽는다. 없으면 빈 문자열.
@@ -91,7 +91,7 @@ func WriteText(szText string) error {
 	nBytes := uintptr(len(slUtf16) * 2)
 	hMem, _, _ := g_procGlobalAlloc.Call(gmemMoveable, nBytes)
 	if hMem == 0 {
-		return errors.New("메모리 할당 실패")
+		return i18n.NewError("be.clip.alloc")
 	}
 	pDst, _, _ := g_procGlobalLock.Call(hMem)
 	for iIndex, wch := range slUtf16 {
@@ -99,7 +99,7 @@ func WriteText(szText string) error {
 	}
 	g_procGlobalUnlock.Call(hMem)
 	if r, _, _ := g_procSetClipboardData.Call(cfUnicodeText, hMem); r == 0 {
-		return errors.New("클립보드 쓰기 실패")
+		return i18n.NewError("be.clip.write")
 	}
 	return nil
 }
@@ -132,7 +132,7 @@ func ImagePNG() ([]byte, error) {
 	}
 	out, errRun := runPS(`Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $img = [System.Windows.Forms.Clipboard]::GetImage(); if ($img -eq $null) { exit 3 }; $ms = New-Object System.IO.MemoryStream; $img.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png); Write-Output ([Convert]::ToBase64String($ms.ToArray()))`)
 	if errRun != nil || len(out) == 0 {
-		return nil, errors.New("클립보드 이미지를 읽지 못했습니다")
+		return nil, i18n.NewError("be.clip.readImage")
 	}
 	return base64.StdEncoding.DecodeString(out[0])
 }

@@ -1,7 +1,7 @@
 package app
 
 import (
-	"errors"
+	"dariterm/internal/i18n"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,7 +59,7 @@ func openSerialTransport(record hostRecord) (session.Transport, error) {
 		opts.LocalEcho = record.M_pSerial.M_bLocalEcho
 	}
 	if opts.Path == "" {
-		return nil, errors.New("시리얼 장치가 지정되지 않았습니다")
+		return nil, i18n.NewError("be.serial.noDevice")
 	}
 	pPort, errOpen := transport.OpenSerial(opts)
 	if errOpen != nil {
@@ -75,7 +75,7 @@ func openLocalTransport(record hostRecord, notify func(string)) (session.Transpo
 	if szShell == "" {
 		shells := transport.ListShells()
 		if len(shells) == 0 {
-			return nil, errors.New("실행할 셸을 찾을 수 없습니다")
+			return nil, i18n.NewError("be.shell.notFound")
 		}
 		szShell = shells[0].Path
 	}
@@ -88,7 +88,7 @@ func openLocalTransport(record hostRecord, notify func(string)) (session.Transpo
 	if info, errStat := os.Stat(szCwd); szCwd == "" || errStat != nil || !info.IsDir() {
 		if record.M_szLocalCwd != "" {
 			// 지정한 시작 폴더가 없으면 홈으로 열고 노랑 안내 줄을 보인다 (session.md §3).
-			notify("\x1b[33m● 시작 폴더(" + record.M_szLocalCwd + ")가 없어 홈 폴더에서 엽니다\x1b[0m\r\n")
+			notify("\x1b[33m● " + i18n.T("be.local.noStartDir", "dir", record.M_szLocalCwd) + "\x1b[0m\r\n")
 		}
 		szCwd, _ = os.UserHomeDir()
 	}

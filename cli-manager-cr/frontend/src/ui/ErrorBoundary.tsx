@@ -2,6 +2,7 @@
 // - page: 앱 최상위. "화면 오류가 발생했습니다" + 오류 메시지 + [다시 불러오기].
 // - dialog: 대화상자 하나. 그 대화상자만 안내로 바꾸고 [닫기](onDismiss) 로 닫으면 나머지 앱은 그대로 살아 있다.
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { t } from '../i18n';
 
 interface Props {
   children: ReactNode;
@@ -29,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // 진단용 기록. 화면에는 메시지만 보인다.
-    console.error('[화면 오류]', this.props.label ?? 'app', error, info.componentStack);
+    console.error('[render error]', this.props.label ?? 'app', error, info.componentStack);
   }
 
   render(): ReactNode {
@@ -40,18 +41,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
     if (variant === 'dialog') {
       return (
-        <div className="overlay" role="alertdialog" aria-label="대화상자 오류">
+        <div className="overlay" role="alertdialog" aria-label={t('error.dialogTitle')}>
           <div className="modal sm" style={{ padding: 0 }}>
             <div className="modal-head">
-              <span className="title">{this.props.label ? `${this.props.label} 오류` : '대화상자 오류'}</span>
+              <span className="title">{this.props.label ? t('error.dialogTitleNamed', { name: this.props.label }) : t('error.dialogTitle')}</span>
             </div>
             <div className="modal-body">
-              <div>이 화면에서 오류가 발생했습니다. 다른 기능은 그대로 쓸 수 있습니다.</div>
+              <div>{t('error.dialogBody')}</div>
               <div className="faint selectable" style={{ fontSize: 11.5, wordBreak: 'break-all' }}>{message}</div>
             </div>
             <div className="modal-foot">
-              <button className="btn" type="button" onClick={reloadApp}>다시 불러오기</button>
-              <button className="btn primary" type="button" onClick={() => this.props.onDismiss?.()}>닫기</button>
+              <button className="btn" type="button" onClick={reloadApp}>{t('error.reload')}</button>
+              <button className="btn primary" type="button" onClick={() => this.props.onDismiss?.()}>{t('common.close')}</button>
             </div>
           </div>
         </div>
@@ -67,13 +68,13 @@ export class ErrorBoundary extends Component<Props, State> {
         }}
       >
         <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>화면 오류가 발생했습니다</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{t('error.pageTitle')}</div>
           <div style={{ color: 'var(--fg-2)', lineHeight: 1.6 }}>
-            화면을 그리는 중 문제가 생겼습니다. 다시 불러오면 대부분 해결됩니다.
+            {t('error.pageBody')}
           </div>
           <div className="faint selectable" style={{ fontSize: 11.5, wordBreak: 'break-all' }}>{message}</div>
           <div>
-            <button className="btn primary" type="button" onClick={reloadApp}>다시 불러오기</button>
+            <button className="btn primary" type="button" onClick={reloadApp}>{t('error.reload')}</button>
           </div>
         </div>
       </div>

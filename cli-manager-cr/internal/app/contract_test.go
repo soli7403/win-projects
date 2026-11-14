@@ -49,6 +49,8 @@ func contractNormalize(anyValue any, szKey string) any {
 			return "<dir>"
 		case "platform":
 			return "<os>"
+		case "osLanguage":
+			return "<lang>"
 		case "lastSync", "message":
 			return v
 		}

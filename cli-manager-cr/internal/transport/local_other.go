@@ -2,10 +2,12 @@
 
 package transport
 
-import "errors"
+import (
+	"dariterm/internal/i18n"
+)
 
 // ErrLocalUnsupported 는 이 운영체제에서 로컬 터미널을 아직 지원하지 않는다는 뜻이다 (1차 범위는 Windows).
-var ErrLocalUnsupported = errors.New("이 운영체제에서는 로컬 터미널을 아직 지원하지 않습니다")
+var ErrLocalUnsupported = i18n.NewError("be.local.unsupported")
 
 // LocalConn 은 비 Windows 빌드의 자리표시자다.
 type LocalConn struct{}

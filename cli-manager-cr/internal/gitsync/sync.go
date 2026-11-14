@@ -1,6 +1,7 @@
 package gitsync
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
 	"errors"
 	"os"
@@ -35,12 +36,12 @@ const G_ciSyncMaxAttempts = 2
 
 // 명세 문구 (data/sync-backup.md §5.4).
 const (
-	g_cszMsgCredentialInUrl = "저장소 주소에 비밀번호·토큰을 넣지 마세요 — 이 PC 의 git 자격 증명 도우미/SSH 키를 사용합니다"
-	g_cszMsgLocked          = "잠금을 해제한 뒤에 동기화할 수 있습니다"
-	g_cszMsgNoGit           = "git 이 설치되어 있지 않습니다"
-	g_cszMsgMismatch        = "저장소의 암호화 데이터가 이 PC 와 다릅니다"
-	g_cszMsgPasswordFail    = "앱 잠금 비밀번호가 맞지 않거나 취소되었습니다"
-	g_cszMsgParseFail       = "동기화 파일 해석 실패"
+	g_cszMsgCredentialInUrl = "sync.credInUrl" // 문구 키(locales, D75)
+	g_cszMsgLocked          = "be.sync.locked"
+	g_cszMsgNoGit           = "be.sync.nogit"
+	g_cszMsgMismatch        = "sync.mismatch"
+	g_cszMsgPasswordFail    = "be.sync.pwFail"
+	g_cszMsgParseFail       = "be.sync.parse"
 )
 
 // G_cszSyncBaseFile 은 기준 파일 이름이다 (data/sync-backup.md §5.2).
@@ -129,13 +130,13 @@ func (pSyncer *Syncer) run(szRepo string, szMode string) Result {
 		return Result{M_szState: G_cszStateUnconfigured}
 	}
 	if HasCredentialInUrl(szRepo) {
-		return Result{M_szState: G_cszStateError, M_szMessage: g_cszMsgCredentialInUrl}
+		return Result{M_szState: G_cszStateError, M_szMessage: i18n.T(g_cszMsgCredentialInUrl)}
 	}
 	if pSyncer.deps.M_vault.Locked() {
-		return Result{M_szState: G_cszStateLocked, M_szMessage: g_cszMsgLocked}
+		return Result{M_szState: G_cszStateLocked, M_szMessage: i18n.T(g_cszMsgLocked)}
 	}
 	if !GitAvailable() {
-		return Result{M_szState: G_cszStateNoGit, M_szMessage: g_cszMsgNoGit}
+		return Result{M_szState: G_cszStateNoGit, M_szMessage: i18n.T(g_cszMsgNoGit)}
 	}
 	var res Result
 	for iAttempt := 0; iAttempt < G_ciSyncMaxAttempts; iAttempt++ {
@@ -187,11 +188,11 @@ func (pSyncer *Syncer) attempt(szRepo string, szMode string, bCanRetry bool) (Re
 		} else {
 			bPlain, errOpen := pSyncer.deps.M_vault.DecryptPayload(blob)
 			if errOpen != nil {
-				return Result{M_szState: G_cszStateVaultMismatch, M_szMessage: g_cszMsgMismatch}, false
+				return Result{M_szState: G_cszStateVaultMismatch, M_szMessage: i18n.T(g_cszMsgMismatch)}, false
 			}
 			remoteData, errOpen = DecodeData(bPlain)
 			if errOpen != nil {
-				return Result{M_szState: G_cszStateError, M_szMessage: g_cszMsgParseFail}, false
+				return Result{M_szState: G_cszStateError, M_szMessage: i18n.T(g_cszMsgParseFail)}, false
 			}
 		}
 		bHasRemote = true
@@ -241,11 +242,11 @@ func (pSyncer *Syncer) pullVault(header json.RawMessage, blob vault.Blob) (Data,
 	}
 	bPlain, errOpen := vault.DecryptWithKey(bKey, blob, vault.G_cszSyncPayloadAad)
 	if errOpen != nil {
-		return NewData(), errors.New(g_cszMsgParseFail)
+		return NewData(), i18n.NewError(g_cszMsgParseFail)
 	}
 	remoteData, errDecode := DecodeData(bPlain)
 	if errDecode != nil {
-		return NewData(), errors.New(g_cszMsgParseFail)
+		return NewData(), i18n.NewError(g_cszMsgParseFail)
 	}
 	slItems := sortedItems(remoteData.M_mapCreds)
 	bAdopted, errAdopt := pSyncer.deps.M_vault.AdoptRemote(header, slItems, szPassword)
@@ -262,14 +263,14 @@ func (pSyncer *Syncer) pullVault(header json.RawMessage, blob vault.Blob) (Data,
 type mismatchError struct{}
 
 func (pErr *mismatchError) Error() string {
-	return g_cszMsgPasswordFail
+	return i18n.T(g_cszMsgPasswordFail)
 }
 
 // errorToResult 는 오류를 상태로 바꾼다 (볼트 불일치는 vault-mismatch, 그 외는 error).
 func errorToResult(errRun error) Result {
 	var pMismatch *mismatchError
 	if errors.As(errRun, &pMismatch) {
-		return Result{M_szState: G_cszStateVaultMismatch, M_szMessage: g_cszMsgPasswordFail}
+		return Result{M_szState: G_cszStateVaultMismatch, M_szMessage: i18n.T(g_cszMsgPasswordFail)}
 	}
 	return Result{M_szState: G_cszStateError, M_szMessage: errRun.Error()}
 }

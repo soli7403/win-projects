@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { getBackend, errorMessage } from '../ipc/backend';
 import type { UpdateInfo, UpdateCheckResult } from '../ipc/c1types';
 import { useApp } from './app';
+import { t } from '../i18n';
 
 interface UpdateState {
   available: UpdateInfo | null;
@@ -30,12 +31,12 @@ export const useUpdate = create<UpdateState>((set) => ({
       const r = await getBackend().invoke<UpdateCheckResult>('update.check');
       if (r.status === 'newer') {
         set({ available: { version: r.version ?? '', url: r.url ?? '' } });
-        push({ kind: 'info', text: `새 버전 ${r.version} 이 있습니다` });
-      } else if (r.status === 'latest') push({ kind: 'ok', text: '최신 버전입니다' });
-      else if (r.status === 'unconfigured') push({ kind: 'ok', text: '배포 저장소가 설정되지 않은 빌드입니다' });
-      else push({ kind: 'error', text: '확인하지 못했습니다 (네트워크를 확인하세요)' });
+        push({ kind: 'info', text: t('update.newer', { version: r.version ?? '' }) });
+      } else if (r.status === 'latest') push({ kind: 'ok', text: t('update.latest') });
+      else if (r.status === 'unconfigured') push({ kind: 'ok', text: t('update.unconfigured') });
+      else push({ kind: 'error', text: t('update.failedNetwork') });
     } catch (e) {
-      push({ kind: 'error', text: `확인하지 못했습니다 (${errorMessage(e)})` });
+      push({ kind: 'error', text: t('update.failed', { error: errorMessage(e) }) });
     }
   },
 }));
@@ -45,7 +46,7 @@ export function subscribeUpdateEvents(): () => void {
   const off = getBackend().on('update.available', (u: UpdateInfo) => {
     useUpdate.getState().setAvailable({ version: u.version, url: u.url });
     if (u.announce) {
-      useApp.getState().pushToast({ kind: 'info', text: `새 버전 ${u.version} 이 있습니다 (상태 표시줄을 눌러 확인)` });
+      useApp.getState().pushToast({ kind: 'info', text: t('update.announce', { version: u.version }) });
     }
   });
   return off;

@@ -6,6 +6,8 @@ import { useUi, type MenuItem } from '../state/ui';
 import { paneIds, findPane } from '../lib/layout';
 import { isFileDrag, hoverStart, hoverEnd, dropFiles, tabSessionId } from './fileDrag';
 import { focusActiveTerminal } from './TerminalView';
+// 이 파일은 t 를 탭 변수 이름으로 많이 쓰므로 번역 함수는 tr 로 가져온다(D75).
+import { t as tr } from '../i18n';
 
 export const TAB_MIME = 'application/x-dariterm-tab';
 
@@ -53,7 +55,7 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
 
   const rename = async (t: Tab) => {
     const cur = tabTitle(t, sessions);
-    const v = await prompt({ title: '탭 이름 변경', value: t.title ?? cur, okText: '확인' });
+    const v = await prompt({ title: tr('tab.rename'), value: t.title ?? cur, okText: tr('common.ok') });
     if (v === null) return;
     renameTab(t.id, v);
   };
@@ -68,9 +70,9 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
     const count = paneIds(t.root).filter((pid) => findPane(t.root, pid)?.sessionId).length;
     if (count >= 2) {
       const ok = await confirm({
-        title: '탭 닫기',
-        body: `이 탭의 연결 ${count}개를 모두 닫을까요?`,
-        okText: '닫기',
+        title: tr('tab.close'),
+        body: tr('tab.closeBody', { count }),
+        okText: tr('common.close'),
         danger: true,
       });
       if (!ok) return;
@@ -81,17 +83,17 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
   const menuFor = (t: Tab): MenuItem[] => {
     const panes = paneIds(t.root).length;
     return [
-      { label: '탭 이름 변경', onSelect: () => void rename(t) },
+      { label: tr('tab.rename'), onSelect: () => void rename(t) },
       groupOf(t) === 0
-        ? { label: '오른쪽 화면으로 보내기', disabled: allTabs.length < 2, onSelect: () => moveTabToGroup(t.id, 1) }
-        : { label: '왼쪽 화면으로 보내기', onSelect: () => moveTabToGroup(t.id, 0) },
-      ...(split ? [{ label: '한 화면으로 합치기', onSelect: () => mergeGroups() } as MenuItem] : []),
-      { label: t.broadcast ? '이 탭의 모든 창에 일괄 입력 끄기' : '이 탭의 모든 창에 일괄 입력', shortcut: 'Ctrl+Shift+B', disabled: panes < 2, onSelect: () => toggleBroadcast(t.id) },
-      { label: '창마다 탭으로 나누기', disabled: panes < 2, onSelect: () => detachPanes(t.id) },
-      { label: '모든 탭을 한 화면에 바둑판으로', onSelect: () => gridTabs() },
+        ? { label: tr('tab.toRight'), disabled: allTabs.length < 2, onSelect: () => moveTabToGroup(t.id, 1) }
+        : { label: tr('tab.toLeft'), onSelect: () => moveTabToGroup(t.id, 0) },
+      ...(split ? [{ label: tr('tab.merge'), onSelect: () => mergeGroups() } as MenuItem] : []),
+      { label: t.broadcast ? tr('tab.broadcastOff') : tr('tab.broadcastOn'), shortcut: 'Ctrl+Shift+B', disabled: panes < 2, onSelect: () => toggleBroadcast(t.id) },
+      { label: tr('tab.detach'), disabled: panes < 2, onSelect: () => detachPanes(t.id) },
+      { label: tr('tab.grid'), onSelect: () => gridTabs() },
       { separator: true },
-      { label: '나머지 탭 닫기', onSelect: () => void closeOthers(t) },
-      { label: '탭 닫기', shortcut: 'Ctrl+Shift+W', danger: true, onSelect: () => void confirmClose(t) },
+      { label: tr('tab.closeOthers'), onSelect: () => void closeOthers(t) },
+      { label: tr('tab.close'), shortcut: 'Ctrl+Shift+W', danger: true, onSelect: () => void confirmClose(t) },
     ];
   };
 
@@ -201,12 +203,12 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
             {env && <span className="bar" style={{ background: env }} />}
             <span className={`dot ${dot}`} />
             <span className="title">{title}</span>
-            {t.broadcast && <Radio size={12} color="var(--warn)" aria-label="일괄 입력" />}
+            {t.broadcast && <Radio size={12} color="var(--warn)" aria-label={tr('tab.broadcastAria')} />}
             {showBadge(t) && <span className="tab-badge">{paneIds(t.root).length}</span>}
             <button
               className="x"
-              aria-label="탭 닫기"
-              title="닫기 (Ctrl+Shift+W)"
+              aria-label={tr('tab.close')}
+              title={tr('tab.closeTitle')}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
@@ -218,7 +220,7 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
           </div>
         );
       })}
-      <button className="icon-btn" title="새로 연결 (Ctrl+K)" aria-label="새로 연결" onClick={() => openQuick(null)} style={{ marginLeft: 4, marginTop: 5 }}>
+      <button className="icon-btn" title={tr('tab.newTitle')} aria-label={tr('tab.new')} onClick={() => openQuick(null)} style={{ marginLeft: 4, marginTop: 5 }}>
         <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
       </button>
       <button

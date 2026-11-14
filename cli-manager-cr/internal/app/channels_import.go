@@ -1,6 +1,7 @@
 package app
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
 	"os"
 
@@ -48,7 +49,7 @@ func (pService *Service) registerImport() {
 			szDir, _ = argString(slArgs, 0)
 		}
 		if szDir == "" {
-			szPicked, errPick := dialog.ChooseDir("SecureCRT 설정 폴더 선택", importer.SecureCrtConfigDir(), false)
+			szPicked, errPick := dialog.ChooseDir(i18n.T("be.dlg.pickCrt"), importer.SecureCrtConfigDir(), false)
 			if errPick != nil {
 				return nil, errPick
 			}

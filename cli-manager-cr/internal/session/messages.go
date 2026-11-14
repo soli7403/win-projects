@@ -2,7 +2,7 @@
 package session
 
 import (
-	"fmt"
+	"dariterm/internal/i18n"
 	"regexp"
 	"strings"
 )
@@ -38,54 +38,55 @@ func notice(szColor string, szText string) string {
 
 // MsgConnecting 은 접속 시작 안내다 (로컬 제외).
 func MsgConnecting(szTitle string, szTarget string) string {
-	return notice(G_cszColorInfo, szTitle+" ("+szTarget+") 연결 중...")
+	return notice(G_cszColorInfo, i18n.T("be.session.connecting", "title", szTitle, "target", szTarget))
 }
 
 // MsgConnectFailed 는 접속 실패 안내다. 로컬은 MsgShellFailed 를 쓴다.
 func MsgConnectFailed(szReason string) string {
-	return notice(G_cszColorError, "연결 실패: "+TranslateError(szReason))
+	return notice(G_cszColorError, i18n.T("be.session.connectFailed", "reason", TranslateError(szReason)))
 }
 
 // MsgShellFailed 는 로컬 셸 실행 실패 안내다.
 func MsgShellFailed(szReason string) string {
-	return notice(G_cszColorError, "셸 실행 실패: "+szReason)
+	return notice(G_cszColorError, i18n.T("be.session.shellFailed", "reason", szReason))
 }
 
 // MsgDisconnected 는 연결 끊김 안내다. 이유가 없으면 기본 문구를 쓴다.
 func MsgDisconnected(szReason string) string {
 	if szReason == "" {
-		return notice(G_cszColorWarn, "연결이 끊어졌습니다")
+		return notice(G_cszColorWarn, i18n.T("be.session.disconnected"))
 	}
-	return notice(G_cszColorWarn, "연결 끊김: "+szReason)
+	return notice(G_cszColorWarn, i18n.T("be.session.disconnectedReason", "reason", szReason))
 }
 
 // MsgReconnectScheduled 는 자동 재접속 예약 안내다.
 func MsgReconnectScheduled(iSec int) string {
-	return notice(G_cszColorInfo, fmt.Sprintf("%d초 후 자동 재연결합니다... (Enter: 즉시 재연결)", iSec))
+	return notice(G_cszColorInfo, i18n.T("be.session.reconnectIn", "sec", iSec))
 }
 
 // MsgGiveUp 는 재접속을 포기했을 때의 안내다.
 func MsgGiveUp() string {
-	return notice(G_cszColorInfo, "Enter 키를 누르면 다시 연결합니다.")
+	return notice(G_cszColorInfo, i18n.T("be.session.pressEnter"))
 }
 
 // MsgTmuxMissing 은 tmux 가 없을 때 스크립트가 내는 안내다 (session.md §7 1번).
 func MsgTmuxMissing() string {
-	return notice(G_cszColorWarn, "이 대상에 tmux 가 없어 세션 유지를 쓰지 않습니다 (자동 실행 명령은 실행되지 않음)")
+	return notice(G_cszColorWarn, i18n.T("be.session.tmuxMissing"))
 }
 
 // g_slErrorRules 는 오류 문구 번역표다 (session.md §3). 위에서 아래 순서로 첫 일치를 쓴다.
+// szOutput 은 문구 키(locales/*.json, D75)이고 {raw} 자리에 원문을 넣는다.
 var g_slErrorRules = []struct {
 	slWords  []string
 	szOutput string
 }{
-	{[]string{"refused", "actively refused"}, "서버가 연결을 거부했습니다 (포트 확인)"},
-	{[]string{"timed out", "i/o timeout"}, "응답 시간 초과 (주소·방화벽 확인)"},
-	{[]string{"no such host"}, "호스트 이름을 찾을 수 없습니다"},
-	{[]string{"unreachable"}, "네트워크에 도달할 수 없습니다"},
-	{[]string{"unable to authenticate", "no supported methods"}, "인증 실패 (사용자 이름/비밀번호/키 확인)"},
-	{[]string{"host key rejected"}, "호스트 키를 승인하지 않아 연결을 중단했습니다"},
-	{[]string{"access is denied", "cannot find the file"}, "%s (포트 사용 중이거나 권한 없음)"},
+	{[]string{"refused", "actively refused"}, "be.err.refused"},
+	{[]string{"timed out", "i/o timeout"}, "be.err.timeout"},
+	{[]string{"no such host"}, "be.err.noHost"},
+	{[]string{"unreachable"}, "be.err.unreachable"},
+	{[]string{"unable to authenticate", "no supported methods"}, "be.err.auth"},
+	{[]string{"host key rejected"}, "be.err.hostKeyRejected"},
+	{[]string{"access is denied", "cannot find the file"}, "be.err.portBusy"},
 }
 
 // TranslateError 는 접속 실패 원문을 안내 문구로 바꾼다. 일치하지 않으면 원문을 돌려준다.
@@ -94,10 +95,7 @@ func TranslateError(szRaw string) string {
 	for _, ruleItem := range g_slErrorRules {
 		for _, szWord := range ruleItem.slWords {
 			if strings.Contains(szLower, szWord) {
-				if strings.Contains(ruleItem.szOutput, "%s") {
-					return strings.Replace(ruleItem.szOutput, "%s", szRaw, 1)
-				}
-				return ruleItem.szOutput
+				return i18n.T(ruleItem.szOutput, "raw", szRaw)
 			}
 		}
 	}

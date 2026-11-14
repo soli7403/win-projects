@@ -1,7 +1,7 @@
 package transport
 
 import (
-	"errors"
+	"dariterm/internal/i18n"
 	"fmt"
 	"strings"
 	"sync"
@@ -11,7 +11,7 @@ import (
 )
 
 // ErrPortClosed 는 시리얼 포트가 닫혔을 때의 이유다 (protocols.md §5).
-var ErrPortClosed = errors.New("포트가 닫혔습니다")
+var ErrPortClosed = i18n.NewError("be.serial.closed")
 
 // SerialOptions 는 시리얼 열기 설정이다 (protocols.md §5, data/store.md §3 serial).
 type SerialOptions struct {

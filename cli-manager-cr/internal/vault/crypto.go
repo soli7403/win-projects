@@ -4,8 +4,8 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"dariterm/internal/i18n"
 	"encoding/base64"
-	"errors"
 	"strings"
 
 	"golang.org/x/crypto/scrypt"
@@ -28,7 +28,7 @@ const (
 )
 
 // errCipherShort 는 암호문 형식이 잘못되었을 때 돌려준다.
-var errCipherShort = errors.New("암호문 형식 오류")
+var errCipherShort = i18n.NewError("be.vault.cipherShort")
 
 // cipherBlob 은 AES-GCM 결과 {iv, tag, ct} 다. 모든 값은 base64 이다.
 type cipherBlob struct {

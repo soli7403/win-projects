@@ -1,7 +1,7 @@
 package app
 
 import (
-	"fmt"
+	"dariterm/internal/i18n"
 
 	"dariterm/internal/session"
 )
@@ -9,9 +9,9 @@ import (
 // CloseConfirmText 는 연결된 세션이 있을 때 종료 확인 본문을 만든다 (lifecycle.md §5 문구 원문).
 // iKeep 은 세션 유지(tmux) 중인 창 수다. 0이면 둘째 문단이 없다.
 func CloseConfirmText(iSessions int, iKeep int) string {
-	szText := fmt.Sprintf("연결된 세션 %d개가 있습니다. 모두 닫고 종료할까요?", iSessions)
+	szText := i18n.T("be.close.body", "count", iSessions)
 	if iKeep > 0 {
-		szText += fmt.Sprintf("\n\n세션 유지(tmux) 중인 창 %d개는 앱을 닫아도 안의 프로그램이 계속 실행되고, 다시 열면 그 화면에 그대로 붙습니다. 완전히 끝내려면 그 창에서 exit 를 입력하세요.", iKeep)
+		szText += "\n\n" + i18n.T("be.close.keep", "count", iKeep)
 	}
 	return szText
 }
@@ -44,8 +44,11 @@ func IsQuitChoice(szChoice string, bErr bool) bool {
 	if bErr {
 		return false
 	}
+	if szChoice == i18n.T("be.close.quit") {
+		return true
+	}
 	switch szChoice {
-	case "종료", "Yes", "예", "예(Y)":
+	case "종료", "Yes", "예", "예(Y)": // i18n-ok Windows 시스템 버튼·예전 값
 		return true
 	}
 	return false

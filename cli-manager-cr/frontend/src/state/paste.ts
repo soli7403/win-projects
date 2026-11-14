@@ -2,6 +2,7 @@
 import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from './app';
 import { useWorkspace } from './workspace';
+import { t } from '../i18n';
 
 const SPECIAL = /[\s'"$`\\()&;|<>*?!#]/;
 
@@ -19,9 +20,9 @@ export function insertPaths(targets: string[], paths: string[]): void {
 }
 
 function labelOf(kind: 'image' | 'files', count: number, name?: string): string {
-  if (kind === 'image') return '클립보드 이미지';
+  if (kind === 'image') return t('paste.clipboardImage');
   if (count === 1 && name) return name;
-  return `파일 ${count}개`;
+  return t('paste.files', { count });
 }
 
 /** 세션 종류에 따라 업로드 또는 경로만 입력(terminal.md §5). */
@@ -45,20 +46,20 @@ export async function uploadAndInsert(
       return;
     }
     if (isSftp) {
-      pushToast({ kind: 'info', text: `${label} 서버로 전송 중...` });
+      pushToast({ kind: 'info', text: t('paste.uploading', { label }) });
       const paths = await getBackend().invoke<string[]>('sftp.uploadForPrompt', [sessionId, original]);
-      pushToast({ kind: 'ok', text: `${label} 전송 완료 → ${paths.join(', ')}` });
+      pushToast({ kind: 'ok', text: t('paste.uploaded', { label, paths: paths.join(', ') }) });
       insertPaths(targets, paths);
       return;
     }
     if (kind === 'image') {
-      pushToast({ kind: 'error', text: '이미지 전송은 연결된 SSH 세션에서만 가능합니다' });
+      pushToast({ kind: 'error', text: t('paste.imageNeedsSsh') });
       return;
     }
     // 파일은 올리지 않고 원래 경로를 입력한다.
     if (original.kind === 'files') insertPaths(targets, original.paths);
   } catch (e) {
-    pushToast({ kind: 'error', text: `전송 실패: ${errorMessage(e)}` });
+    pushToast({ kind: 'error', text: t('paste.failed', { error: errorMessage(e) }) });
   }
 }
 
@@ -68,7 +69,7 @@ export async function forceImagePaste(sessionId: string, targets: string[]): Pro
   try {
     const has = await getBackend().invoke<boolean>('clip.hasImage');
     if (!has) {
-      pushToast({ kind: 'info', text: '클립보드에 이미지가 없습니다' });
+      pushToast({ kind: 'info', text: t('paste.noImage') });
       return;
     }
     await uploadAndInsert(sessionId, targets, { kind: 'clipboardImage' });

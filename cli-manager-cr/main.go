@@ -70,7 +70,7 @@ func (pApp *App) Reply(szRequestId string, szValueJson string) {
 func main() {
 	szDataDir, errDir := app.DataDir()
 	if errDir != nil {
-		log.Fatalf("데이터 폴더를 열 수 없습니다: %v", errDir)
+		log.Fatalf("cannot open data folder: %v", errDir)
 	}
 	emitter := &Emitter{}
 	pService, errService := app.NewService(szDataDir, emitter)
@@ -110,13 +110,13 @@ func main() {
 		},
 		OnShutdown: func(ctxApp context.Context) {
 			if errClose := pService.Close(); errClose != nil {
-				log.Printf("종료 중 저장 실패: %v", errClose)
+				log.Printf("save on exit failed: %v", errClose)
 			}
 		},
 		LogLevel: logger.ERROR,
 	})
 	if errRun != nil {
-		log.Fatalf("앱 실행 실패: %v", errRun)
+		log.Fatalf("app run failed: %v", errRun)
 	}
 }
 

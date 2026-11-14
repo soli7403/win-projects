@@ -5,6 +5,7 @@ import { formatBytes, formatMtime, isImageName } from '../lib/sftpPath';
 import { useUi, type MenuItem } from '../state/ui';
 import type { Entry } from './sftpOps';
 import * as ops from './sftpOps';
+import { t } from '../i18n';
 
 export interface ListProps {
   sid: string;
@@ -50,32 +51,32 @@ export function SftpList(p: ListProps) {
     return [
       {
         // 우클릭한 행 하나가 대상이며 다중 선택에서도 활성(spec §2.4, 2026-11-10 답).
-        label: e.isDir ? '열기' : '미리보기',
+        label: e.isDir ? t('sftp.open') : t('sftp.preview'),
         onSelect: () => p.onOpen(e),
       },
-      { label: p.local ? '다른 폴더로 복사...' : '다운로드...', onSelect: () => void ops.downloadPaths(p.sid, targets.map((t) => t.path), p.local) },
+      { label: p.local ? t('sftp.copyTo') : t('sftp.downloadTo'), onSelect: () => void ops.downloadPaths(p.sid, targets.map((t) => t.path), p.local) },
       {
-        label: p.local ? '기본 앱으로 열기' : '이 PC 앱으로 편집 (저장하면 자동 업로드)',
+        label: p.local ? t('sftp.openDefault') : t('sftp.editLocal'),
         disabled: e.isDir || n > 1,
         onSelect: () => void ops.editLocally(p.sid, e.path, p.local),
       },
       { separator: true },
-      { label: '경로를 터미널에 입력', onSelect: () => ops.typePaths(targets.map((t) => t.path), p.sep) },
+      { label: t('preview.typePath'), onSelect: () => ops.typePaths(targets.map((t) => t.path), p.sep) },
       {
-        label: '터미널을 이 폴더로 이동 (cd)',
+        label: t('sftp.cdHere'),
         onSelect: () => ops.cdTerminal(e.isDir ? e.path : cur, p.sep),
       },
-      { label: '경로 복사', onSelect: () => void ops.copyPaths(targets.map((t) => t.path)) },
+      { label: t('sftp.copyPath'), onSelect: () => void ops.copyPaths(targets.map((t) => t.path)) },
       { separator: true },
       {
-        label: '이름 바꾸기',
+        label: t('common.rename'),
         disabled: n > 1,
         onSelect: () => void ops.renameEntry(p.sid, e, cur, p.sep).then((ok) => ok && p.onRefresh()),
       },
       ...(showChmod
         ? [
             {
-              label: `권한 바꾸기 (지금 ${e.perm})`,
+              label: t('sftp.chmodLabel', { perm: e.perm }),
               disabled: n > 1,
               onSelect: () => void ops.chmodEntry(p.sid, e).then((ok) => ok && p.onRefresh()),
             },
@@ -83,7 +84,7 @@ export function SftpList(p: ListProps) {
         : []),
       { separator: true },
       {
-        label: '삭제',
+        label: t('common.delete'),
         danger: true,
         shortcut: 'Delete',
         onSelect: () => void ops.deleteEntries(p.sid, targets, p.local).then((ok) => ok && p.onRefresh()),
@@ -128,15 +129,15 @@ export function SftpList(p: ListProps) {
   };
 
   return (
-    <div className="sftp-list" tabIndex={0} onKeyDown={onKey} role="listbox" aria-label="파일 목록" aria-multiselectable="true">
+    <div className="sftp-list" tabIndex={0} onKeyDown={onKey} role="listbox" aria-label={t('sftp.fileList')} aria-multiselectable="true">
       <div className="sftp-head" aria-hidden="true">
         <span />
-        <span>이름</span>
-        <span style={{ textAlign: 'right' }}>크기</span>
-        <span style={{ textAlign: 'right' }}>수정일</span>
+        <span>{t('sftp.colName')}</span>
+        <span style={{ textAlign: 'right' }}>{t('sftp.colSize')}</span>
+        <span style={{ textAlign: 'right' }}>{t('sftp.colModified')}</span>
       </div>
       {p.entries.length === 0 && (
-        <div className="sftp-empty">빈 폴더입니다. 파일을 여기로 끌어다 놓으면 {p.local ? '복사' : '업로드'}됩니다.</div>
+        <div className="sftp-empty">{p.local ? t('sftp.emptyCopy') : t('sftp.emptyUpload')}</div>
       )}
       {p.entries.map((e, i) => {
         const sel = p.selected.has(e.path);
@@ -163,7 +164,7 @@ export function SftpList(p: ListProps) {
             <EntryIcon e={e} />
             <span className="name">
               {e.name}
-              {e.isLink && <Link2 size={11} style={{ marginLeft: 4, verticalAlign: '-1px' }} color="var(--fg-3)" aria-label="링크" />}
+              {e.isLink && <Link2 size={11} style={{ marginLeft: 4, verticalAlign: '-1px' }} color="var(--fg-3)" aria-label={t('sftp.link')} />}
             </span>
             <span className="num">{e.isDir ? '' : formatBytes(e.size)}</span>
             <span className="mtime">{formatMtime(e.mtime)}</span>

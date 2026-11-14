@@ -2,6 +2,7 @@ package sftpfs
 
 import (
 	"crypto/rand"
+	"dariterm/internal/i18n"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -80,9 +81,9 @@ func (pService *Service) watchEdit(watch *EditWatch, fnToast func(string, string
 		time.Sleep(G_cdurEditSettle)
 		errUp := pService.uploadFile(watch.szLocal, watch.szRemote, func(int64) {})
 		if errUp != nil {
-			fnToast("error", "업로드 실패: "+errUp.Error())
+			fnToast("error", i18n.T("be.edit.uploadFailed", "error", errUp.Error()))
 			continue
 		}
-		fnToast("ok", pService.be.Base(watch.szRemote)+" 저장됨 → 서버에 업로드 완료")
+		fnToast("ok", i18n.T("be.edit.uploaded", "name", pService.be.Base(watch.szRemote)))
 	}
 }

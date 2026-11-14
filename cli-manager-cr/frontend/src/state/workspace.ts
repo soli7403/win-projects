@@ -7,6 +7,7 @@ import {
   sessionsIn, splitPane, swapSessions, type Dir, type LayoutNode, type PaneNode,
 } from '../lib/layout';
 import { useApp } from './app';
+import { relabel, t } from '../i18n';
 
 export interface Tab {
   id: string;
@@ -74,7 +75,6 @@ interface WorkspaceState {
   splitEmpty: (paneId: string, dir: Dir, before?: boolean) => void;
 }
 
-const TAB_NAME_GRID = '로컬 터미널';
 
 function tabOf(state: WorkspaceState, tabId: string): Tab | undefined {
   return state.tabs.find((t) => t.id === tabId);
@@ -123,12 +123,12 @@ function withNewTab(s: WorkspaceState, tab: Tab): Placement {
 }
 
 /** 탭 이름(표시용): 사용자 이름 → 포커스 칸 세션 제목 → "세션". */
-export function tabTitle(t: Tab, sessions: Record<string, SessionEntry>): string {
-  if (t.title) return t.title;
-  const pane = t.focusedPane ? findPane(t.root, t.focusedPane) : undefined;
+export function tabTitle(tab: Tab, sessions: Record<string, SessionEntry>): string {
+  if (tab.title) return relabel(tab.title);
+  const pane = tab.focusedPane ? findPane(tab.root, tab.focusedPane) : undefined;
   const sid = pane?.sessionId;
-  if (sid && sessions[sid]) return sessions[sid].info.title;
-  return '세션';
+  if (sid && sessions[sid]) return relabel(sessions[sid].info.title);
+  return t('tab.session');
 }
 
 export const useWorkspace = create<WorkspaceState>((set, get) => ({
@@ -360,17 +360,17 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   },
 
   toggleBroadcast(tabId) {
-    const t = tabOf(get(), tabId);
-    if (!t) return;
-    if (!t.broadcast && paneIds(t.root).length < 2) {
-      useApp.getState().pushToast({ kind: 'info', text: '창이 2개 이상일 때만 일괄 입력을 켤 수 있습니다' });
+    const tab = tabOf(get(), tabId);
+    if (!tab) return;
+    if (!tab.broadcast && paneIds(tab.root).length < 2) {
+      useApp.getState().pushToast({ kind: 'info', text: t('broadcast.needTwo') });
       return;
     }
     set((s) => ({ tabs: patchTab(s.tabs, tabId, (x) => ({ ...x, broadcast: !x.broadcast })) }));
-    const on = !t.broadcast;
+    const on = !tab.broadcast;
     useApp.getState().pushToast({
       kind: 'info',
-      text: on ? '일괄 입력 켜짐 — 이 탭의 모든 창에 입력됩니다' : '일괄 입력 꺼짐',
+      text: on ? t('broadcast.on') : t('broadcast.off'),
     });
   },
 
@@ -387,7 +387,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     const panes: PaneNode[] = [];
     for (const t of s.tabs) collectPanes(t.root, panes);
     if (panes.length < 2) return;
-    const tab: Tab = { id: newId('t'), title: TAB_NAME_GRID, broadcast: false, root: gridLayout(panes), focusedPane: panes[0].id, zoomed: null };
+    const tab: Tab = { id: newId('t'), title: t('host.localTerminal'), broadcast: false, root: gridLayout(panes), focusedPane: panes[0].id, zoomed: null };
     set({ tabs: [tab], activeTabId: tab.id, activeByGroup: [tab.id, null] });
   },
 }));

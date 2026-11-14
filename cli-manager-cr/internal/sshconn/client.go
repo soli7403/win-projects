@@ -1,10 +1,9 @@
 package sshconn
 
 import (
+	"dariterm/internal/i18n"
 	"sync"
 
-	"errors"
-	"fmt"
 	"github.com/pkg/sftp"
 	"net"
 	"strconv"
@@ -14,10 +13,10 @@ import (
 )
 
 // ErrJumpTooDeep 는 점프 호스트 체인이 너무 길 때의 오류다 (protocols.md §2.4).
-var ErrJumpTooDeep = errors.New("경유 서버 체인이 너무 깁니다")
+var ErrJumpTooDeep = i18n.NewError("be.ssh.jumpTooDeep")
 
 // ErrNoUsername 은 사용자 이름이 입력되지 않았을 때의 오류다 (protocols.md §2.2).
-var ErrNoUsername = errors.New("사용자 이름이 입력되지 않았습니다")
+var ErrNoUsername = i18n.NewError("be.ssh.noUser")
 
 // Conn 은 대상 서버까지의 SSH 연결이다. 점프 호스트가 있으면 Hops 에 그 연결들을 가진다.
 type Conn struct {
@@ -62,7 +61,7 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 	var conn net.Conn
 	if tgt.Jump != nil {
 		tgt.Jump.Depth = tgt.Depth + 1
-		notice(fmt.Sprintf("경유 서버 %s 를 거쳐 연결 중...", tgt.Jump.Title))
+		notice(i18n.T("be.ssh.viaJump", "name", tgt.Jump.Title))
 		jumpConn, errJump := Connect(tgt.Jump, store, prompt, notice)
 		if errJump != nil {
 			return nil, errJump
@@ -126,12 +125,12 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 		}
 	}
 	closeHops(hops)
-	return nil, errors.New("인증 실패 (사용자 이름/비밀번호/키 확인)")
+	return nil, i18n.NewError("be.err.auth")
 }
 
 // askPasswordFor 는 비밀번호 요청 창을 띄운다 (bFailed 면 실패 표시).
 func askPasswordFor(tgt *Target, username string, prompt Prompter, asked *askedSecret, bFailed bool) (string, bool, bool) {
-	szPassword, bSave, bOk := prompt.Password(tgt.Title, fmt.Sprintf("%s@%s 비밀번호", username, tgt.Host), username, bFailed)
+	szPassword, bSave, bOk := prompt.Password(tgt.Title, i18n.T("be.ssh.passwordPrompt", "user", username, "host", tgt.Host), username, bFailed)
 	if !bOk {
 		return "", false, false
 	}

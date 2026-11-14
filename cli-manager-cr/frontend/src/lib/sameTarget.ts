@@ -15,7 +15,7 @@ export type OpenRequest =
 export function sameTargetRequest(info: SessionInfo): OpenRequest | null {
   if (info.hostId) return { kind: 'host', hostId: info.hostId };
   if (info.protocol === 'local') {
-    const cwd = info.target.replace(/^로컬 · /, '').trim();
+    const cwd = info.target.replace(/^[^·]+ · /, '').trim(); // 접두(언어마다 다름) 떼기
     return { kind: 'adhoc', adhoc: { host: '', protocol: 'local', ...(cwd && cwd !== '~' ? { cwd } : {}) } };
   }
   if (info.protocol === 'ssh' || info.protocol === 'telnet') {

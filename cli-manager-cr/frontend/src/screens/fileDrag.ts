@@ -6,6 +6,7 @@ import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
 import { useWorkspace } from '../state/workspace';
 import { findPane } from '../lib/layout';
+import { t } from '../i18n';
 
 export const FILE_MIME = 'application/x-dariterm-files';
 
@@ -84,7 +85,7 @@ export async function dropFiles(dstSid: string | null, dir: string): Promise<voi
   if (!d || d.paths.length === 0 || !dstSid) return;
   const toast = useApp.getState().pushToast;
   if (!canBrowse(dstSid)) {
-    toast({ kind: 'error', text: '이 탭에는 복사할 수 없습니다 (연결된 SSH 또는 로컬 터미널만 가능)' });
+    toast({ kind: 'error', text: t('drop.badTarget') });
     return;
   }
   const target = dir || lastDir.get(dstSid) || '';
@@ -94,18 +95,19 @@ export async function dropFiles(dstSid: string | null, dir: string): Promise<voi
     const b = getBackend();
     const r = await b.invoke<{ jobId: string; conflicts: string[] }>('sftp.copy', [d.sessionId, d.paths, dstSid, target, false]);
     if (r.conflicts.length > 0) {
-      const names = r.conflicts.slice(0, 5).join(', ') + (r.conflicts.length > 5 ? ` 외 ${r.conflicts.length - 5}개` : '');
+      const first = r.conflicts.slice(0, 5).join(', ');
+      const names = r.conflicts.length > 5 ? t('drop.andMore', { names: first, count: r.conflicts.length - 5 }) : first;
       const ok = await useUi.getState().confirm({
-        title: '덮어쓰기',
-        body: `대상 폴더에 같은 이름이 있습니다: ${names}`,
-        detail: '덮어쓸까요?',
-        okText: '덮어쓰기',
+        title: t('drop.overwrite'),
+        body: t('drop.conflictBody', { names }),
+        detail: t('drop.overwriteAsk'),
+        okText: t('drop.overwrite'),
         danger: true,
       });
       if (ok) await b.invoke('sftp.copy', [d.sessionId, d.paths, dstSid, target, true]);
     }
   } catch (e) {
-    toast({ kind: 'error', text: `복사 실패: ${errorMessage(e)}` });
+    toast({ kind: 'error', text: t('drop.copyFailed', { error: errorMessage(e) }) });
   }
 }
 

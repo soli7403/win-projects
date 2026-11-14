@@ -8,6 +8,7 @@ import { findPane, paneIds, type Dir, type LayoutNode } from '../lib/layout';
 import { sameTargetRequest } from '../lib/sameTarget';
 import type { ShortcutAction } from '../lib/keys';
 import { focusActiveTerminal } from '../screens/TerminalView';
+import { t } from '../i18n';
 
 /** 포커스 그룹(나뉘지 않았으면 전체)의 탭 목록. */
 function focusGroupTabs(ws: { tabs: Tab[]; activeTabId: string | null }): Tab[] {
@@ -76,7 +77,7 @@ async function openHostAt(
   }
   // 분할 한도에 이르면 쪼개지 않고 새 탭에서 연다 (ui/panes.md §2).
   if (!canSplitMore(active.root)) {
-    useApp.getState().pushToast({ kind: 'info', text: `화면 나누기는 최대 ${maxVerticalSplits()}개까지라 새 탭에서 열었습니다` });
+    useApp.getState().pushToast({ kind: 'info', text: t('split.limitNewTab', { max: maxVerticalSplits() }) });
     ws.openInNewTab(info);
     return;
   }
@@ -87,7 +88,7 @@ async function openHostAt(
 export async function splitSameAs(info: SessionInfo, dir: Dir, paneId: string): Promise<void> {
   const req = sameTargetRequest(info);
   if (!req) {
-    useApp.getState().pushToast({ kind: 'info', text: '같은 대상을 다시 해석할 수 없어 나누지 않았습니다' });
+    useApp.getState().pushToast({ kind: 'info', text: t('split.cannotResolve') });
     return;
   }
   if (req.kind === 'host') await openHost(req.hostId, { kind: 'split', dir, paneId });
@@ -132,11 +133,11 @@ export function runShortcut(action: ShortcutAction, arg?: number | 'last' | 'up'
       const sess = active && focused ? findPane(active.root, focused)?.sessionId : null;
       const info = sess ? ws.sessions[sess]?.info : undefined;
       if (!info || !focused) {
-        useApp.getState().pushToast({ kind: 'info', text: '나눌 세션이 없습니다' });
+        useApp.getState().pushToast({ kind: 'info', text: t('split.noSession') });
         return;
       }
       if (active && !canSplitMore(active.root)) {
-        useApp.getState().pushToast({ kind: 'info', text: `화면 나누기는 최대 ${maxVerticalSplits()}개까지입니다` });
+        useApp.getState().pushToast({ kind: 'info', text: t('split.limit', { max: maxVerticalSplits() }) });
         return;
       }
       void splitSameAs(info, action === 'splitRight' ? 'row' : 'col', focused);
@@ -237,11 +238,11 @@ export async function openFolderGrid(groupId: string): Promise<void> {
   }
   const hosts = st.hosts.filter((h) => h.groupId && ids.has(h.groupId)).sort((a, b) => a.sort - b.sort);
   if (hosts.length === 0) {
-    useApp.getState().pushToast({ kind: 'info', text: '이 폴더에 서버가 없습니다' });
+    useApp.getState().pushToast({ kind: 'info', text: t('folder.noServers') });
     return;
   }
   if (hosts.length > 16) {
-    const ok = await useUi.getState().confirm({ title: '여러 서버 열기', body: `${hosts.length}개 서버에 동시에 연결할까요?`, okText: '확인' });
+    const ok = await useUi.getState().confirm({ title: t('folder.openManyTitle'), body: t('folder.openManyBody', { count: hosts.length }), okText: t('common.ok') });
     if (!ok) return;
   }
   const infos: SessionInfo[] = [];
@@ -249,7 +250,7 @@ export async function openFolderGrid(groupId: string): Promise<void> {
     const info = await openSessionFor(h.id);
     if (info) infos.push(info);
   }
-  addGridTab(group?.name ?? '폴더', infos);
+  addGridTab(group?.name ?? t('folder.fallbackName'), infos);
 }
 
 /** 칸을 다른 탭으로 옮기지 않는다(panes §7 은 같은 탭 안만). 탭 분리는 detachPanes 를 쓴다. */

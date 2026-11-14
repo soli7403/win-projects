@@ -1,10 +1,12 @@
 // 참고한 프로젝트 고지(D63). 저장소 루트 THIRD_PARTY_NOTICES.md 와 같은 내용을 정보 화면에 보인다.
 // 실행 파일만 배포해도 고지가 함께 가도록 앱 안에 넣어 둔다(MIT 조건: 저작권 고지·허가 문구 포함).
 
+import type { MsgId } from '../i18n';
+
 export const REFERENCE_NOTICE = {
   name: 'BrightTerm v1.1.0',
   summary: 'MIT · Copyright (c) 2026 Dany Kim',
-  note: '이 프로그램은 BrightTerm v1.1.0의 기능과 동작을 참고해 새로 작성했습니다. 원본 소스 코드·이름·로고·이미지는 포함하지 않습니다.',
+  note: 'about.referenceNote' as MsgId, // 문구 키(D75)
   license: `MIT License
 
 Copyright (c) 2026 Dany Kim

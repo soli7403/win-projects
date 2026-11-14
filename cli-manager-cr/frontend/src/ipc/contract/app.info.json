@@ -1,5 +1,6 @@
 {
   "dataDir": "\u003cdir\u003e",
+  "osLanguage": "\u003clang\u003e",
   "platform": "\u003cos\u003e",
   "version": "0.1.0"
 }

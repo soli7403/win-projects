@@ -1,7 +1,7 @@
 package sshconn
 
 import (
-	"fmt"
+	"dariterm/internal/i18n"
 	"io"
 	"net"
 	"strconv"
@@ -46,20 +46,20 @@ func (pConn *Conn) StartForwards(slForwards []Forward, notice func(string)) []io
 		if fw.Type == "R" {
 			ln, errListen := pConn.Client.Listen("tcp", szBindAddr)
 			if errListen != nil {
-				notice(fmt.Sprintf("포트 포워딩 R%d 실패: %v", fw.BindPort, errListen))
+				notice(i18n.T("be.fwd.remoteFailed", "port", fw.BindPort, "error", errListen))
 				continue
 			}
-			notice(fmt.Sprintf("포워딩 %s → %s", szBindAddr, szDest))
+			notice(i18n.T("be.fwd.active", "from", szBindAddr, "to", szDest))
 			slClosers = append(slClosers, ln)
 			go acceptLoop(ln, func() (net.Conn, error) { return net.Dial("tcp", szDest) })
 			continue
 		}
 		ln, errListen := net.Listen("tcp", szBindAddr)
 		if errListen != nil {
-			notice(fmt.Sprintf("포트 포워딩 L%d 실패: %v", fw.BindPort, errListen))
+			notice(i18n.T("be.fwd.localFailed", "port", fw.BindPort, "error", errListen))
 			continue
 		}
-		notice(fmt.Sprintf("포워딩 %s → %s", szBindAddr, szDest))
+		notice(i18n.T("be.fwd.active", "from", szBindAddr, "to", szDest))
 		slClosers = append(slClosers, ln)
 		client := pConn.Client
 		go acceptLoop(ln, func() (net.Conn, error) { return client.Dial("tcp", szDest) })

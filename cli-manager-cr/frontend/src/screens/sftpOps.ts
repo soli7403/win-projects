@@ -6,6 +6,7 @@ import { useUi } from '../state/ui';
 import { useWorkspace } from '../state/workspace';
 import { sendText } from '../lib/termSend';
 import { cdCommandFor, isValidMode, joinWith, quoteFor } from '../lib/sftpPath';
+import { t } from '../i18n';
 
 export interface Entry {
   name: string;
@@ -48,7 +49,7 @@ export function sessionInfo(sid: string | null): SessionInfo | undefined {
 
 /** 새 폴더. 빈 이름이면 아무 일도 없다. 성공 시 true. */
 export async function makeFolder(sid: string, dir: string, sep = '/'): Promise<boolean> {
-  const name = await useUi.getState().prompt({ title: '새 폴더', label: '새 폴더 이름', okText: '만들기' });
+  const name = await useUi.getState().prompt({ title: t('quick.newFolder'), label: t('sftp.newFolderLabel'), okText: t('sftp.create') });
   if (name === null || !name.trim()) return false;
   try {
     await getBackend().invoke('sftp.mkdir', [sid, joinWith(dir, name.trim(), sep)]);
@@ -86,7 +87,7 @@ export async function uploadLocal(sid: string, dir: string, localPaths: string[]
 export async function downloadPaths(sid: string, paths: string[], local = false): Promise<void> {
   try {
     const saved = await getBackend().invoke<string | false>('sftp.download', [sid, paths]);
-    if (typeof saved === 'string' && saved) toastOk(`${local ? '복사' : '다운로드'} 완료 → ${saved}`);
+    if (typeof saved === 'string' && saved) toastOk(local ? t('sftp.copied', { path: saved }) : t('sftp.downloaded', { path: saved }));
   } catch (e) {
     toastErr(e);
   }
@@ -97,7 +98,7 @@ export async function editLocally(sid: string, path: string, local = false): Pro
   try {
     await getBackend().invoke('sftp.edit', [sid, path]);
     // 로컬 터미널은 그 파일을 기본 앱으로 열 뿐이라 안내하지 않는다 (file-panel.md §1).
-    if (!local) toastInfo('편집 후 저장하면 서버에 자동 업로드됩니다');
+    if (!local) toastInfo(t('sftp.editHint'));
     return true;
   } catch (e) {
     toastErr(e);
@@ -107,7 +108,7 @@ export async function editLocally(sid: string, path: string, local = false): Pro
 
 /** 이름 바꾸기. 같은 폴더(dir = 패널의 현재 폴더) 안에서 바꾼다. 성공 시 true. */
 export async function renameEntry(sid: string, entry: Entry, dir: string, sep = '/'): Promise<boolean> {
-  const next = await useUi.getState().prompt({ title: '이름 바꾸기', label: '이름', value: entry.name, okText: '바꾸기' });
+  const next = await useUi.getState().prompt({ title: t('common.rename'), label: t('sftp.colName'), value: entry.name, okText: t('sftp.renameOk') });
   if (next === null || !next.trim() || next.trim() === entry.name) return false;
   try {
     await getBackend().invoke('sftp.rename', [sid, entry.path, joinWith(dir, next.trim(), sep)]);
@@ -121,7 +122,7 @@ export async function renameEntry(sid: string, entry: Entry, dir: string, sep = 
 /** 권한 변경. 형식이 [0-7]{3,4} 가 아니면 적용하지 않는다(F5). */
 export async function chmodEntry(sid: string, entry: Entry): Promise<boolean> {
   const current = (entry.mode & 0o777).toString(8).padStart(3, '0');
-  const v = await useUi.getState().prompt({ title: '권한 변경', label: '권한 (8진수, 예: 755)', value: current, okText: '적용' });
+  const v = await useUi.getState().prompt({ title: t('sftp.chmodTitle'), label: t('sftp.chmodField'), value: current, okText: t('sftp.apply') });
   if (v === null || !isValidMode(v.trim())) return false;
   try {
     await getBackend().invoke('sftp.chmod', [sid, entry.path, parseInt(v.trim(), 8)]);
@@ -136,14 +137,15 @@ export async function chmodEntry(sid: string, entry: Entry): Promise<boolean> {
 export async function deleteEntries(sid: string, entries: Entry[], local = false): Promise<boolean> {
   const n = entries.length;
   const anyDir = entries.some((e) => e.isDir);
-  const title = '삭제';
-  const where = local ? '이 PC에서' : '서버에서';
-  const body = n === 1 ? `"${entries[0].name}"을(를) ${where} 영구 삭제할까요?` : `${n}개 항목을(를) ${where} 영구 삭제할까요?`;
+  const title = t('common.delete');
+    const body = n === 1
+    ? t(local ? 'sftp.deleteOneLocal' : 'sftp.deleteOneServer', { name: entries[0].name })
+    : t(local ? 'sftp.deleteManyLocal' : 'sftp.deleteManyServer', { count: n });
   const ok = await useUi.getState().confirm({
     title,
     body,
-    detail: anyDir ? '폴더는 안의 내용까지 모두 삭제됩니다.' : undefined,
-    okText: '삭제',
+    detail: anyDir ? t('sftp.deleteDirNote') : undefined,
+    okText: t('common.delete'),
     danger: true,
   });
   if (!ok) return false;

@@ -3,6 +3,7 @@
 package transport
 
 import (
+	"dariterm/internal/i18n"
 	"fmt"
 	"strings"
 	"sync"
@@ -43,7 +44,7 @@ func OpenLocal(opts LocalOptions) (*LocalConn, error) {
 	var hPty windows.Handle
 	rCreate, _, _ := g_procCreatePseudoConsole.Call(coordValue(opts.Cols, opts.Rows), uintptr(hInRead), uintptr(hOutWrite), 0, uintptr(unsafe.Pointer(&hPty)))
 	if rCreate != 0 {
-		return nil, fmt.Errorf("가상 터미널 생성 실패: 0x%x", rCreate)
+		return nil, i18n.Errorf("be.pty.create", nil, "code", fmt.Sprintf("0x%x", rCreate))
 	}
 	// 가상 터미널이 입출력 쪽 핸들을 가져갔으므로 이쪽 복사본은 닫는다.
 	_ = windows.CloseHandle(hInRead)
@@ -56,12 +57,12 @@ func OpenLocal(opts LocalOptions) (*LocalConn, error) {
 	pAttr := unsafe.Pointer(&slAttr[0])
 	rInit, _, errInit := g_procInitializeProcThreadAttrList.Call(uintptr(pAttr), 1, 0, uintptr(unsafe.Pointer(&cbAttr)))
 	if rInit == 0 {
-		return nil, fmt.Errorf("프로세스 속성 초기화 실패: %v", errInit)
+		return nil, i18n.Errorf("be.pty.attr", nil, "error", errInit)
 	}
 	// 가상 터미널 속성의 값은 HPCON 핸들 값 자체다 (포인터가 아님, ConPTY 예제와 같다).
 	rUpdate, _, errUpdate := g_procUpdateProcThreadAttribute.Call(uintptr(pAttr), 0, g_dwProcThreadAttrPseudoConsole, uintptr(hPty), unsafe.Sizeof(hPty), 0, 0)
 	if rUpdate == 0 {
-		return nil, fmt.Errorf("가상 터미널 연결 실패: %v", errUpdate)
+		return nil, i18n.Errorf("be.pty.attach", nil, "error", errUpdate)
 	}
 	defer g_procDeleteProcThreadAttributeList.Call(uintptr(pAttr))
 
@@ -97,7 +98,7 @@ func OpenLocal(opts LocalOptions) (*LocalConn, error) {
 		uintptr(unsafe.Pointer(&pi)),
 	)
 	if rProc == 0 {
-		return nil, fmt.Errorf("셸 실행 실패: %v", errProc)
+		return nil, i18n.Errorf("be.shell.startFailed", nil, "error", errProc)
 	}
 	_ = windows.CloseHandle(pi.Thread)
 	return &LocalConn{hPty: hPty, hProcess: pi.Process, hInWrite: hInWrite, hOutRead: hOutRead}, nil
@@ -135,9 +136,9 @@ func (pLocal *LocalConn) exitReason() error {
 	_, _ = windows.WaitForSingleObject(pLocal.hProcess, windows.INFINITE)
 	var dwCode uint32
 	if errCode := windows.GetExitCodeProcess(pLocal.hProcess, &dwCode); errCode == nil && dwCode != 0 {
-		return fmt.Errorf("셸이 종료되었습니다 (코드 %d)", dwCode)
+		return i18n.Errorf("be.shell.exitedCode", nil, "code", dwCode)
 	}
-	return fmt.Errorf("셸이 종료되었습니다")
+	return i18n.Errorf("be.shell.exited", nil)
 }
 
 // Write 는 입력(UTF-8 바이트)을 셸로 보낸다.
@@ -155,7 +156,7 @@ func (pLocal *LocalConn) Resize(iCols int, iRows int) error {
 	}
 	rResize, _, errResize := g_procResizePseudoConsole.Call(uintptr(pLocal.hPty), coordValue(iCols, iRows))
 	if rResize != 0 {
-		return fmt.Errorf("크기 변경 실패: %v", errResize)
+		return i18n.Errorf("be.pty.resize", nil, "error", errResize)
 	}
 	return nil
 }

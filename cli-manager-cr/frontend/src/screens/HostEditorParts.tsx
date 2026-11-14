@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import type { Forward } from '../ipc/types';
 import { BAUD_RATES, type JumpDirect, type SerialEnter, type SerialFlow, type SerialOpts, type SerialParity } from '../lib/hostForm';
 import { Field, Segmented, Switch } from '../ui/Controls';
+import { t } from '../i18n';
 
 export const newForward = (): Forward => ({
   id: crypto.randomUUID(),
@@ -18,15 +19,15 @@ export function ForwardsTable({ rows, onChange }: { rows: Forward[]; onChange: (
   const patch = (id: string, p: Partial<Forward>) => onChange(rows.map((r) => (r.id === id ? { ...r, ...p } : r)));
   return (
     <>
-      <div className="notice info">L: 내 PC의 포트 → 서버에서 접근 가능한 주소 (예: 로컬 3307 → DB 3306). R: 서버의 포트 → 내 PC 쪽 주소.</div>
+      <div className="notice info">{t('fwd.help')}</div>
       <table className="fwd-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
         <thead>
           <tr className="faint small" style={{ textAlign: 'left' }}>
-            <th style={{ width: 70 }}>종류</th>
-            <th>수신 주소</th>
-            <th style={{ width: 90 }}>포트</th>
-            <th>대상 주소</th>
-            <th style={{ width: 90 }}>대상 포트</th>
+            <th style={{ width: 70 }}>{t('fwd.type')}</th>
+            <th>{t('fwd.bindHost')}</th>
+            <th style={{ width: 90 }}>{t('fwd.port')}</th>
+            <th>{t('fwd.destHost')}</th>
+            <th style={{ width: 90 }}>{t('fwd.destPort')}</th>
             <th style={{ width: 40 }} />
           </tr>
         </thead>
@@ -34,17 +35,17 @@ export function ForwardsTable({ rows, onChange }: { rows: Forward[]; onChange: (
           {rows.map((r) => (
             <tr key={r.id}>
               <td>
-                <select className="input" aria-label="종류" value={r.type} onChange={(e) => patch(r.id, { type: e.target.value as 'L' | 'R' })}>
+                <select className="input" aria-label={t('fwd.type')} value={r.type} onChange={(e) => patch(r.id, { type: e.target.value as 'L' | 'R' })}>
                   <option value="L">L</option>
                   <option value="R">R</option>
                 </select>
               </td>
-              <td><input className="input mono" aria-label="수신 주소" value={r.bindHost} onChange={(e) => patch(r.id, { bindHost: e.target.value })} /></td>
-              <td><input className="input" aria-label="포트" inputMode="numeric" value={String(r.bindPort)} onChange={(e) => patch(r.id, { bindPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
-              <td><input className="input mono" aria-label="대상 주소" value={r.destHost} onChange={(e) => patch(r.id, { destHost: e.target.value })} /></td>
-              <td><input className="input" aria-label="대상 포트" inputMode="numeric" value={String(r.destPort)} onChange={(e) => patch(r.id, { destPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
+              <td><input className="input mono" aria-label={t('fwd.bindHost')} value={r.bindHost} onChange={(e) => patch(r.id, { bindHost: e.target.value })} /></td>
+              <td><input className="input" aria-label={t('fwd.port')} inputMode="numeric" value={String(r.bindPort)} onChange={(e) => patch(r.id, { bindPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
+              <td><input className="input mono" aria-label={t('fwd.destHost')} value={r.destHost} onChange={(e) => patch(r.id, { destHost: e.target.value })} /></td>
+              <td><input className="input" aria-label={t('fwd.destPort')} inputMode="numeric" value={String(r.destPort)} onChange={(e) => patch(r.id, { destPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
               <td>
-                <button type="button" className="icon-btn" aria-label="삭제" title="삭제" onClick={() => onChange(rows.filter((x) => x.id !== r.id))}>
+                <button type="button" className="icon-btn" aria-label={t('common.delete')} title={t('common.delete')} onClick={() => onChange(rows.filter((x) => x.id !== r.id))}>
                   <Trash2 size={14} />
                 </button>
               </td>
@@ -53,7 +54,7 @@ export function ForwardsTable({ rows, onChange }: { rows: Forward[]; onChange: (
         </tbody>
       </table>
       <div>
-        <button type="button" className="btn small-btn" onClick={() => onChange([...rows, newForward()])}>+ 포워딩 추가</button>
+        <button type="button" className="btn small-btn" onClick={() => onChange([...rows, newForward()])}>{t('fwd.add')}</button>
       </div>
     </>
   );
@@ -67,7 +68,7 @@ const PARITY: { value: SerialParity; label: string }[] = [
   { value: 'space', label: 'space' },
 ];
 const FLOW: { value: SerialFlow; label: string }[] = [
-  { value: 'none', label: '없음' },
+  { value: 'none', label: 'none' }, // 그릴 때 serial.flowNone 으로 바꾼다
   { value: 'rtscts', label: 'RTS/CTS' },
   { value: 'xonxoff', label: 'XON/XOFF' },
 ];
@@ -94,54 +95,54 @@ export function SerialFields({
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <Field label="포트" htmlFor="serial-port">
+        <Field label={t('fwd.port')} htmlFor="serial-port">
           <div style={{ display: 'flex', gap: 8 }}>
             <input id="serial-port" className="input mono" list={listId} placeholder="COM3" value={value.path} onChange={(e) => set('path', e.target.value)} style={{ flex: 1 }} />
-            <button type="button" className="btn link small" onClick={onRefresh}>새로고침</button>
+            <button type="button" className="btn link small" onClick={onRefresh}>{t('sftp.refresh')}</button>
           </div>
           <datalist id={listId}>
             {ports.map((p) => <option key={p.path} value={p.path}>{p.label}</option>)}
           </datalist>
         </Field>
-        <Field label="속도 (baud)" htmlFor="serial-baud">
+        <Field label={t('serial.baud')} htmlFor="serial-baud">
           <select id="serial-baud" className="input" value={value.baudRate} onChange={(e) => set('baudRate', Number(e.target.value))}>
             {BAUD_RATES.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         </Field>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-        <Field label="데이터 비트">
+        <Field label={t('serial.dataBits')}>
           <select className="input" value={value.dataBits} onChange={(e) => set('dataBits', Number(e.target.value) as SerialOpts['dataBits'])}>
             {[8, 7, 6, 5].map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </Field>
-        <Field label="패리티">
+        <Field label={t('serial.parity')}>
           <select className="input" value={value.parity} onChange={(e) => set('parity', e.target.value as SerialParity)}>
             {PARITY.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </Field>
-        <Field label="정지 비트">
+        <Field label={t('serial.stopBits')}>
           <select className="input" value={value.stopBits} onChange={(e) => set('stopBits', Number(e.target.value) as SerialOpts['stopBits'])}>
             {[1, 1.5, 2].map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </Field>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <Field label="흐름 제어">
+        <Field label={t('serial.flow')}>
           <select className="input" value={value.flowControl} onChange={(e) => set('flowControl', e.target.value as SerialFlow)}>
-            {FLOW.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {FLOW.map((o) => <option key={o.value} value={o.value}>{o.value === 'none' ? t('serial.flowNone') : o.label}</option>)}
           </select>
         </Field>
-        <Field label="Enter 키 보낼 값">
-          <Segmented value={value.enterSends} options={ENTER} onChange={(v) => set('enterSends', v)} label="Enter 키 보낼 값" />
+        <Field label={t('serial.enter')}>
+          <Segmented value={value.enterSends} options={ENTER} onChange={(v) => set('enterSends', v)} label={t('serial.enter')} />
         </Field>
       </div>
       <div className="toggle-row">
         <div>
-          <div className="t-title">입력 글자 표시 (로컬 에코)</div>
-          <div className="t-desc">장비가 입력한 글자를 돌려주지 않을 때 켜세요</div>
+          <div className="t-title">{t('serial.echo')}</div>
+          <div className="t-desc">{t('serial.echoDesc')}</div>
         </div>
-        <Switch checked={value.localEcho} onChange={(v) => set('localEcho', v)} label="입력 글자 표시 (로컬 에코)" />
+        <Switch checked={value.localEcho} onChange={(v) => set('localEcho', v)} label={t('serial.echo')} />
       </div>
     </>
   );
@@ -186,41 +187,41 @@ export function JumpDirectCard({
   void keyText;
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, border: '1px solid var(--border)', borderRadius: 8 }}>
-      <Field label="경유 서버 주소" help="user@host:port 형식으로 넣으면 사용자·호스트·포트로 나뉩니다">
+      <Field label={t('jump.address')} help={t('jump.addressHelp')}>
         <input className="input mono" placeholder="ec2-user@203.0.113.10:22" value={address} onChange={(e) => onAddress(e.target.value)} />
       </Field>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <Field label="포트">
+        <Field label={t('fwd.port')}>
           <input className="input" inputMode="numeric" placeholder="22" value={port} onChange={(e) => onPort(e.target.value.replace(/\D/g, ''))} />
         </Field>
-        <Field label="사용자">
+        <Field label={t('host.user')}>
           <input className="input" value={username} onChange={(e) => onUsername(e.target.value)} />
         </Field>
       </div>
-      <Field label="인증 방식">
+      <Field label={t('host.authMethod')}>
         <Segmented
           value={authType}
-          options={[{ value: 'password', label: '비밀번호' }, { value: 'key', label: '키 파일' }]}
+          options={[{ value: 'password', label: t('cred.password') }, { value: 'key', label: t('host.keyFile') }]}
           onChange={onAuthType}
-          label="경유 서버 로그인 방식"
+          label={t('jump.authAria')}
         />
       </Field>
       {authType === 'password' ? (
         <Field
-          label="비밀번호"
-          help={hasSaved ? '저장됨 — 바꾸려면 새로 입력' : '암호화해 저장 ("{표시 이름} 경유 서버")'}
+          label={t('cred.password')}
+          help={hasSaved ? t('host.savedChange') : t('jump.saveHint')}
         >
-          <input className="input" type="password" placeholder={hasSaved ? '••••••••  (저장됨)' : '비밀번호'} value={password} onChange={(e) => onPassword(e.target.value)} />
+          <input className="input" type="password" placeholder={hasSaved ? t('host.savedMask') : t('cred.password')} value={password} onChange={(e) => onPassword(e.target.value)} />
         </Field>
       ) : (
         <>
-          <Field label="키 파일">
+          <Field label={t('host.keyFile')}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <button type="button" className="btn small-btn" onClick={onPickKey}>키 파일 선택</button>
-              <span className="faint small">{keyStatus || (hasSaved ? '저장됨' : '선택된 키 없음')}</span>
+              <button type="button" className="btn small-btn" onClick={onPickKey}>{t('host.pickKey')}</button>
+              <span className="faint small">{keyStatus || (hasSaved ? t('host.saved') : t('host.noKey'))}</span>
             </div>
           </Field>
-          <Field label="키 암호 (있으면)">
+          <Field label={t('host.passphrase')}>
             <input className="input" type="password" value={passphrase} onChange={(e) => onPassphrase(e.target.value)} />
           </Field>
         </>

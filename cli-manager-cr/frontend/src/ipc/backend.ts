@@ -3,6 +3,8 @@
 // 명세에 없으므로(spec/QUESTIONS.md Q1) 아래 실제 어댑터는 Wails v2 관례(window.go.main.App, window.runtime)를 가정한다.
 // 해당 전역이 없으면 가짜 백엔드(fakeBackend.ts)를 쓴다(개발 서버·테스트).
 
+import { t } from '../i18n';
+
 export type EventName =
   | 'session.data'
   | 'session.state'
@@ -80,7 +82,7 @@ let current: Backend | null = null;
 
 /** 현재 백엔드. 앱 시작 시 initBackend 로 정한 뒤 사용한다. */
 export function getBackend(): Backend {
-  if (!current) throw new Error('백엔드가 초기화되지 않았습니다');
+  if (!current) throw new Error(t('backend.notReady'));
   return current;
 }
 

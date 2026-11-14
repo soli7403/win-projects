@@ -2,8 +2,8 @@
 package ipc
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
-	"fmt"
 	"sync"
 )
 
@@ -56,18 +56,18 @@ func (pRouter *Router) Invoke(szChannel string, szArgsJson string) (szResult str
 	fnHandler, bFound := pRouter.mapHandlers[szChannel]
 	pRouter.mtxData.RUnlock()
 	if !bFound {
-		return "", fmt.Errorf("구현되지 않은 채널: %s", szChannel)
+		return "", i18n.Errorf("be.ipc.noChannel", nil, "name", szChannel)
 	}
 	var slArgs []json.RawMessage
 	if szArgsJson != "" {
 		if errArgs := json.Unmarshal([]byte(szArgsJson), &slArgs); errArgs != nil {
-			return "", fmt.Errorf("인자 해석 실패(%s): %v", szChannel, errArgs)
+			return "", i18n.Errorf("be.ipc.badArgs", nil, "name", szChannel, "error", errArgs)
 		}
 	}
 	defer func() {
 		if anyPanic := recover(); anyPanic != nil {
 			szResult = ""
-			errResult = fmt.Errorf("내부 오류(%s): %v", szChannel, anyPanic)
+			errResult = i18n.Errorf("be.ipc.internal", nil, "name", szChannel, "error", anyPanic)
 		}
 	}()
 	anyValue, errHandle := fnHandler(slArgs)
@@ -79,7 +79,7 @@ func (pRouter *Router) Invoke(szChannel string, szArgsJson string) (szResult str
 	}
 	bOut, errMarshal := json.Marshal(anyValue)
 	if errMarshal != nil {
-		return "", fmt.Errorf("결과 직렬화 실패(%s): %v", szChannel, errMarshal)
+		return "", i18n.Errorf("be.ipc.marshal", nil, "name", szChannel, "error", errMarshal)
 	}
 	return string(bOut), nil
 }

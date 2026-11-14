@@ -5,6 +5,8 @@ import { useRequests, type UiRequest } from '../state/requests';
 import { useApp } from '../state/app';
 import { Modal } from '../ui/Modal';
 import { Field } from '../ui/Controls';
+import { Rich } from '../i18n/Rich';
+import { t } from '../i18n';
 
 type Answer = (v: unknown) => void;
 
@@ -29,23 +31,23 @@ function RequestView({ req, onAnswer, onCancel }: { req: UiRequest; onAnswer: An
 function HostKeyView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { kind: 'hostkey' }>; onAnswer: Answer; onCancel: () => void }) {
   if (!req.changed) {
     return (
-      <Modal title="처음 연결하는 서버입니다" icon={ShieldQuestion} iconColor="var(--accent)" size="sm" onClose={onCancel}
-        foot={<><button className="btn" onClick={onCancel}>연결 취소</button><button className="btn primary" autoFocus onClick={() => onAnswer(true)}>믿고 연결</button></>}>
+      <Modal title={t('hk.newTitle')} icon={ShieldQuestion} iconColor="var(--accent)" size="sm" onClose={onCancel}
+        foot={<><button className="btn" onClick={onCancel}>{t('hk.cancel')}</button><button className="btn primary" autoFocus onClick={() => onAnswer(true)}>{t('hk.trust')}</button></>}>
         <div style={{ lineHeight: 1.7 }}>
-          [{req.sessionTitle}] <b>{req.hostPort}</b> 서버의 신원을 아직 확인하지 않았습니다. 아래 지문이 서버 관리자가 알려준 값과 같은지 확인하세요.
+          <Rich text={t('hk.newBody', { session: req.sessionTitle, host: req.hostPort })} />
         </div>
-        <Field label={`${req.keyType} 키 지문`}><div className="detail-box">{req.fingerprint}</div></Field>
+        <Field label={t('hk.fingerprint', { type: req.keyType })}><div className="detail-box">{req.fingerprint}</div></Field>
       </Modal>
     );
   }
   return (
-    <Modal title="경고: 서버의 호스트 키가 바뀌었습니다" icon={ShieldAlert} iconColor="var(--danger)" size="sm" onClose={onCancel}
-      foot={<><button className="btn" onClick={onCancel}>연결 취소</button><button className="btn danger" onClick={() => onAnswer(true)}>위험을 알고 새 키로 연결</button></>}>
+    <Modal title={t('hk.changedTitle')} icon={ShieldAlert} iconColor="var(--danger)" size="sm" onClose={onCancel}
+      foot={<><button className="btn" onClick={onCancel}>{t('hk.cancel')}</button><button className="btn danger" onClick={() => onAnswer(true)}>{t('hk.connectAnyway')}</button></>}>
       <div className="notice danger">
-        [{req.sessionTitle}] {req.hostPort}의 호스트 키가 이전에 저장한 키와 다릅니다. 서버를 재설치했거나 IP가 바뀐 경우가 아니라면 <b>중간자 공격</b>일 수 있습니다. 확실하지 않으면 연결하지 마세요.
+        <Rich text={t('hk.changedBody', { session: req.sessionTitle, host: req.hostPort })} />
       </div>
-      <Field label={`${req.keyType} 키 지문`}><div className="detail-box">{req.fingerprint}</div></Field>
-      {req.oldFingerprint && <Field label="이전에 저장된 지문"><div className="detail-box faint">{req.oldFingerprint}</div></Field>}
+      <Field label={t('hk.fingerprint', { type: req.keyType })}><div className="detail-box">{req.fingerprint}</div></Field>
+      {req.oldFingerprint && <Field label={t('hk.oldFingerprint')}><div className="detail-box faint">{req.oldFingerprint}</div></Field>}
     </Modal>
   );
 }
@@ -59,18 +61,18 @@ function PasswordView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { k
     onAnswer({ password: pw, save: vaultOpen && save && req.allowSave });
   };
   return (
-    <Modal title="비밀번호 입력" icon={KeyRound} size="sm" onClose={onCancel}
-      foot={<><button className="btn" type="button" onClick={onCancel}>취소</button><button className="btn primary" type="submit" form="pw-form">확인</button></>}>
+    <Modal title={t('auth.pwTitle')} icon={KeyRound} size="sm" onClose={onCancel}
+      foot={<><button className="btn" type="button" onClick={onCancel}>{t('common.cancel')}</button><button className="btn primary" type="submit" form="pw-form">{t('common.ok')}</button></>}>
       <form id="pw-form" onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="faint">[{req.sessionTitle}]</div>
-        {req.failed && <div className="err-text">비밀번호가 틀렸거나 인증에 실패했습니다. 다시 입력하세요.</div>}
-        <Field label={req.prompt || '비밀번호'}>
+        {req.failed && <div className="err-text">{t('auth.failed')}</div>}
+        <Field label={req.prompt || t('cred.password')}>
           <input className="input" type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} />
         </Field>
         {req.allowSave && (
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', opacity: vaultOpen ? 1 : 0.5 }}>
             <input type="checkbox" disabled={!vaultOpen} checked={vaultOpen && save} onChange={(e) => setSave(e.target.checked)} />
-            암호화해 저장하고 다음부터 자동 로그인{vaultOpen ? '' : ' (앱 잠김)'}
+            {t('auth.save')}{vaultOpen ? '' : t('auth.saveLocked')}
           </label>
         )}
       </form>
@@ -85,8 +87,8 @@ function KeyboardView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { k
     onAnswer(vals);
   };
   return (
-    <Modal title={req.name || '추가 인증'} icon={KeyRound} size="sm" onClose={onCancel}
-      foot={<><button className="btn" type="button" onClick={onCancel}>취소</button><button className="btn primary" type="submit" form="kb-form">확인</button></>}>
+    <Modal title={req.name || t('auth.kbTitle')} icon={KeyRound} size="sm" onClose={onCancel}
+      foot={<><button className="btn" type="button" onClick={onCancel}>{t('common.cancel')}</button><button className="btn primary" type="submit" form="kb-form">{t('common.ok')}</button></>}>
       <form id="kb-form" onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="faint">[{req.sessionTitle}]</div>
         {req.instructions && <div>{req.instructions}</div>}
@@ -108,12 +110,12 @@ function SingleView({ req, onAnswer, onCancel }: { req: Extract<UiRequest, { kin
     onAnswer(val);
   };
   return (
-    <Modal title={isUser ? '사용자 이름 입력' : '키 암호 입력'} icon={isUser ? User : KeyRound} size="sm" onClose={onCancel}
-      foot={<><button className="btn" type="button" onClick={onCancel}>취소</button><button className="btn primary" type="submit" form="single-form">확인</button></>}>
+    <Modal title={isUser ? t('auth.userTitle') : t('auth.passphraseTitle')} icon={isUser ? User : KeyRound} size="sm" onClose={onCancel}
+      foot={<><button className="btn" type="button" onClick={onCancel}>{t('common.cancel')}</button><button className="btn primary" type="submit" form="single-form">{t('common.ok')}</button></>}>
       <form id="single-form" onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="faint">[{req.sessionTitle}]</div>
-        {!isUser && <div className="faint small">키 파일이 암호로 보호되어 있습니다</div>}
-        <Field label={isUser ? '연결할 계정' : undefined}>
+        {!isUser && <div className="faint small">{t('auth.keyProtected')}</div>}
+        <Field label={isUser ? t('auth.account') : undefined}>
           <input className="input" type={isUser ? 'text' : 'password'} autoFocus value={val} onChange={(e) => setVal(e.target.value)} />
         </Field>
       </form>

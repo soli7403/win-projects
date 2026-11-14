@@ -2,8 +2,8 @@
 package backup
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 )
@@ -22,18 +22,22 @@ func knownApp(szApp string) bool {
 	return szApp == G_cszAppName || szApp == G_cszAppNameOrigin
 }
 
-// G_cszFilterName 과 G_cszFilterPattern 은 대화상자 필터다.
+// FilterName 은 대화상자 필터 이름이다(지금 언어, D75).
+func FilterName() string {
+	return i18n.T("be.backup.filter")
+}
+
+// G_cszFilterPattern 과 G_cszOpenPattern 은 대화상자 필터다.
 const (
-	G_cszFilterName    = "백업 (*.dtbackup)"
 	G_cszFilterPattern = "*.dtbackup"
 	G_cszOpenPattern   = "*.dtbackup;*.btbackup;*.json"
 )
 
 // ErrNotBackup 은 백업 파일이 아닐 때 돌려준다.
-var ErrNotBackup = errors.New("백업 파일이 아닙니다")
+var ErrNotBackup = i18n.NewError("be.backup.notBackup")
 
 // ErrUnreadable 은 JSON 으로 읽을 수 없을 때 돌려준다.
-var ErrUnreadable = errors.New("백업 파일을 읽을 수 없습니다")
+var ErrUnreadable = i18n.NewError("be.backup.unreadable")
 
 // File 은 백업 파일 구조다 (data/sync-backup.md §3 표).
 type File struct {

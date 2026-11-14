@@ -3,11 +3,11 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"runtime"
 	"time"
 
+	"dariterm/internal/i18n"
 	"dariterm/internal/ipc"
 	"dariterm/internal/session"
 	"dariterm/internal/store"
@@ -37,11 +37,11 @@ type Service struct {
 func NewService(szDataDir string, emitter ipc.Emitter) (*Service, error) {
 	pStore, errStore := store.Open(filepath.Join(szDataDir, "store.json"))
 	if errStore != nil {
-		return nil, fmt.Errorf("저장 데이터를 열 수 없습니다: %w", errStore)
+		return nil, i18n.Errorf("be.app.storeOpen", errStore)
 	}
 	pVault, errVault := vault.Open(filepath.Join(szDataDir, "vault.json"))
 	if errVault != nil {
-		return nil, fmt.Errorf("암호화 데이터를 열 수 없습니다: %w", errVault)
+		return nil, i18n.Errorf("be.app.vaultOpen", errVault)
 	}
 	pService := &Service{
 		pRouter:   ipc.NewRouter(emitter),
@@ -62,6 +62,7 @@ func NewService(szDataDir string, emitter ipc.Emitter) (*Service, error) {
 	pService.pSessions = session.NewManager(func(szEvent string, anyData ...any) {
 		pService.pRouter.Emit(szEvent, anyData...)
 	})
+	pService.applyLanguage()
 	pService.registerStore()
 	pService.registerVault()
 	pService.registerCred()
@@ -134,8 +135,21 @@ func (pService *Service) registerStore() {
 		if errArg := argInto(slArgs, 0, &mapPatch); errArg != nil {
 			return nil, errArg
 		}
-		return nil, pService.pStore.Patch(mapPatch)
+		errPatch := pService.pStore.Patch(mapPatch)
+		pService.applyLanguage()
+		return nil, errPatch
 	})
+}
+
+// applyLanguage 는 백엔드 문구 언어를 설정(settings.language, 비면 OS 언어)에 맞춘다 (D75).
+func (pService *Service) applyLanguage() {
+	szSetting := ""
+	if mapSnap, errSnap := pService.pStore.Snapshot(); errSnap == nil {
+		if mapSettings, bOk := mapSnap["settings"].(map[string]any); bOk {
+			szSetting, _ = mapSettings["language"].(string)
+		}
+	}
+	i18n.SetLang(i18n.Resolve(szSetting))
 }
 
 func (pService *Service) registerApp() {
@@ -144,6 +158,8 @@ func (pService *Service) registerApp() {
 			"version":  G_cszAppVersion,
 			"platform": runtime.GOOS,
 			"dataDir":  pService.szDataDir,
+			// OS 표시 언어를 지원 언어로 맞춘 값(D75): 첫 실행 언어 선택의 기본값.
+			"osLanguage": i18n.Match(i18n.DetectOS()),
 		}, nil
 	})
 }

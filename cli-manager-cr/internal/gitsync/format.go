@@ -1,8 +1,8 @@
 package gitsync
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
-	"errors"
 
 	"dariterm/internal/vault"
 )
@@ -14,7 +14,7 @@ const G_cszSyncFormat = "dariterm-sync-1"
 const G_cszSyncFileName = "dariterm-sync.json"
 
 // ErrFormat 은 동기화 파일 형식을 알 수 없을 때 돌려준다.
-var ErrFormat = errors.New("동기화 파일 형식을 알 수 없습니다")
+var ErrFormat = i18n.NewError("be.sync.format")
 
 // syncFile 은 저장소 파일의 구조다 (data/sync-backup.md §5.1).
 type syncFile struct {

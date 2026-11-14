@@ -4,11 +4,12 @@ import { Download, Plus, Terminal, Zap } from 'lucide-react';
 import { useApp } from '../state/app';
 import { effectiveColor, recentHosts } from '../lib/hosts';
 import { sidebarSubtitle } from '../lib/tree';
-import { START_SHORTCUTS } from '../lib/shortcuts';
+import { START_SHORTCUTS, shortcutText } from '../lib/shortcuts';
 import { LogoMark } from '../ui/Logo';
 import { openHost, runShortcut } from '../state/actions';
 import { useUi } from '../state/ui';
 import { PROTOCOL_ICON, protocolIconColor } from '../ui/protocolIcon';
+import { t } from '../i18n';
 
 export function Welcome() {
   const store = useApp((s) => s.store);
@@ -22,20 +23,20 @@ export function Welcome() {
         <LogoMark size={48} />
         <h1>DariTerm</h1>
         <p className="muted" style={{ margin: 0 }}>
-          서버를 더블클릭하거나 <span className="kbd">Ctrl+K</span> 로 바로 연결하세요.
+          {t('welcome.hint').split('{key}')[0]}<span className="kbd">Ctrl+K</span>{t('welcome.hint').split('{key}')[1]}
         </p>
         <div className="welcome-actions">
           <button className="btn primary" onClick={() => useUi.getState().openQuick(null)}>
-            <Zap size={15} />빠른 연결
+            <Zap size={15} />{t('welcome.quick')}
           </button>
           <button className="btn" title="Ctrl+Alt+T" onClick={() => runShortcut('newLocal')}>
-            <Terminal size={15} />로컬 터미널
+            <Terminal size={15} />{t('host.localTerminal')}
           </button>
           <button className="btn" onClick={() => useUi.getState().openEditor({ kind: 'host', hostId: null, groupId: null })}>
-            <Plus size={15} />새 서버 등록
+            <Plus size={15} />{t('welcome.newServer')}
           </button>
           <button className="btn" onClick={() => useUi.getState().openImportDialog()}>
-            <Download size={15} />PuTTY에서 가져오기
+            <Download size={15} />{t('welcome.importPutty')}
           </button>
         </div>
         {recent.length > 0 && (
@@ -59,8 +60,8 @@ export function Welcome() {
         <div className="shortcut-table" style={{ gridTemplateColumns: '1fr 1fr', width: '100%', gap: '6px 22px' }}>
           {START_SHORTCUTS.map((s) => (
             <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span className="muted">{s.name}</span>
-              <span className="kbd">{s.keys}</span>
+              <span className="muted">{shortcutText(s).name}</span>
+              <span className="kbd">{shortcutText(s).keys}</span>
             </div>
           ))}
         </div>

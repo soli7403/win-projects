@@ -69,6 +69,8 @@ export interface KnownHost {
 }
 
 export interface Settings {
+  /** 화면 언어(D75): en·ko·ja·zh·tw·de·fr·es·pt·ru. 비면 아직 고르지 않음 → 첫 실행 언어 선택, 그동안은 OS 언어. */
+  language: string;
   theme: 'dark' | 'light';
   terminalTheme: string;
   fontFamily: string;

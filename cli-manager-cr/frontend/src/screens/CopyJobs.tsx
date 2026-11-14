@@ -3,12 +3,13 @@ import { ArrowRight, Ban, CircleAlert, CircleCheck, Copy, LoaderCircle, X } from
 import { useCopyJobs, isActiveJob, type CopyJob } from '../state/copyJobs';
 import { formatBytes, transferPercent } from '../lib/sftpPath';
 import { cancelCopy } from './fileDrag';
+import { t, type MsgId } from '../i18n';
 
-const PHASE: Record<CopyJob['phase'], string> = {
-  scan: '크기 확인 중',
-  download: '임시 폴더로 받는 중',
-  upload: '대상으로 올리는 중',
-  copy: '복사 중',
+const PHASE: Record<CopyJob['phase'], MsgId> = {
+  scan: 'cj.scan',
+  download: 'cj.download',
+  upload: 'cj.upload',
+  copy: 'cj.copy',
 };
 
 export function CopyJobs() {
@@ -18,17 +19,17 @@ export function CopyJobs() {
   const running = jobs.filter(isActiveJob).length;
   const finished = jobs.length - running;
   return (
-    <div className="copyjobs" aria-label="전송 목록">
+    <div className="copyjobs" aria-label={t('cj.list')}>
       <div className="cj-head">
         <Copy size={12} />
         <span>
-          {running ? `복사 ${running}개 진행 중` : '복사 완료'}
-          {finished > 0 ? ` · 끝남 ${finished}개` : ''}
+          {running ? t('cj.running', { count: running }) : t('cj.allDone')}
+          {finished > 0 ? t('cj.finished', { count: finished }) : ''}
         </span>
         <span className="spacer" />
         {finished > 0 && (
           <button className="btn link" onClick={() => remove(jobs.filter((j) => !isActiveJob(j)).map((j) => j.id))}>
-            끝난 항목 지우기
+            {t('cj.clear')}
           </button>
         )}
       </div>
@@ -46,36 +47,36 @@ function statusText(j: CopyJob, pct: number): string {
   const half = (n: number) => (j.relay ? Math.round(n / 2) : n);
   switch (j.state) {
     case 'queued':
-      return '대기 중';
+      return t('cj.waiting');
     case 'running':
-      return `${PHASE[j.phase]}${j.files ? ` · ${j.filesDone}/${j.files}개` : ''} · ${formatBytes(half(j.bytes))}/${formatBytes(half(j.total))} · ${pct}%`;
+      return `${t(PHASE[j.phase])}${j.files ? ` · ${t('cj.files', { done: j.filesDone, total: j.files })}` : ''} · ${formatBytes(half(j.bytes))}/${formatBytes(half(j.total))} · ${pct}%`;
     case 'done':
-      return `완료 · ${j.files}개 · ${formatBytes(half(j.total))}`;
+      return t('cj.done', { count: j.files, size: formatBytes(half(j.total)) });
     case 'canceled':
-      return '취소됨';
+      return t('cj.canceled');
     default:
-      return `실패: ${j.error ?? ''}`;
+      return t('cj.failed', { error: j.error ?? '' });
   }
 }
 
 function JobRow({ j, onRemove }: { j: CopyJob; onRemove: () => void }) {
   const pct = transferPercent(j.bytes, j.total, j.state);
-  const name = j.count > 1 ? `${j.name} 외 ${j.count - 1}개` : j.name;
+  const name = j.count > 1 ? t('drop.andMore', { names: j.name, count: j.count - 1 }) : j.name;
   const from = `${j.srcTitle || '?'}: ${j.srcDir}`;
   const to = `${j.dstTitle || '?'}: ${j.dstDir}`;
   const active = isActiveJob(j);
-  const tip = [name, from, `→ ${to}`, j.relay ? '(이 PC 임시 폴더 경유)' : '', j.error ?? ''].filter(Boolean).join('\n');
+  const tip = [name, from, `→ ${to}`, j.relay ? t('cj.relay') : '', j.error ?? ''].filter(Boolean).join('\n');
   return (
     <div className={`cj-row ${j.state}`} title={tip}>
       <span className="cj-ic">
         {j.state === 'done' ? (
-          <CircleCheck size={13} color="var(--ok)" aria-label="완료" />
+          <CircleCheck size={13} color="var(--ok)" aria-label={t('cj.doneAria')} />
         ) : j.state === 'error' ? (
-          <CircleAlert size={13} color="var(--danger)" aria-label="실패" />
+          <CircleAlert size={13} color="var(--danger)" aria-label={t('cj.failedAria')} />
         ) : j.state === 'canceled' ? (
-          <Ban size={13} aria-label="취소됨" />
+          <Ban size={13} aria-label={t('cj.canceled')} />
         ) : (
-          <LoaderCircle size={13} className="spin" aria-label="진행 중" />
+          <LoaderCircle size={13} className="spin" aria-label={t('cj.progressAria')} />
         )}
       </span>
       <span className="cj-name">{name}</span>
@@ -87,11 +88,11 @@ function JobRow({ j, onRemove }: { j: CopyJob; onRemove: () => void }) {
         <span style={{ width: `${j.state === 'done' ? 100 : pct}%` }} />
       </span>
       {active ? (
-        <button className="btn small-btn cj-cancel" title="취소" onClick={() => cancelCopy(j.id)}>
-          취소
+        <button className="btn small-btn cj-cancel" title={t('common.cancel')} onClick={() => cancelCopy(j.id)}>
+          {t('common.cancel')}
         </button>
       ) : (
-        <button className="icon-btn small" title="끝난 항목 지우기" aria-label="끝난 항목 지우기" onClick={onRemove}>
+        <button className="icon-btn small" title={t('cj.clear')} aria-label={t('cj.clear')} onClick={onRemove}>
           <X size={12} />
         </button>
       )}

@@ -1,10 +1,9 @@
 package app
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,7 +42,7 @@ func (pService *Service) sftpFor(szId string) (*sftpfs.Service, error) {
 	}
 	transport := pSession.Transport()
 	if transport == nil {
-		return nil, errors.New("연결되어 있지 않습니다")
+		return nil, i18n.NewError("be.sftp.notConnected")
 	}
 	info := pSession.Snapshot()
 	emit := func(szEvent string, anyData ...any) {
@@ -61,7 +60,7 @@ func (pService *Service) sftpFor(szId string) (*sftpfs.Service, error) {
 	}
 	provider, bOk := transport.(sftpClientProvider)
 	if !bOk {
-		return nil, errors.New("SSH로 연결된 세션에서만 사용할 수 있습니다")
+		return nil, i18n.NewError("be.sftp.sshOnly")
 	}
 	client, errClient := provider.SftpClient()
 	if errClient != nil {
@@ -77,10 +76,11 @@ func (pService *Service) sftpFor(szId string) (*sftpfs.Service, error) {
 	return svc, nil
 }
 
-// localStartDir 는 로컬 세션 대상 표기("로컬 · <폴더>")에서 시작 폴더를 꺼낸다. "~" 이거나 없으면 빈 값(= 홈).
+// localStartDir 는 로컬 세션 대상 표기("<로컬> · <폴더>", 접두는 언어마다 다름 D75)에서 시작 폴더를 꺼낸다. "~" 이거나 없으면 빈 값(= 홈).
 func localStartDir(szTarget string) string {
-	szCwd := strings.TrimSpace(strings.TrimPrefix(szTarget, "로컬 · "))
-	if szCwd == "" || szCwd == "~" || szCwd == szTarget {
+	_, szAfter, bFound := strings.Cut(szTarget, " · ")
+	szCwd := strings.TrimSpace(szAfter)
+	if !bFound || szCwd == "" || szCwd == "~" {
 		return ""
 	}
 	return expandHome(szCwd)
@@ -226,7 +226,7 @@ func (pService *Service) registerSftp() {
 		if errDir != nil {
 			return nil, errDir
 		}
-		slLocal, errPick := dialog.OpenFiles("업로드할 파일 선택")
+		slLocal, errPick := dialog.OpenFiles(i18n.T("be.dlg.pickUpload"))
 		if errPick != nil || len(slLocal) == 0 {
 			return []string{}, errPick
 		}
@@ -242,7 +242,7 @@ func (pService *Service) registerSftp() {
 			szLocalDir, _ = argString(slArgs, 1)
 		}
 		if szLocalDir == "" {
-			szPicked, errPick := dialog.ChooseDir("저장할 폴더 선택", downloadsDir(), true)
+			szPicked, errPick := dialog.ChooseDir(i18n.T("be.dlg.pickSaveDir"), downloadsDir(), true)
 			if errPick != nil || szPicked == "" {
 				return false, errPick
 			}
@@ -391,7 +391,7 @@ func (pService *Service) remoteUploadDir(svc *sftpfs.Service) string {
 // 기본값 ~/.dariterm/uploads 처럼 상위 폴더도 없을 수 있어 한 단계만 만드는 Mkdir 로는 부족하다.
 func ensureUploadDir(pFs *sftpfs.Fs, szDir string) error {
 	if errMk := pFs.MkdirAll(szDir); errMk != nil {
-		return fmt.Errorf("업로드 폴더를 만들지 못했습니다 (%s): %w", szDir, errMk)
+		return i18n.Errorf("be.sftp.mkUploadDir", errMk, "dir", szDir)
 	}
 	return nil
 }
@@ -399,7 +399,7 @@ func ensureUploadDir(pFs *sftpfs.Fs, szDir string) error {
 // decodeBuffer 는 {"__b64": "..."} 로 감싼 바이트를 푼다.
 func decodeBuffer(origin sftpOrigin) ([]byte, error) {
 	if origin.Data == nil {
-		return nil, errors.New("데이터가 없습니다")
+		return nil, i18n.NewError("be.sftp.noData")
 	}
 	return base64.StdEncoding.DecodeString(origin.Data.B64)
 }

@@ -1,5 +1,6 @@
 // 사이드바 트리 계산(순수 함수). 근거: spec/ui/sidebar.md §2~§4, spec/ui/host-editor.md §2.
 import type { Group, Host } from '../ipc/types';
+import { t } from '../i18n';
 
 /** 정렬: 정렬 키 오름차순, 같으면 이름 순. */
 function bySortThenName<T extends { sort: number }>(nameOf: (x: T) => string) {
@@ -52,7 +53,7 @@ export function countHostsIn(groups: Group[], hosts: Host[], groupId: string, fi
 
 /** 사이드바 행의 부제(접속 대상). 시리얼=장치 경로, 로컬=`로컬 · 시작 폴더 또는 ~`, 그 외=`[사용자@]주소`. */
 export function sidebarSubtitle(h: Host): string {
-  if (h.protocol === 'local') return `로컬 · ${h.local?.cwd || '~'}`;
+  if (h.protocol === 'local') return t('host.localTarget', { cwd: h.local?.cwd || '~' });
   if (h.protocol === 'serial') return (h.serial as { path?: string } | undefined)?.path ?? h.host;
   // 부제는 포트를 붙이지 않는다(§5). 포트는 툴팁에서만 보인다.
   return `${h.username ? h.username + '@' : ''}${h.host}`;
@@ -126,7 +127,7 @@ export function folderDeletePlan(
 
 /** 서버 복제(§7, B8): 새 id, 이름에 " (복사본)", 최근 사용 기록 지움. */
 export function duplicateHostRecord(h: Host, newId: string, sort: number): Host {
-  return { ...h, id: newId, alias: `${h.alias} (복사본)`, lastUsedAt: undefined, sort };
+  return { ...h, id: newId, alias: t('host.copyAlias', { alias: h.alias }), lastUsedAt: undefined, sort };
 }
 
 /** 사이드바 너비 범위(§1.3): 200~520px. */

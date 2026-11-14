@@ -1,6 +1,7 @@
 // 서버 편집 대화상자의 순수 규칙(입력 나누기, 프로토콜 전환, 검사, 정규화). 근거: spec/ui/host-editor.md §1.1~§1.6.
 // 화면 없이 단위 테스트하기 위해 React 밖에 둔다.
 import type { EnvKind, Host, Protocol } from '../ipc/types';
+import { t, type MsgId } from '../i18n';
 
 export type SerialParity = 'none' | 'even' | 'odd' | 'mark' | 'space';
 export type SerialFlow = 'none' | 'rtscts' | 'xonxoff';
@@ -87,7 +88,7 @@ export function fallbackAlias(alias: string, protocol: Protocol, opts: { host: s
   if (protocol === 'serial') return opts.serialPath?.trim() || 'Serial';
   if (protocol === 'local') {
     const last = (opts.localCwd ?? '').trim().split(/[\\/]/).filter(Boolean).pop();
-    return last || '로컬 터미널';
+    return last || t('host.localTerminal');
   }
   return opts.host.trim();
 }
@@ -105,15 +106,15 @@ export function validateHostForm(input: {
   jumpHasSecret: boolean;
 }): { tab: 'basic' | 'auth' | 'adv'; message: string } | null {
   const isNet = input.protocol === 'ssh' || input.protocol === 'telnet';
-  if (isNet && !input.host.trim()) return { tab: 'basic', message: '호스트 주소를 입력하세요' };
-  if (input.protocol === 'serial' && !input.serialPath.trim()) return { tab: 'basic', message: '시리얼 포트를 선택하세요' };
+  if (isNet && !input.host.trim()) return { tab: 'basic', message: t('hostForm.needHost') };
+  if (input.protocol === 'serial' && !input.serialPath.trim()) return { tab: 'basic', message: t('hostForm.needSerial') };
   if (isNet && input.hasSecret && !input.vaultOpen) {
-    return { tab: 'auth', message: '앱이 잠겨 있어 비밀번호를 저장할 수 없습니다' };
+    return { tab: 'auth', message: t('hostForm.lockedPassword') };
   }
   if (input.protocol === 'ssh' && input.jumpDirect) {
-    if (!input.jumpAddress.trim()) return { tab: 'adv', message: '경유 서버 주소를 입력하세요' };
+    if (!input.jumpAddress.trim()) return { tab: 'adv', message: t('hostForm.needJump') };
     if (input.jumpHasSecret && !input.vaultOpen) {
-      return { tab: 'adv', message: '앱이 잠겨 있어 경유 서버 자격 증명을 저장할 수 없습니다' };
+      return { tab: 'adv', message: t('hostForm.lockedJump') };
     }
   }
   return null;
@@ -123,7 +124,7 @@ export function validateHostForm(input: {
 export function isPpkV3(text: string): boolean {
   return /^PuTTY-User-Key-File-3:/m.test(text.trimStart());
 }
-export const PPK_V3_MESSAGE = 'PPK v3 키는 PuTTYgen → Conversions → Export OpenSSH key 로 변환해 주세요';
+export const PPK_V3_MESSAGE: MsgId = 'hostForm.ppkV3';
 
 /** 셸 경로가 WSL 인지(세션 유지 카드 표시 조건, §1.3 3번). */
 export function isWslShell(path: string | undefined): boolean {

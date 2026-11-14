@@ -1,7 +1,7 @@
 package importer
 
 import (
-	"fmt"
+	"dariterm/internal/i18n"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -227,7 +227,7 @@ func ResolveCrtJumps(slCands []Candidate, slSessions []CrtSession) {
 				continue
 			}
 		}
-		slCands[iIndex].M_szNote = fmt.Sprintf("방화벽 설정 \"%s\" 은 옮기지 않음", szFirewall)
+		slCands[iIndex].M_szNote = i18n.T("be.crt.firewall", "name", szFirewall)
 	}
 }
 

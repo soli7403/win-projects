@@ -2,6 +2,7 @@ package session
 
 import (
 	"crypto/rand"
+	"dariterm/internal/i18n"
 	"fmt"
 	"sync"
 )
@@ -39,7 +40,7 @@ func (pManager *Manager) Get(szId string) (*Session, error) {
 	defer pManager.mtxData.Unlock()
 	pSession, bOk := pManager.mapSessions[szId]
 	if !bOk {
-		return nil, fmt.Errorf("세션을 찾을 수 없습니다")
+		return nil, i18n.Errorf("be.session.notFound", nil)
 	}
 	return pSession, nil
 }

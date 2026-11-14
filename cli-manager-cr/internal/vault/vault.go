@@ -2,8 +2,8 @@
 package vault
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/base64"
-	"errors"
 	"os"
 	"sync"
 	"time"
@@ -22,16 +22,16 @@ const G_cszOsUnlockKind = "windows"
 const G_ciMinPasswordLen = 8
 
 // ErrLocked 는 볼트가 잠겨 있을 때 돌려준다.
-var ErrLocked = errors.New("앱이 잠겨 있습니다")
+var ErrLocked = i18n.NewError("be.vault.locked")
 
 // ErrNoVault 는 볼트 파일이 없을 때 돌려준다.
-var ErrNoVault = errors.New("앱 잠금 비밀번호가 설정되지 않음")
+var ErrNoVault = i18n.NewError("be.vault.none")
 
 // ErrAlreadySetup 은 이미 볼트가 있을 때 돌려준다.
-var ErrAlreadySetup = errors.New("이미 앱 잠금 비밀번호가 설정되어 있습니다")
+var ErrAlreadySetup = i18n.NewError("be.vault.already")
 
 // ErrPasswordShort 는 앱 잠금 비밀번호가 짧을 때 돌려준다.
-var ErrPasswordShort = errors.New("앱 잠금 비밀번호는 8자 이상이어야 합니다")
+var ErrPasswordShort = i18n.NewError("be.vault.short")
 
 // Vault 는 볼트 파일의 메모리 사본과, 열려 있을 때만 가지는 볼트 키를 가진다.
 type Vault struct {

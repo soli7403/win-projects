@@ -32,7 +32,7 @@ export function parseDirect(input: string): DirectTarget | null {
 export function isLocalPrefix(input: string): boolean {
   const s = input.trim().toLowerCase();
   if (!s) return false;
-  return ['로컬', 'local', '터미널', 'term', 'shell', '셸'].some((p) => s.startsWith(p));
+  return ['로컬', 'local', '터미널', 'term', 'shell', '셸'].some((p) => s.startsWith(p)); // i18n-ok 입력 별칭 // i18n-ok 입력 별칭
 }
 
 import type { Group, Host } from '../ipc/types';

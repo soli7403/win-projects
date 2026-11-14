@@ -1,8 +1,8 @@
 package importer
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -24,7 +24,7 @@ type AwsInstance struct {
 }
 
 // g_reAwsRoleSuffix 는 이름 끝의 역할 접미(app, web, bastion 등 + 숫자)를 찾는다.
-var g_reAwsRoleSuffix = regexp.MustCompile(`[-_ ]?(app|api|web|was|server|bastion|jump|배스천)\d*$`)
+var g_reAwsRoleSuffix = regexp.MustCompile(`[-_ ]?(app|api|web|was|server|bastion|jump|배스천)\d*$`) // i18n-ok 이름 별칭
 
 // ParseAwsRegions 는 describe-regions 출력에서 리전 이름 목록을 뽑는다.
 func ParseAwsRegions(bData []byte) ([]string, error) {
@@ -34,7 +34,7 @@ func ParseAwsRegions(bData []byte) ([]string, error) {
 		} `json:"Regions"`
 	}
 	if errJson := json.Unmarshal(bData, &mapOut); errJson != nil {
-		return nil, fmt.Errorf("aws CLI 출력 해석 실패")
+		return nil, i18n.Errorf("be.aws.parse", nil)
 	}
 	slOut := []string{}
 	for _, region := range mapOut.Regions {
@@ -68,7 +68,7 @@ func ParseAwsInstances(bData []byte, szRegion string) ([]AwsInstance, error) {
 		} `json:"Reservations"`
 	}
 	if errJson := json.Unmarshal(bData, &mapOut); errJson != nil {
-		return nil, fmt.Errorf("aws CLI 출력 해석 실패")
+		return nil, i18n.Errorf("be.aws.parse", nil)
 	}
 	slOut := []AwsInstance{}
 	for _, reservation := range mapOut.Reservations {
@@ -110,7 +110,7 @@ func ParseAwsImages(bData []byte) (map[string]string, error) {
 		} `json:"Images"`
 	}
 	if errJson := json.Unmarshal(bData, &mapOut); errJson != nil {
-		return nil, fmt.Errorf("aws CLI 출력 해석 실패")
+		return nil, i18n.Errorf("be.aws.parse", nil)
 	}
 	mapOut2 := map[string]string{}
 	for _, image := range mapOut.Images {
@@ -145,7 +145,7 @@ func awsStem(szName string) string {
 // awsIsBastionName 은 이름에 bastion/jump/배스천 이 있는지 본다 (대소문자 무시).
 func awsIsBastionName(szName string) bool {
 	szLower := strings.ToLower(szName)
-	return strings.Contains(szLower, "bastion") || strings.Contains(szLower, "jump") || strings.Contains(szLower, "배스천")
+	return strings.Contains(szLower, "bastion") || strings.Contains(szLower, "jump") || strings.Contains(szLower, "배스천") // i18n-ok 이름 별칭
 }
 
 // PickAwsBastion 은 공인 IP 없는 대상의 같은 VPC 베스천을 고른다 (import.md §3 우선순위). 없으면 nil.
@@ -219,14 +219,14 @@ func BuildAwsCandidates(slInstances []AwsInstance, mapImageNames map[string]stri
 		szKeyFile := FindAwsKeyFile(inst.M_szKeyName, szHome)
 		szNote := inst.M_szRegion
 		if inst.M_szState == "stopped" {
-			szNote += " · 중지됨"
+			szNote += " · " + i18n.T("be.aws.stopped")
 		}
 		if inst.M_szKeyName != "" && szKeyFile == "" {
-			szNote += " · 키 파일 없음: " + inst.M_szKeyName + ".pem"
+			szNote += " · " + i18n.T("import.noKeyFile") + ": " + inst.M_szKeyName + ".pem" // 화면이 import.noKeyFile 문구로 찾는다
 		}
 		szMemo := "AWS " + inst.M_szRegion + " " + inst.M_szId
 		if inst.M_szKeyName != "" {
-			szMemo += " (키: " + inst.M_szKeyName + ")"
+			szMemo += " (" + i18n.T("be.aws.keyLabel", "name", inst.M_szKeyName) + ")"
 		}
 		cand := Candidate{
 			M_szSource:  G_cszSourceAws,

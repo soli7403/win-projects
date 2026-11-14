@@ -3,9 +3,12 @@
 //   VITE_DARITERM_PURCHASE_URL, VITE_DARITERM_DONATE_URL, VITE_DARITERM_HOMEPAGE_URL
 // 비어 있거나 http(s) 주소가 아니면 그 버튼을 숨긴다(백엔드 app.openExternal 도 http(s) 만 연다).
 
+import type { MsgId } from '../i18n';
+
 export interface ExternalLink {
   key: 'purchase' | 'donate' | 'homepage';
-  label: string;
+  /** 문구 키(D75). */
+  label: MsgId;
   url: string;
 }
 
@@ -18,9 +21,9 @@ export function safeUrl(value: unknown): string {
 /** 주소가 설정된 링크만 [구매하기] → [후원하기] → [홈페이지] 순서로 돌려준다. */
 export function aboutLinks(env: Record<string, unknown> = import.meta.env): ExternalLink[] {
   const all: ExternalLink[] = [
-    { key: 'purchase', label: '업무용 라이선스 구매', url: safeUrl(env.VITE_DARITERM_PURCHASE_URL) },
-    { key: 'donate', label: '후원하기', url: safeUrl(env.VITE_DARITERM_DONATE_URL) },
-    { key: 'homepage', label: '홈페이지', url: safeUrl(env.VITE_DARITERM_HOMEPAGE_URL) },
+    { key: 'purchase', label: 'about.buyLicense', url: safeUrl(env.VITE_DARITERM_PURCHASE_URL) },
+    { key: 'donate', label: 'about.donate', url: safeUrl(env.VITE_DARITERM_DONATE_URL) },
+    { key: 'homepage', label: 'about.homepage', url: safeUrl(env.VITE_DARITERM_HOMEPAGE_URL) },
   ];
   return all.filter((l) => l.url !== '');
 }
@@ -29,7 +32,7 @@ export function aboutLinks(env: Record<string, unknown> = import.meta.env): Exte
 export const LICENSE_CONTACT = 'soli97403@gmail.com';
 
 /** 정보 화면의 사용 조건 요약(LICENSE §2 와 같은 뜻). */
-export const LICENSE_SUMMARY = {
-  personal: '개인이 업무가 아닌 목적(학습, 개인 프로젝트, 취미 등)으로 쓰면 무료입니다.',
-  business: '회사·기관·단체의 업무나 영리 목적의 일에 쓰려면 사용하는 사람마다 업무용 라이선스가 필요합니다. 검토용으로 30일까지 무료로 써 볼 수 있습니다.',
+export const LICENSE_SUMMARY: { personal: MsgId; business: MsgId } = {
+  personal: 'about.licensePersonal',
+  business: 'about.licenseBusiness',
 };

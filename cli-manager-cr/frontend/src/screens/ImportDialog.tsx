@@ -7,6 +7,8 @@ import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
 import type { ImportCandidate, ImportApplyResult, ImportHost } from '../ipc/c1types';
+import { t } from '../i18n';
+import { Rich } from '../i18n/Rich';
 
 type Cand = ImportCandidate & { key: string };
 
@@ -51,7 +53,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
   const pushToast = useApp((s) => s.pushToast);
   const [cands, setCands] = useState<Cand[]>([]);
   const [sel, setSel] = useState<Set<string>>(new Set());
-  const [folder, setFolder] = useState('PuTTY 가져오기');
+  const [folder, setFolder] = useState(() => t('import.defaultFolder'));
   const [scanning, setScanning] = useState(true);
   const [awsBusy, setAwsBusy] = useState(false);
   const [crtBusy, setCrtBusy] = useState(false);
@@ -111,12 +113,12 @@ function ImportBody({ onClose }: { onClose: () => void }) {
     try {
       const found = await getBackend().invoke<ImportCandidate[]>('import.scanAws', []);
       if (!Array.isArray(found) || found.length === 0) {
-        pushToast({ kind: 'info', text: 'AWS 에서 가져올 인스턴스를 찾지 못했습니다' });
+        pushToast({ kind: 'info', text: t('import.awsNone') });
         return;
       }
       replaceSource('aws', found, 'AWS');
     } catch (e) {
-      pushToast({ kind: 'error', text: `AWS 조회 실패: ${errorMessage(e)} — 터미널에서 aws configure 로 자격 증명을 확인하세요` });
+      pushToast({ kind: 'error', text: t('import.awsFailed', { error: errorMessage(e) }) });
     } finally {
       setAwsBusy(false);
     }
@@ -129,12 +131,12 @@ function ImportBody({ onClose }: { onClose: () => void }) {
       const found = await getBackend().invoke<ImportCandidate[] | null>('import.scanSecureCrt', []);
       if (found === null || found === undefined) return;
       if (!Array.isArray(found) || found.length === 0) {
-        pushToast({ kind: 'info', text: '선택한 폴더에서 SecureCRT 세션을 찾지 못했습니다' });
+        pushToast({ kind: 'info', text: t('import.crtNone') });
         return;
       }
       replaceSource('securecrt', found, 'SecureCRT');
     } catch (e) {
-      pushToast({ kind: 'error', text: `SecureCRT 폴더를 읽지 못했습니다: ${errorMessage(e)}` });
+      pushToast({ kind: 'error', text: t('import.crtFailed', { error: errorMessage(e) }) });
     } finally {
       setCrtBusy(false);
     }
@@ -153,7 +155,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
       await useApp.getState().refreshVault();
       pushToast({
         kind: 'ok',
-        text: `${r.hosts}개 서버를 가져왔습니다${r.keys > 0 ? ` (키 ${r.keys}개 암호화해 저장)` : ''}`,
+        text: t('import.done', { count: r.hosts }) + (r.keys > 0 ? t('import.doneKeys', { count: r.keys }) : ''),
       });
       if (r.skipped && r.skipped.length > 0) pushToast({ kind: 'error', text: r.skipped.join('\n') });
       onClose();
@@ -166,70 +168,70 @@ function ImportBody({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal
-      title="서버 가져오기"
+      title={t('import.title')}
       icon={Download}
       size="lg"
       onClose={onClose}
       foot={
         <>
-          <span className="faint" style={{ marginRight: 'auto', alignSelf: 'center' }}>{sel.size}/{cands.length}개 선택</span>
-          <button className="btn" type="button" onClick={onClose}>취소</button>
+          <span className="faint" style={{ marginRight: 'auto', alignSelf: 'center' }}>{t('import.selectedCount', { sel: sel.size, total: cands.length })}</span>
+          <button className="btn" type="button" onClick={onClose}>{t('common.cancel')}</button>
           <button className="btn primary" type="button" disabled={chosen.length === 0 || applying} onClick={() => void apply()}>
-            {applying ? '가져오는 중...' : `${chosen.length}개 가져오기`}
+            {applying ? t('import.applying') : t('import.apply', { count: chosen.length })}
           </button>
         </>
       }
     >
       <div className="set-notice" style={{ lineHeight: 1.6 }}>
-        PuTTY 저장 세션(레지스트리), SecureCRT 세션 폴더, <code className="kbdish">~/.ssh/config</code>를 읽어 옵니다. 호스트·포트·사용자·키 파일·포트 포워딩·시리얼 설정·인코딩이 옮겨집니다. 비밀번호는 옮기지 않으므로 처음 연결할 때 한 번 입력하면 저장됩니다.
-        {vaultLocked && ' (앱이 잠겨 있으면 키 파일은 저장되지 않습니다)'}
+        <Rich text={t('import.intro')} />
+        {vaultLocked && t('import.lockedNote')}
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <button className="btn" type="button" disabled={awsBusy} onClick={() => void scanAws()} style={{ flex: 'none' }}>
-          <Cloud size={14} /> {awsBusy ? 'AWS 전 리전 조회 중...' : 'AWS EC2 불러오기'}
+          <Cloud size={14} /> {awsBusy ? t('import.awsBusy') : t('import.aws')}
         </button>
-        <span className="set-note">aws CLI 자격 증명으로 인스턴스를 읽습니다. 사설 IP 서버는 같은 VPC 의 배스천을 경유 서버로 거쳐 연결하고, 키는 ~/.ssh/&lt;키 이름&gt;.pem 에서 찾습니다.</span>
+        <span className="set-note">{t('import.awsNote')}</span>
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <button className="btn" type="button" disabled={crtBusy} onClick={() => void scanSecureCrt()} style={{ flex: 'none' }}>
-          <FolderOpen size={14} /> {crtBusy ? 'SecureCRT 폴더 읽는 중...' : 'SecureCRT 폴더 선택'}
+          <FolderOpen size={14} /> {crtBusy ? t('import.crtBusy') : t('import.crt')}
         </button>
-        <span className="set-note">다른 위치(다른 PC에서 복사한 Config 폴더 등)의 SecureCRT 세션을 읽습니다. 폴더 구조는 넣을 폴더 아래에 그대로 만들어집니다.</span>
+        <span className="set-note">{t('import.crtNote')}</span>
       </div>
 
-      {scanning && <div className="faint">검색 중...</div>}
+      {scanning && <div className="faint">{t('import.scanning')}</div>}
       {!scanning && cands.length === 0 && (
         <div>
-          <div>가져올 세션을 찾지 못했습니다.</div>
-          <div className="set-note">PuTTY·SecureCRT에 저장된 세션이 없거나 ~/.ssh/config가 없습니다.</div>
+          <div>{t('import.none')}</div>
+          <div className="set-note">{t('import.noneNote')}</div>
         </div>
       )}
 
       {cands.length > 0 && (
         <>
-          <Field label="넣을 폴더 이름" help="이름이 prod-/stg-/dev- 로 시작하면 운영/검증/개발 환경이 자동 지정됩니다. 비우면 최상위에 넣습니다. SecureCRT 폴더 구조는 이 폴더 아래에 만들어집니다.">
-            <input className="input" aria-label="넣을 폴더 이름" value={folder} onChange={(e) => setFolder(e.target.value)} />
+          <Field label={t('import.folder')} help={t('import.folderHelp')}>
+            <input className="input" aria-label={t('import.folder')} value={folder} onChange={(e) => setFolder(e.target.value)} />
           </Field>
           <div className="import-wrap">
             <table className="import-table">
               <thead>
                 <tr>
                   <th style={{ width: 36 }}>
-                    <input type="checkbox" aria-label="전체 선택" checked={allChecked} onChange={toggleAll} />
+                    <input type="checkbox" aria-label={t('pane.selectAll')} checked={allChecked} onChange={toggleAll} />
                   </th>
-                  <th>이름</th>
-                  <th>주소</th>
-                  <th>종류</th>
-                  <th>출처</th>
+                  <th>{t('sftp.colName')}</th>
+                  <th>{t('import.address')}</th>
+                  <th>{t('import.kind')}</th>
+                  <th>{t('import.source')}</th>
                 </tr>
               </thead>
               <tbody>
                 {cands.map((c) => (
                   <tr key={c.key}>
                     <td>
-                      <input type="checkbox" aria-label={`${c.name} 선택`} checked={sel.has(c.key)} onChange={() => toggle(c.key)} />
+                      <input type="checkbox" aria-label={t('import.selectOne', { name: c.name })} checked={sel.has(c.key)} onChange={() => toggle(c.key)} />
                     </td>
                     <td style={{ fontWeight: 700 }}>
                       {folderPrefix(c) && <span className="faint" style={{ fontWeight: 400 }}>{folderPrefix(c)}</span>}
@@ -237,13 +239,13 @@ function ImportBody({ onClose }: { onClose: () => void }) {
                     </td>
                     <td>
                       <span className="mono" style={{ fontSize: 12 }}>{addrOf(c)}</span>
-                      {c.keyFile && <KeyRound size={12} style={{ marginLeft: 6, verticalAlign: '-2px' }} aria-label="키 파일 있음" />}
+                      {c.keyFile && <KeyRound size={12} style={{ marginLeft: 6, verticalAlign: '-2px' }} aria-label={t('import.hasKey')} />}
                     </td>
                     <td>{kindOf(c)}</td>
                     <td title={c.note ?? undefined}>
                       {SOURCE_LABEL[c.source] ?? String(c.source ?? '')}
-                      {c.source === 'aws' && c.jumpVia ? ' · 경유 서버 거침' : ''}
-                      {typeof c.note === 'string' && c.note.includes('키 파일 없음') && <span className="danger-note"> (키 없음)</span>}
+                      {c.source === 'aws' && c.jumpVia ? t('import.viaJump') : ''}
+                      {typeof c.note === 'string' && c.note.includes(t('import.noKeyFile')) && <span className="danger-note">{t('import.noKey')}</span>}
                     </td>
                   </tr>
                 ))}

@@ -2,6 +2,7 @@ package transport
 
 import (
 	"bufio"
+	"dariterm/internal/i18n"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -39,7 +40,7 @@ func listWindowsShells() []ShellItem {
 		slOut = append(slOut, ShellItem{Path: szPs, Label: "Windows PowerShell"})
 	}
 	if szCmd, errCmd := exec.LookPath("cmd.exe"); errCmd == nil {
-		slOut = append(slOut, ShellItem{Path: szCmd, Label: "명령 프롬프트 (cmd)"})
+		slOut = append(slOut, ShellItem{Path: szCmd, Label: i18n.T("be.shell.cmd")})
 	}
 	if szPwsh, errPwsh := exec.LookPath("pwsh.exe"); errPwsh == nil {
 		slOut = append(slOut, ShellItem{Path: szPwsh, Label: "PowerShell 7"})

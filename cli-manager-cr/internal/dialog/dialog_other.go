@@ -2,10 +2,12 @@
 
 package dialog
 
-import "errors"
+import (
+	"dariterm/internal/i18n"
+)
 
 // errUnsupported 는 1차 범위 밖 운영체제의 대화상자 자리표시자다.
-var errUnsupported = errors.New("이 운영체제에서는 대화상자를 아직 지원하지 않습니다")
+var errUnsupported = i18n.NewError("be.dialog.unsupported")
 
 // OpenFiles 는 비 Windows 에서 지원하지 않는다.
 func OpenFiles(szTitle string) ([]string, error) { return nil, errUnsupported }

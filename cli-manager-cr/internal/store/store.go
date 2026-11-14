@@ -14,6 +14,7 @@ const G_cszSaveDelay = 300 * time.Millisecond
 
 // g_mapSettingsDefault 는 설정 기본값이다 (data/store.md §4). 저장 값에 없는 키만 채운다.
 var g_mapSettingsDefault = map[string]any{
+	"language":              "", // D75: 비면 아직 고르지 않음(첫 실행 언어 선택, 그동안 OS 언어)
 	"theme":                 "dark",
 	"terminalTheme":         "DariTerm Dark",
 	"fontFamily":            "'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace",

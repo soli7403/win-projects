@@ -4,6 +4,7 @@ import { getBackend } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { useWorkspace } from '../state/workspace';
 import { findPane, sessionsIn } from './layout';
+import { t } from '../i18n';
 
 /** 포커스된 칸의 세션 id. 없으면 null. */
 export function focusedSessionId(): string | null {
@@ -36,7 +37,7 @@ export function sendSnippet(body: string, sendEnter: boolean): boolean {
 /** 원문 텍스트를 입력 대상에 보내고 터미널에 포커스(경로 입력·cd 용). 포커스 세션이 없으면 토스트. */
 export function sendText(text: string): boolean {
   if (!focusedSessionId()) {
-    useApp.getState().pushToast({ kind: 'info', text: '먼저 세션을 선택하세요' });
+    useApp.getState().pushToast({ kind: 'info', text: t('term.selectSessionFirst') });
     return false;
   }
   for (const target of inputTargets()) getBackend().termInput(target, text);
@@ -51,5 +52,5 @@ export function focusTerminal(): void {
 }
 
 export function notifyNoFocus(): void {
-  useApp.getState().pushToast({ kind: 'info', text: '먼저 세션을 선택하세요' });
+  useApp.getState().pushToast({ kind: 'info', text: t('term.selectSessionFirst') });
 }

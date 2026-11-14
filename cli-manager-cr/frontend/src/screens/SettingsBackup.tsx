@@ -2,6 +2,7 @@
 import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
+import { t } from '../i18n';
 
 export function SettingsBackup() {
   const pushToast = useApp((s) => s.pushToast);
@@ -10,7 +11,7 @@ export function SettingsBackup() {
   const exportBackup = async () => {
     try {
       const path = await getBackend().invoke<string | false>('backup.export');
-      if (path) pushToast({ kind: 'ok', text: `백업 저장: ${path}` });
+      if (path) pushToast({ kind: 'ok', text: t('backup.saved', { path }) });
     } catch (e) {
       pushToast({ kind: 'error', text: errorMessage(e) });
     }
@@ -18,9 +19,9 @@ export function SettingsBackup() {
 
   const importBackup = async () => {
     const ok = await confirm({
-      title: '백업 가져오기',
-      body: '현재 서버 목록과 계정 정보가 백업 파일 내용으로 바뀝니다. 계속할까요?',
-      okText: '가져오기',
+      title: t('backup.import'),
+      body: t('backup.importBody'),
+      okText: t('backup.importOk'),
       danger: true,
     });
     if (!ok) return;
@@ -29,7 +30,7 @@ export function SettingsBackup() {
       if (!done) return;
       await useApp.getState().refreshStore();
       await useApp.getState().refreshVault();
-      pushToast({ kind: 'ok', text: '백업을 가져왔습니다. 백업한 PC의 앱 잠금 비밀번호로 잠금을 해제하세요.' });
+      pushToast({ kind: 'ok', text: t('backup.imported') });
     } catch (e) {
       pushToast({ kind: 'error', text: errorMessage(e) });
     }
@@ -39,12 +40,12 @@ export function SettingsBackup() {
     <>
       <div className="set-notice">
         <div>
-          백업 파일 하나에 서버 목록·설정·명령 모음과 <b>암호화된</b> 계정 정보가 담깁니다. 다른 PC에서 가져온 뒤 같은 앱 잠금 비밀번호로 엽니다.
+          {t('backup.desc').split('{encrypted}')[0]}<b>{t('backup.encrypted')}</b>{t('backup.desc').split('{encrypted}')[1]}
         </div>
       </div>
       <div style={{ display: 'flex', gap: 10 }}>
-        <button className="btn primary" type="button" onClick={() => void exportBackup()}>백업 내보내기</button>
-        <button className="btn" type="button" onClick={() => void importBackup()}>백업 가져오기</button>
+        <button className="btn primary" type="button" onClick={() => void exportBackup()}>{t('backup.export')}</button>
+        <button className="btn" type="button" onClick={() => void importBackup()}>{t('backup.import')}</button>
       </div>
     </>
   );

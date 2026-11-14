@@ -2,8 +2,8 @@
 package transport
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -15,7 +15,7 @@ import (
 const G_cdurTelnetConnect = 15 * time.Second
 
 // ErrRemoteClosed 는 상대가 연결을 끊었을 때의 오류다 (protocols.md §4: "연결이 종료되었습니다").
-var ErrRemoteClosed = errors.New("연결이 종료되었습니다")
+var ErrRemoteClosed = i18n.NewError("be.remote.closed")
 
 // 텔넷 명령·옵션 바이트 (RFC 854/855, NAWS=31, TERMINAL-TYPE=24).
 const (

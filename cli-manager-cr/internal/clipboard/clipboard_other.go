@@ -2,13 +2,15 @@
 
 package clipboard
 
-import "errors"
+import (
+	"dariterm/internal/i18n"
+)
 
 // errUnsupported 는 1차 범위 밖 운영체제의 자리표시자다 (텍스트만 지원 목표, 여기서는 빈 동작).
-var errUnsupported = errors.New("이 운영체제에서는 클립보드를 아직 지원하지 않습니다")
+var errUnsupported = i18n.NewError("be.clip.unsupported")
 
 // ErrNoImage 는 클립보드에 이미지가 없을 때의 오류다.
-var ErrNoImage = errors.New("클립보드에 이미지가 없습니다")
+var ErrNoImage = i18n.NewError("be.clip.noImage")
 
 // ReadText 는 비 Windows 에서 빈 문자열을 돌려준다.
 func ReadText() (string, error) { return "", nil }

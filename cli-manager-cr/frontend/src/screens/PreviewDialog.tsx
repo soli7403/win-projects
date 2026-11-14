@@ -5,8 +5,9 @@ import { Modal } from '../ui/Modal';
 import { useUi } from '../state/ui';
 import { getBackend, errorMessage } from '../ipc/backend';
 import { typePaths, editLocally, downloadPaths } from './sftpOps';
+import { t } from '../i18n';
 
-const NO_PREVIEW = '미리보기를 지원하지 않는 파일입니다 (이진 파일 또는 512KB 초과).';
+const NO_PREVIEW = 'preview.unsupported' as const;
 
 type Loaded =
   | { kind: 'loading' }
@@ -52,8 +53,8 @@ export function PreviewDialog() {
   const onDownload = () => void downloadPaths(target.sessionId, [target.path]);
 
   let body;
-  if (loaded.kind === 'loading') body = <div className="preview-msg">불러오는 중...</div>;
-  else if (loaded.kind === 'none') body = <div className="preview-msg">{NO_PREVIEW}</div>;
+  if (loaded.kind === 'loading') body = <div className="preview-msg">{t('common.loading')}</div>;
+  else if (loaded.kind === 'none') body = <div className="preview-msg">{t(NO_PREVIEW)}</div>;
   else if (loaded.kind === 'error') body = <div className="preview-msg" role="alert">{loaded.message}</div>;
   else if (loaded.kind === 'image') body = <img className="preview-img" src={loaded.data} alt={name} />;
   else body = <pre className="preview-text selectable">{loaded.data}</pre>;
@@ -67,9 +68,9 @@ export function PreviewDialog() {
       foot={
         <div className="preview-foot">
           <span className="preview-path" title={target.path}>{target.path}</span>
-          <button className="btn" onClick={onType}>경로를 터미널에 입력</button>
-          <button className="btn" onClick={() => void onEdit()}>이 PC 앱으로 편집</button>
-          <button className="btn primary" onClick={onDownload}>다운로드</button>
+          <button className="btn" onClick={onType}>{t('preview.typePath')}</button>
+          <button className="btn" onClick={() => void onEdit()}>{t('preview.editLocal')}</button>
+          <button className="btn primary" onClick={onDownload}>{t('common.download')}</button>
         </div>
       }
     >

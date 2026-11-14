@@ -28,6 +28,7 @@
     "fontSize": 14,
     "guardDangerousOnProd": true,
     "insertPathQuote": true,
+    "language": "",
     "lineHeight": 1.15,
     "maxVerticalSplits": 3,
     "osc52Copy": true,

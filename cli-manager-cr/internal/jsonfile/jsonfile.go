@@ -2,14 +2,14 @@
 package jsonfile
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
-	"errors"
 	"os"
 	"path/filepath"
 )
 
 // ErrNotFound 는 본 파일과 .bak 이 모두 없거나 읽을 수 없을 때 돌려준다.
-var ErrNotFound = errors.New("파일 없음")
+var ErrNotFound = i18n.NewError("be.file.notFound")
 
 // Write 는 값을 들여쓰기 2칸 JSON 으로 쓴다.
 // 기존 파일이 있으면 .bak 으로 복사한 뒤 .tmp 에 쓰고 이름을 바꾼다. 권한은 소유자 전용(0600).

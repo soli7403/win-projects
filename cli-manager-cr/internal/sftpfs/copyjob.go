@@ -1,6 +1,7 @@
 package sftpfs
 
 import (
+	"dariterm/internal/i18n"
 	"errors"
 	"fmt"
 	"io"
@@ -21,7 +22,7 @@ import (
 const G_cszCopyEvent = "copyjob.update"
 
 // ErrCopyCanceled 는 사용자가 작업을 취소했을 때의 오류다.
-var ErrCopyCanceled = errors.New("취소됨")
+var ErrCopyCanceled = i18n.NewError("cj.canceled")
 
 // CopyJob 은 복사 작업 갱신 이벤트의 값이다. 끌어 놓기 한 번이 작업 하나다.
 type CopyJob struct {
@@ -84,7 +85,7 @@ var (
 func StartCopy(req CopyRequest) (CopyStart, error) {
 	result := CopyStart{M_slConflicts: []string{}}
 	if len(req.Paths) == 0 {
-		return result, errors.New("복사할 항목이 없습니다")
+		return result, i18n.NewError("be.copy.nothing")
 	}
 	srcBe, dstBe := req.Src.be, req.Dst.be
 	szDir, errDir := req.Dst.Fs.Normalize(req.DstDir)
@@ -92,7 +93,7 @@ func StartCopy(req CopyRequest) (CopyStart, error) {
 		return result, errDir
 	}
 	if info, errStat := dstBe.Stat(szDir); errStat != nil || !info.IsDir() {
-		return result, fmt.Errorf("대상 폴더가 없습니다: %s", szDir)
+		return result, i18n.Errorf("be.copy.noDest", nil, "dir", szDir)
 	}
 	slTargets := make([]string, len(req.Paths))
 	for iIdx, szSrc := range req.Paths {
@@ -240,11 +241,11 @@ func (pRun *copyRun) relay(req CopyRequest, szSrc string, szTarget string) error
 		szBase = filepath.Join(os.TempDir(), "dariterm-transfer")
 	}
 	if errMk := os.MkdirAll(szBase, 0o700); errMk != nil {
-		return fmt.Errorf("임시 폴더를 만들 수 없습니다 (%s): %w", szBase, errMk)
+		return i18n.Errorf("be.copy.tempDir", errMk, "dir", szBase)
 	}
 	szStage, errTemp := os.MkdirTemp(szBase, "copy-")
 	if errTemp != nil {
-		return fmt.Errorf("임시 폴더를 만들 수 없습니다 (%s): %w", szBase, errTemp)
+		return i18n.Errorf("be.copy.tempDir", errTemp, "dir", szBase)
 	}
 	defer os.RemoveAll(szStage)
 	szLocal := filepath.Join(szStage, req.Src.be.Base(szSrc))
@@ -362,7 +363,7 @@ func planTarget(srcBe Backend, szSrcKey string, szSrc string, dstBe Backend, szD
 		return uniqueName(dstBe, szDir, szName), nil
 	}
 	if info, errStat := srcBe.Stat(szSrc); errStat == nil && info.IsDir() && isInside(dstBe, szSrc, szDir) {
-		return "", errors.New("폴더를 자기 자신 안으로 복사할 수 없습니다: " + szName)
+		return "", i18n.Errorf("be.copy.intoSelf", nil, "name", szName)
 	}
 	return szTarget, nil
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
 
 	"dariterm/internal/gitsync"
@@ -106,8 +107,8 @@ func orderedMaps(mapItems gitsync.Collection, slOrder []string) ([]map[string]an
 // askPassword 는 "저장소 데이터 받기"의 앱 잠금 비밀번호를 묻는다 (ui.request password, 저장 허용 안 함).
 func (pService *Service) askPassword() (string, bool) {
 	rawAnswer, bOk := pService.pRouter.Asker().Ask("password", map[string]any{
-		"sessionTitle": "git 동기화",
-		"prompt":       "저장소 데이터의 앱 잠금 비밀번호",
+		"sessionTitle": i18n.T("be.sync.title"),
+		"prompt":       i18n.T("be.sync.pwPrompt"),
 		"username":     "",
 		"allowSave":    false,
 	})

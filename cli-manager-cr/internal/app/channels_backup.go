@@ -40,7 +40,7 @@ func (pService *Service) exportBackup() (any, error) {
 		return false, nil
 	}
 	tmNow := backupNow()
-	szPath, bOk := pService.pDialogs.SaveFile(backup.DefaultName(tmNow), backup.G_cszFilterName, backup.G_cszFilterPattern)
+	szPath, bOk := pService.pDialogs.SaveFile(backup.DefaultName(tmNow), backup.FilterName(), backup.G_cszFilterPattern)
 	if !bOk {
 		return false, nil
 	}
@@ -70,7 +70,7 @@ func (pService *Service) importBackup() (any, error) {
 	if pService.pDialogs == nil {
 		return false, nil
 	}
-	szPath, bOk := pService.pDialogs.OpenFile(backup.G_cszFilterName, backup.G_cszOpenPattern)
+	szPath, bOk := pService.pDialogs.OpenFile(backup.FilterName(), backup.G_cszOpenPattern)
 	if !bOk {
 		return false, nil
 	}
@@ -90,6 +90,7 @@ func (pService *Service) importBackup() (any, error) {
 			return nil, errVault
 		}
 	}
+	pService.applyLanguage()
 	pService.pRouter.Emit("store.changed")
 	return true, nil
 }

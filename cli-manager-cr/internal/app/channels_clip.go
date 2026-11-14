@@ -1,6 +1,7 @@
 package app
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -44,7 +45,7 @@ func (pService *Service) registerClipboard() {
 	})
 	pRouter.Handle("dialog.readKeyFile", func(slArgs []json.RawMessage) (any, error) {
 		szHome, _ := os.UserHomeDir()
-		szPath, errPick := dialog.OpenKeyFile("개인 키 파일 선택", filepath.Join(szHome, ".ssh"))
+		szPath, errPick := dialog.OpenKeyFile(i18n.T("be.dlg.pickKey"), filepath.Join(szHome, ".ssh"))
 		if errPick != nil || szPath == "" {
 			return json.RawMessage("null"), errPick
 		}
@@ -55,7 +56,7 @@ func (pService *Service) registerClipboard() {
 		return map[string]any{"path": szPath, "text": string(bData)}, nil
 	})
 	pRouter.Handle("dialog.chooseDir", func(slArgs []json.RawMessage) (any, error) {
-		szPath, errPick := dialog.ChooseDir("폴더 선택", "", true)
+		szPath, errPick := dialog.ChooseDir(i18n.T("be.dlg.pickFolder"), "", true)
 		if errPick != nil || szPath == "" {
 			return json.RawMessage("null"), errPick
 		}

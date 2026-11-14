@@ -2,6 +2,7 @@
 import type { AuthType, CredMeta, Host, Protocol } from '../ipc/types';
 import { getBackend } from '../ipc/backend';
 import { JUMP_DIRECT, localOptions, type JumpDirect, type SerialOpts } from './hostForm';
+import { t } from '../i18n';
 
 export interface SaveInput {
   original: Host | null;
@@ -94,7 +95,7 @@ export async function buildHostFromForm(i: SaveInput): Promise<Host> {
     if (secret) {
       jumpCred = await saveAccount(
         j.authType === 'key' ? 'key' : 'password',
-        `${i.alias} 경유 서버`,
+        t('host.jumpAccountName', { alias: i.alias }),
         j.username.trim(),
         { password: j.password, privateKey: j.keyText.trim(), passphrase: j.passphrase },
         jumpCred ?? undefined,

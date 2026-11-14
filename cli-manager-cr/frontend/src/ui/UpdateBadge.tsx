@@ -2,6 +2,7 @@
 import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { useUpdate } from '../state/update';
+import { t } from '../i18n';
 
 export function UpdateBadge() {
   const info = useUpdate((s) => s.available);
@@ -15,8 +16,8 @@ export function UpdateBadge() {
     }
   };
   return (
-    <button className="update-badge" type="button" title="새 버전 내려받기 페이지 열기" onClick={() => void open()}>
-      새 버전 {info.version}
+    <button className="update-badge" type="button" title={t('update.openTitle')} onClick={() => void open()}>
+      {t('update.badge', { version: info.version })}
     </button>
   );
 }

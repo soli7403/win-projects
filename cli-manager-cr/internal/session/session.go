@@ -1,8 +1,8 @@
 package session
 
 import (
+	"dariterm/internal/i18n"
 	"errors"
-	"fmt"
 	"io"
 	"sync"
 	"time"
@@ -182,7 +182,7 @@ func (pSession *Session) scheduleRetryLocked() {
 	iDelay := BackoffSec(pSession.attempts)
 	pSession.attempts++
 	pSession.info.M_szState = G_cszStateReconnecting
-	pSession.info.M_szMessage = fmt.Sprintf("%d초 후 재연결 (%d/%d)", iDelay, pSession.attempts, G_ciMaxReconnect)
+	pSession.info.M_szMessage = i18n.T("be.session.reconnectStatus", "sec", iDelay, "n", pSession.attempts, "max", G_ciMaxReconnect)
 	pSession.writeOutputUnlockedNotice(MsgReconnectScheduled(iDelay))
 	if pSession.timerRetry != nil {
 		pSession.timerRetry.Stop()

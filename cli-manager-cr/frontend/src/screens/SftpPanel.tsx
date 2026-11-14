@@ -13,6 +13,8 @@ import * as ops from './sftpOps';
 import type { Entry } from './sftpOps';
 import { errorMessage } from '../ipc/backend';
 import { useUi } from '../state/ui';
+// 이 파일은 t 를 전송 항목 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
+import { t as tr } from '../i18n';
 
 /** 세션별 마지막으로 본 경로(세션마다 기억, fileDrag.lastDir). 패널을 닫아도 유지된다. */
 const lastPath = lastDir;
@@ -222,45 +224,45 @@ export function SftpPanel({ group, onClose }: { group?: 0 | 1; onClose?: () => v
   );
 
   let status: { text: string; sub?: string } | null = null;
-  if (!sid) status = { text: '세션을 선택하면 해당 서버(또는 이 PC)의 파일이 표시됩니다.' };
-  else if (!sftpOk) status = { text: '파일 창은 SSH·로컬 터미널 세션에서만 사용할 수 있습니다.', sub: `(${info!.protocol.toUpperCase()} 세션)` };
-  else if (!connected) status = { text: '연결되면 파일 목록이 표시됩니다.' };
+  if (!sid) status = { text: tr('sftp.selectSession') };
+  else if (!sftpOk) status = { text: tr('sftp.unsupported'), sub: tr('sftp.protoSession', { proto: info!.protocol.toUpperCase() }) };
+  else if (!connected) status = { text: tr('sftp.waitConnect') };
 
   return (
     <div className="rpanel-sftp" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {/* 제목 줄: 제목 · 새로고침 · 새 폴더 · 업로드 · cd · 닫기 (sftp-snippets.md §1·§2.2) */}
       <div className="rpanel-tabs">
-        <span className="rpanel-tab on"><FolderTree size={14} />{isLocal ? '파일' : 'SFTP'}</span>
+        <span className="rpanel-tab on"><FolderTree size={14} />{isLocal ? tr('sftp.filesTab') : 'SFTP'}</span>
         <span className="spacer" />
-        <button className="icon-btn small" title="새로고침" aria-label="새로고침" disabled={!ready} onClick={refresh}>
+        <button className="icon-btn small" title={tr('sftp.refresh')} aria-label={tr('sftp.refresh')} disabled={!ready} onClick={refresh}>
           <RefreshCw size={14} className={st.loading ? 'spin' : undefined} />
         </button>
-        <button className="icon-btn small" title="새 폴더" aria-label="새 폴더" disabled={!ready} onClick={() => void onNewFolder()}>
+        <button className="icon-btn small" title={tr('quick.newFolder')} aria-label={tr('quick.newFolder')} disabled={!ready} onClick={() => void onNewFolder()}>
           <FolderPlus size={14} />
         </button>
-        <button className="icon-btn small" title={isLocal ? '파일 가져오기 (이 폴더로 복사)' : '파일 업로드'} aria-label="파일 업로드" disabled={!ready} onClick={() => void onUpload()}>
+        <button className="icon-btn small" title={isLocal ? tr('sftp.importLocal') : tr('sftp.upload')} aria-label={tr('sftp.upload')} disabled={!ready} onClick={() => void onUpload()}>
           <Upload size={14} />
         </button>
-        <button className="icon-btn small" title="터미널을 이 폴더로 이동 (cd)" aria-label="터미널을 이 폴더로 이동 (cd)" disabled={!ready} onClick={onCd}>
+        <button className="icon-btn small" title={tr('sftp.cdHere')} aria-label={tr('sftp.cdHere')} disabled={!ready} onClick={onCd}>
           <SquareTerminal size={14} />
         </button>
         {onClose && (
-          <button className="icon-btn small" aria-label="닫기" title="닫기" onClick={onClose}>
+          <button className="icon-btn small" aria-label={tr('common.close')} title={tr('common.close')} onClick={onClose}>
             <X size={14} />
           </button>
         )}
       </div>
       {/* 경로 줄: 상위 폴더 · 홈 · 경로 입력 */}
       <div className="sftp-tools">
-        <button className="icon-btn small" title="상위 폴더" aria-label="상위 폴더" disabled={!ready || st.parent === st.path} onClick={() => navigate(st.parent)}>
+        <button className="icon-btn small" title={tr('sftp.parent')} aria-label={tr('sftp.parent')} disabled={!ready || st.parent === st.path} onClick={() => navigate(st.parent)}>
           <ArrowUp size={14} />
         </button>
-        <button className="icon-btn small" title="홈" aria-label="홈" disabled={!ready} onClick={() => navigate('~')}>
+        <button className="icon-btn small" title={tr('sftp.home')} aria-label={tr('sftp.home')} disabled={!ready} onClick={() => navigate('~')}>
           <House size={14} />
         </button>
         <input
           className="input mono sftp-path"
-          aria-label="경로"
+          aria-label={tr('sftp.path')}
           spellCheck={false}
           value={pathDraft}
           disabled={!ready}
@@ -321,7 +323,7 @@ export function SftpPanel({ group, onClose }: { group?: 0 | 1; onClose?: () => v
             />
           )}
           {drop && (
-            <div className="sftp-drop">여기에 놓으면 {drop.dir} (으)로 {drop.file || st.local ? '복사' : '업로드'}</div>
+            <div className="sftp-drop">{drop.file || st.local ? tr('sftp.dropCopy', { dir: drop.dir }) : tr('sftp.dropUpload', { dir: drop.dir })}</div>
           )}
         </div>
       )}
@@ -336,9 +338,9 @@ function TransferBox({ items }: { items: TransferInfo[] }) {
   return (
     <div className="transfers">
       <div className="transfers-head">
-        <span>전송</span>
+        <span>{tr('sftp.transfers')}</span>
         <span className="spacer" />
-        <button className="btn link small-btn" onClick={clear}>지우기</button>
+        <button className="btn link small-btn" onClick={clear}>{tr('sftp.clearList')}</button>
       </div>
       <div className="transfers-list">
         {items.map((t) => {
@@ -350,8 +352,8 @@ function TransferBox({ items }: { items: TransferInfo[] }) {
               <div className="tr-line">
                 {t.direction === 'upload' ? <ArrowUpFromLine size={13} /> : <ArrowDown size={13} />}
                 <span className="name">{t.name}</span>
-                {done && <Check size={13} color="var(--ok)" aria-label="완료" />}
-                {error && <AlertCircle size={13} color="var(--danger)" aria-label="오류" />}
+                {done && <Check size={13} color="var(--ok)" aria-label={tr('cj.doneAria')} />}
+                {error && <AlertCircle size={13} color="var(--danger)" aria-label={tr('common.error')} />}
                 {!done && !error && <span className="pct">{pct}%</span>}
                 <span className="size">{formatBytes(t.total)}</span>
               </div>

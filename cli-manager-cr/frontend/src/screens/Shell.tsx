@@ -16,6 +16,8 @@ import { CopyJobs } from './CopyJobs';
 import { SnippetsPanel } from './SnippetsPanel';
 import { Sidebar } from './Sidebar';
 import { UpdateBadge } from '../ui/UpdateBadge';
+// 이 파일은 t 를 지역 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
+import { relabel, t as tr, type MsgId } from '../i18n';
 
 /** 왼쪽 위 아이콘 묶음: 서버 목록 · 명령 모음 · 일괄 입력 · 설정 (앱 잠그기는 오른쪽 아래 상태 표시줄, D67). 서버 목록이 열려 있으면 가로, 접혀 있으면 세로 막대. */
 export function ToolRow({ vertical }: { vertical: boolean }) {
@@ -26,23 +28,23 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
   const linkInput = useUi((s) => s.linkInput);
   const toggleLink = () => {
     useUi.getState().toggleLinkInput();
-    pushToast({ kind: 'info', text: linkInput ? '일괄 입력을 껐습니다 — 창마다 따로 입력합니다' : '일괄 입력을 켰습니다 — 보이는 모든 창에 같이 입력됩니다' });
+    pushToast({ kind: 'info', text: linkInput ? tr('shell.linkOff') : tr('shell.linkOn') });
   };
   return (
     <div className={`toolrow${vertical ? ' vertical' : ''}`}>
       <button
         className={`icon-btn${sidebarOpen ? ' on' : ''}`}
         onClick={toggle}
-        title="서버 목록 (Ctrl+Shift+L)"
-        aria-label="서버 목록"
+        title={tr('shell.serversTitle')}
+        aria-label={tr('shell.servers')}
         aria-pressed={sidebarOpen}
       >
         <PanelLeft size={16} />
       </button>
       <button
         className={`icon-btn${sidebarOpen && snippetsOpen ? ' on' : ''}`}
-        title="명령 모음"
-        aria-label="명령 모음"
+        title={tr('shell.snippets')}
+        aria-label={tr('shell.snippets')}
         aria-pressed={sidebarOpen && snippetsOpen}
         onClick={() => {
           const ui = useUi.getState();
@@ -58,26 +60,26 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
       {/* 모든 창 동시 입력: 이어진 쇠사슬 = 켜짐(보이는 모든 창에 같이 입력), 끊어진 쇠사슬 = 꺼짐 */}
       <button
         className={`icon-btn link-input${linkInput ? ' on' : ''}`}
-        title={linkInput ? '일괄 입력 켜짐 — 보이는 모든 창에 같이 입력합니다 (누르면 끄기)' : '일괄 입력 꺼짐 — 누르면 보이는 모든 창에 같이 입력합니다'}
-        aria-label="모든 창 일괄 입력"
+        title={linkInput ? tr('shell.linkOnTitle') : tr('shell.linkOffTitle')}
+        aria-label={tr('shell.linkAria')}
         aria-pressed={linkInput}
         onClick={toggleLink}
       >
         {linkInput ? <Link size={16} /> : <Unlink size={16} />}
       </button>
-      <button className="icon-btn" title="설정" aria-label="설정" onClick={() => useUi.getState().openSettings()}>
+      <button className="icon-btn" title={tr('settings.title')} aria-label={tr('settings.title')} onClick={() => useUi.getState().openSettings()}>
         <Settings size={16} />
       </button>
     </div>
   );
 }
 
-const STATE_LABEL: Record<string, string> = {
-  connected: '연결됨',
-  connecting: '연결 중',
-  reconnecting: '재연결 대기',
-  closed: '연결 끊김',
-  error: '실패',
+const STATE_LABEL: Record<string, MsgId> = {
+  connected: 'state.connected',
+  connecting: 'state.connecting',
+  reconnecting: 'state.reconnecting',
+  closed: 'state.closed',
+  error: 'state.error',
 };
 
 function useNow(enabled: boolean): number {
@@ -109,8 +111,8 @@ export function StatusBar() {
   const savedHost = useApp((s) => (entry?.info.hostId ? s.store?.hosts.find((h) => h.id === entry.info.hostId) : undefined));
   const imageHint = !!entry && (entry.info.protocol === 'local' || (entry.info.canSftp && connected));
   const imageTip = entry?.info.protocol === 'local'
-    ? '클립보드 이미지를 이 PC에 저장하고 경로를 입력합니다 (Claude Code 등 CLI에서 이미지 첨부)'
-    : '클립보드 이미지를 서버에 올리고 경로를 입력합니다 (Claude Code 등 CLI에서 이미지 첨부)';
+    ? tr('shell.imageTipLocal')
+    : tr('shell.imageTipServer');
   const lock = async () => {
     try {
       await getBackend().invoke('vault.lock');
@@ -125,30 +127,30 @@ export function StatusBar() {
       {info ? (
         <>
           <span className={`dot ${info.state}`} />
-          <b style={{ color: info.color ?? (info.env === 'prod' ? 'var(--danger)' : undefined) }}>{info.title}</b>
+          <b style={{ color: info.color ?? (info.env === 'prod' ? 'var(--danger)' : undefined) }}>{relabel(info.title)}</b>
           <span className="faint">{info.target}</span>
           <span>
-            {STATE_LABEL[info.state] ?? info.state}
+            {STATE_LABEL[info.state] ? tr(STATE_LABEL[info.state]) : info.state}
             {connected && elapsed ? ` · ${elapsed}` : ''}
             {!connected && info.message ? ` · ${info.message}` : ''}
           </span>
-          {broadcast && <span className="badge-bc">일괄 입력 중</span>}
+          {broadcast && <span className="badge-bc">{tr('pane.broadcasting')}</span>}
         </>
       ) : (
-        <span className="faint">연결된 세션 없음</span>
+        <span className="faint">{tr('shell.noSession')}</span>
       )}
       <span className="grow" />
       <UpdateBadge />
-      {imageHint && <span className="faint" title={imageTip}>이미지 붙여넣기 Ctrl+V</span>}
+      {imageHint && <span className="faint" title={imageTip}>{tr('shell.imageHint')}</span>}
       {savedHost && <span className="faint">{savedHost.encoding.toUpperCase()}</span>}
       {entry && size && <span className="faint">{`${size.cols}×${size.rows}`}</span>}
       {open ? (
-        <button className="link-btn" title="누르면 앱을 잠급니다" onClick={lock}>
-          <LockOpen size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />잠금 해제됨
+        <button className="link-btn" title={tr('shell.lockTitle')} onClick={lock}>
+          <LockOpen size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />{tr('shell.unlocked')}
         </button>
       ) : (
-        <span title="앱 잠김">
-          <LockIcon size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />앱 잠김
+        <span title={tr('shell.locked')}>
+          <LockIcon size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />{tr('shell.locked')}
         </span>
       )}
     </footer>
@@ -164,7 +166,7 @@ function TabGroupColumn({ group, split, flex }: { group: 0 | 1; split: boolean; 
     <section
       className={`tabgroup${split && focused ? ' focused' : ''}`}
       style={{ flex: `${flex} 1 0` }}
-      aria-label={group === 0 ? '왼쪽 화면' : '오른쪽 화면'}
+      aria-label={group === 0 ? tr('shell.leftView') : tr('shell.rightView')}
     >
       <TabBar group={group} />
       <div className="tabgroup-body">
@@ -201,7 +203,7 @@ function GroupDivider({ containerRef }: { containerRef: React.RefObject<HTMLDivE
       className="group-divider"
       role="separator"
       aria-orientation="vertical"
-      aria-label="좌우 화면 경계"
+      aria-label={tr('shell.viewDivider')}
       onPointerDown={onDown}
       onDoubleClick={() => useWorkspace.getState().setGroupRatio(50)}
     />
@@ -236,7 +238,7 @@ function SnippetDivider({ containerRef }: { containerRef: React.RefObject<HTMLDi
       className="snippet-divider"
       role="separator"
       aria-orientation="horizontal"
-      aria-label="서버 목록·명령 모음 경계"
+      aria-label={tr('shell.sidebarDivider')}
       onPointerDown={onDown}
       onDoubleClick={() => useUi.getState().setSnippetRatio(SNIPPET_RATIO_DEFAULT)}
     />
@@ -270,7 +272,7 @@ export function Shell() {
               {snippetsOpen && (
                 <>
                   <SnippetDivider containerRef={leftRef} />
-                  <div className="snippet-dock" aria-label="명령 모음" style={{ flex: `${snippetRatio} 1 0` }}>
+                  <div className="snippet-dock" aria-label={tr('shell.snippets')} style={{ flex: `${snippetRatio} 1 0` }}>
                     <SnippetsPanel />
                   </div>
                 </>
@@ -313,7 +315,7 @@ export function Shell() {
                 useWorkspace.getState().moveTabToGroup(id, 1);
               }}
             >
-              <span>여기에 놓으면 좌우로 나눕니다</span>
+              <span>{tr('shell.dropSplit')}</span>
             </div>
           )}
         </main>

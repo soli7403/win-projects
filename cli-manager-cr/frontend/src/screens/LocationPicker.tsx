@@ -8,6 +8,7 @@ import { useWorkspace, openSessionFor, tabTitle, type Tab } from '../state/works
 import { openHost } from '../state/actions';
 import { Modal } from '../ui/Modal';
 import type { Dir } from '../lib/layout';
+import { relabel, t } from '../i18n';
 
 export function LocationPicker() {
   const loc = useUi((s) => s.locationPicker);
@@ -28,9 +29,9 @@ export function LocationPicker() {
   };
 
   return (
-    <Modal title={`열 위치 선택 — ${host.alias}`} size="lg" onClose={close}
-      foot={<button className="btn primary" onClick={() => { close(); void openHost(loc.hostId); }}>새 탭으로 열기</button>}>
-      {tabs.length === 0 && <div className="faint">열린 탭이 없습니다. 새 탭으로 여세요.</div>}
+    <Modal title={t('loc.title', { name: host.alias })} size="lg" onClose={close}
+      foot={<button className="btn primary" onClick={() => { close(); void openHost(loc.hostId); }}>{t('loc.newTab')}</button>}>
+      {tabs.length === 0 && <div className="faint">{t('loc.noTabs')}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
         {tabs.map((t) => (
           <div key={t.id} className="loc-card">
@@ -54,11 +55,11 @@ function MiniNode({ tab, node, onPlace, sessions }: {
   sessions: Sessions;
 }) {
   if (node.type === 'pane') {
-    const title = node.sessionId ? sessions[node.sessionId]?.info.title ?? '세션' : null;
+    const title = node.sessionId ? relabel(sessions[node.sessionId]?.info.title) ?? t('tab.session') : null;
     if (!title) {
       return (
         <div className="loc-pane">
-          <button className="btn small-btn" title="이 빈 창에서 열기" onClick={() => onPlace(node.id, 'row', false, true)}>여기에</button>
+          <button className="btn small-btn" title={t('loc.openHereTitle')} onClick={() => onPlace(node.id, 'row', false, true)}>{t('loc.here')}</button>
         </div>
       );
     }
@@ -66,10 +67,10 @@ function MiniNode({ tab, node, onPlace, sessions }: {
       <div className="loc-pane">
         <span className="small">{title}</span>
         <div className="loc-arrows">
-          <button className="icon-btn small" title="이 방향으로 나눠 열기" aria-label="위로 나누기" onClick={() => onPlace(node.id, 'col', true, false)}><ArrowUp size={12} /></button>
-          <button className="icon-btn small" title="이 방향으로 나눠 열기" aria-label="왼쪽으로 나누기" onClick={() => onPlace(node.id, 'row', true, false)}><ArrowLeft size={12} /></button>
-          <button className="icon-btn small" title="이 방향으로 나눠 열기" aria-label="오른쪽으로 나누기" onClick={() => onPlace(node.id, 'row', false, false)}><ArrowRight size={12} /></button>
-          <button className="icon-btn small" title="이 방향으로 나눠 열기" aria-label="아래로 나누기" onClick={() => onPlace(node.id, 'col', false, false)}><ArrowDown size={12} /></button>
+          <button className="icon-btn small" title={t('loc.splitOpen')} aria-label={t('split.up')} onClick={() => onPlace(node.id, 'col', true, false)}><ArrowUp size={12} /></button>
+          <button className="icon-btn small" title={t('loc.splitOpen')} aria-label={t('split.left')} onClick={() => onPlace(node.id, 'row', true, false)}><ArrowLeft size={12} /></button>
+          <button className="icon-btn small" title={t('loc.splitOpen')} aria-label={t('split.right')} onClick={() => onPlace(node.id, 'row', false, false)}><ArrowRight size={12} /></button>
+          <button className="icon-btn small" title={t('loc.splitOpen')} aria-label={t('split.down')} onClick={() => onPlace(node.id, 'col', false, false)}><ArrowDown size={12} /></button>
         </div>
       </div>
     );

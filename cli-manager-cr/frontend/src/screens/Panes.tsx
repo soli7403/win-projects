@@ -14,6 +14,8 @@ import { notYet } from '../lib/notYet';
 import { getBackend, errorMessage } from '../ipc/backend';
 import type { MenuItem } from '../state/ui';
 import { isFileDrag, hoverStart, hoverEnd, dropFiles } from './fileDrag';
+// 이 파일은 t 를 지역 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
+import { relabel, t as tr } from '../i18n';
 
 const PANE_MIME = 'application/x-dariterm-pane';
 /** 사이드바 서버 끌어 놓기 MIME(에이전트 B 가 dragstart 에서 설정). */
@@ -185,20 +187,20 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
     }
   };
   const menu: MenuItem[] = [
-    { label: '복사', shortcut: 'Ctrl+Shift+C', disabled: !hasSession, onSelect: () => { const sel = termHandles.get(pane.id)?.getSelection(); if (sel) void getBackend().invoke('clip.writeText', [sel]).catch(() => undefined); } },
-    { label: '붙여넣기', shortcut: 'Ctrl+V', disabled: !hasSession, onSelect: () => { const t = termHandles.get(pane.id); if (t && pane.sessionId) void pasteFromClipboard(pane.id, pane.sessionId, t); } },
-    { label: info?.canSftp || info?.protocol === 'local' ? '이미지 붙여넣기 (파일 경로로)' : '클립보드 이미지를 서버로 붙여넣기', shortcut: 'Ctrl+Alt+V', disabled: !hasSession || (!info?.canSftp && info?.protocol !== 'local'), onSelect: () => { if (pane.sessionId) void forceImagePaste(pane.sessionId, targetsFor(pane.id, pane.sessionId)); } },
+    { label: tr('common.copy'), shortcut: 'Ctrl+Shift+C', disabled: !hasSession, onSelect: () => { const sel = termHandles.get(pane.id)?.getSelection(); if (sel) void getBackend().invoke('clip.writeText', [sel]).catch(() => undefined); } },
+    { label: tr('paste.ok'), shortcut: 'Ctrl+V', disabled: !hasSession, onSelect: () => { const t = termHandles.get(pane.id); if (t && pane.sessionId) void pasteFromClipboard(pane.id, pane.sessionId, t); } },
+    { label: info?.canSftp || info?.protocol === 'local' ? tr('pane.pasteImagePath') : tr('pane.pasteImageServer'), shortcut: 'Ctrl+Alt+V', disabled: !hasSession || (!info?.canSftp && info?.protocol !== 'local'), onSelect: () => { if (pane.sessionId) void forceImagePaste(pane.sessionId, targetsFor(pane.id, pane.sessionId)); } },
     { separator: true },
-    { label: '전체 선택', disabled: !hasSession, onSelect: () => termHandles.get(pane.id)?.selectAll() },
-    { label: '화면 비우기', disabled: !hasSession, onSelect: () => termHandles.get(pane.id)?.clear() },
-    { label: '찾기', shortcut: 'Ctrl+Shift+F', disabled: !hasSession, onSelect: () => window.dispatchEvent(new CustomEvent(FIND_EVENT, { detail: pane.id })) },
+    { label: tr('pane.selectAll'), disabled: !hasSession, onSelect: () => termHandles.get(pane.id)?.selectAll() },
+    { label: tr('pane.clear'), disabled: !hasSession, onSelect: () => termHandles.get(pane.id)?.clear() },
+    { label: tr('pane.find'), shortcut: 'Ctrl+Shift+F', disabled: !hasSession, onSelect: () => window.dispatchEvent(new CustomEvent(FIND_EVENT, { detail: pane.id })) },
     { separator: true },
-    { label: '같은 서버를 오른쪽에', shortcut: 'Ctrl+Shift+D', disabled: !info || !canSplit, onSelect: () => void splitSame('row') },
-    { label: '같은 서버를 아래에', shortcut: 'Ctrl+Shift+E', disabled: !info || !canSplit, onSelect: () => void splitSame('col') },
-    { label: info?.protocol === 'local' ? '파일 창 열기' : 'SFTP 창 열기', shortcut: 'Ctrl+Shift+S', disabled: !info?.canSftp && info?.protocol !== 'local', onSelect: () => { focusPane(pane.id); useUi.getState().setSftpOpen(groupOf(tab), true); } },
-    { label: '재연결', disabled: !hasSession || entry?.info.state === 'connected', onSelect: () => void reconnect() },
+    { label: tr('sc.splitRight'), shortcut: 'Ctrl+Shift+D', disabled: !info || !canSplit, onSelect: () => void splitSame('row') },
+    { label: tr('sc.splitDown'), shortcut: 'Ctrl+Shift+E', disabled: !info || !canSplit, onSelect: () => void splitSame('col') },
+    { label: info?.protocol === 'local' ? tr('pane.openFiles') : tr('pane.openSftp'), shortcut: 'Ctrl+Shift+S', disabled: !info?.canSftp && info?.protocol !== 'local', onSelect: () => { focusPane(pane.id); useUi.getState().setSftpOpen(groupOf(tab), true); } },
+    { label: tr('pane.reconnect'), disabled: !hasSession || entry?.info.state === 'connected', onSelect: () => void reconnect() },
     { separator: true },
-    { label: '창 닫기', danger: true, onSelect: () => void closePane(pane.id) },
+    { label: tr('pane.close'), danger: true, onSelect: () => void closePane(pane.id) },
   ];
   return (
     <div
@@ -225,35 +227,35 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
         style={{ background: color ? `color-mix(in srgb, ${color} ${focused ? 22 : 12}%, var(--panel-2))` : undefined }}
       >
         <span className={`dot ${entry ? entry.info.state : 'closed'}`} />
-        {env && <span className="env-tag" style={{ background: ENV_INFO[env].color }}>{ENV_INFO[env].label}</span>}
-        <span className="pane-title">{info?.title ?? '빈 창'}</span>
-        {linkInput && hasSession && <Link size={12} color="var(--warn)" aria-label="일괄 입력 중" className="pane-link" />}
+        {env && <span className="env-tag" style={{ background: ENV_INFO[env].color }}>{tr(ENV_INFO[env].label)}</span>}
+        <span className="pane-title">{relabel(info?.title) ?? tr('pane.empty')}</span>
+        {linkInput && hasSession && <Link size={12} color="var(--warn)" aria-label={tr('pane.broadcasting')} className="pane-link" />}
         {info && <span className="faint small pane-target">{info.target}</span>}
         <span className="spacer" />
         {hasSession && entry?.info.state !== 'connected' && (
-          <button className="icon-btn small" title="재연결" aria-label="재연결" onClick={() => void reconnect()}><RotateCw size={12} /></button>
+          <button className="icon-btn small" title={tr('pane.reconnect')} aria-label={tr('pane.reconnect')} onClick={() => void reconnect()}><RotateCw size={12} /></button>
         )}
         {hasSession && (info?.protocol === 'local' || info?.canSftp) && (
-          <button className="icon-btn small" title={info?.protocol === 'local' ? '클립보드 이미지를 저장하고 경로 입력 (Ctrl+Alt+V)' : '클립보드 이미지 → 서버 업로드 후 경로 입력 (Ctrl+Alt+V)'} aria-label="이미지 붙여넣기" onClick={() => { if (pane.sessionId) void forceImagePaste(pane.sessionId, targetsFor(pane.id, pane.sessionId)); }}><ImageIcon size={12} /></button>
+          <button className="icon-btn small" title={info?.protocol === 'local' ? tr('pane.imageLocalTitle') : tr('pane.imageServerTitle')} aria-label={tr('pane.pasteImage')} onClick={() => { if (pane.sessionId) void forceImagePaste(pane.sessionId, targetsFor(pane.id, pane.sessionId)); }}><ImageIcon size={12} /></button>
         )}
         {hasSession && (
-          <button className="icon-btn small" title="찾기 (Ctrl+Shift+F)" aria-label="찾기" onClick={() => notYet('찾기')}><Search size={12} /></button>
+          <button className="icon-btn small" title={tr('pane.findTitle')} aria-label={tr('pane.find')} onClick={() => notYet(tr('pane.find'))}><Search size={12} /></button>
         )}
         {hasSession && (
           <>
             {/* 좌우 분할 아이콘은 두지 않는다. 상하 분할은 탭의 칸 수가 한도(설정 maxVerticalSplits)에 이르면 비활성 (ui/panes.md §2). */}
-            <button className="icon-btn small" title={canSplit ? '아래로 나누기 (Ctrl+Shift+E)' : `아래로 나누기 (최대 ${maxSplits}개)`} aria-label="아래로 나누기" disabled={!canSplit} onClick={() => splitEmpty(pane.id, 'col')}><Rows2 size={12} /></button>
+            <button className="icon-btn small" title={canSplit ? tr('pane.splitDownTitle') : tr('pane.splitDownMax', { max: maxSplits })} aria-label={tr('split.down')} disabled={!canSplit} onClick={() => splitEmpty(pane.id, 'col')}><Rows2 size={12} /></button>
           </>
         )}
         {total >= 2 && (
-          <button className="icon-btn small" title={tab.zoomed ? '복원 (Ctrl+Shift+Enter)' : '최대화 (Ctrl+Shift+Enter)'} aria-label="최대화" onClick={() => { focusPane(pane.id); toggleZoom(tab.id); }}>
+          <button className="icon-btn small" title={tab.zoomed ? tr('pane.restoreTitle') : tr('pane.maximizeTitle')} aria-label={tr('pane.maximize')} onClick={() => { focusPane(pane.id); toggleZoom(tab.id); }}>
             {tab.zoomed ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
           </button>
         )}
         <button
           className="icon-btn small"
-          title="닫기"
-          aria-label="닫기"
+          title={tr('common.close')}
+          aria-label={tr('common.close')}
           onClick={() => void closePane(pane.id)}
         >
           <X size={12} />
@@ -264,12 +266,12 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
           <TerminalView paneId={pane.id} sessionId={pane.sessionId!} focused={focused} />
         ) : (
           <div className="empty-pane">
-            <div>서버를 이 창으로 끌어다 놓거나,</div>
-            <div className="faint">이 창을 선택하고 사이드바에서 서버를 더블클릭하세요</div>
-            <button className="btn" onClick={() => openQuick(pane.id)}><ZoomIn size={13} />빠른 연결…</button>
+            <div>{tr('pane.dropHint')}</div>
+            <div className="faint">{tr('pane.dropHint2')}</div>
+            <button className="btn" onClick={() => openQuick(pane.id)}><ZoomIn size={13} />{tr('pane.quick')}</button>
           </div>
         )}
-        {total >= 2 && hasSession && <div className="pane-watermark">{info?.title}</div>}
+        {total >= 2 && hasSession && <div className="pane-watermark">{relabel(info?.title)}</div>}
       </div>
     </div>
   );

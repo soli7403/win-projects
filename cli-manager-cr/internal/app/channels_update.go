@@ -1,6 +1,7 @@
 package app
 
 import (
+	"dariterm/internal/i18n"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -70,7 +71,7 @@ func (pService *Service) checkUpdate(bManual bool) update.Result {
 	bAnnounce := bFirst || bManual
 	pService.pRouter.Emit("update.available", map[string]any{"version": res.M_szVersion, "url": res.M_szUrl, "announce": bAnnounce})
 	if bAnnounce {
-		pService.pRouter.Emit("toast", map[string]any{"kind": "info", "text": "새 버전 " + res.M_szVersion + " 이 있습니다 (상태 표시줄을 눌러 확인)"})
+		pService.pRouter.Emit("toast", map[string]any{"kind": "info", "text": i18n.T("update.announce", "version", res.M_szVersion)})
 	}
 	if bFirst {
 		_ = jsonfile.Write(szPath, updateFile{M_szNotified: res.M_szVersion})

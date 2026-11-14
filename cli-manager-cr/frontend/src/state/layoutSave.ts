@@ -5,6 +5,7 @@ import type { Host, SessionInfo, Store } from '../ipc/types';
 import { useApp } from './app';
 import { openSessionFor, replaceTabs, useWorkspace, type Tab } from './workspace';
 import { newPane, newId, paneIds, type LayoutNode, type SplitNode } from '../lib/layout';
+import { t } from '../i18n';
 
 type SavedNode =
   | { type: 'pane'; empty?: boolean; hostId?: string; local?: { cwd?: string } }
@@ -44,7 +45,7 @@ function saveNode(node: LayoutNode, hosts: Host[], sessions: Record<string, { in
     const info = sessions[node.sessionId]?.info;
     if (!info) return { type: 'pane', empty: true };
     if (info.hostId && hosts.some((h) => h.id === info.hostId)) return { type: 'pane', hostId: info.hostId };
-    if (info.protocol === 'local') return { type: 'pane', local: { cwd: info.target.replace(/^로컬 · /, '') } };
+    if (info.protocol === 'local') return { type: 'pane', local: { cwd: info.target.replace(/^[^·]+ · /, '') } };
     return null;
   }
   const kids: { node: SavedNode; size: number }[] = [];
@@ -123,7 +124,7 @@ async function restore(store: Store): Promise<void> {
     tabs.push({
       id: newId('t'),
       // 예전 빌드가 저장한 그리드 탭 이름("전체 보기")은 새 이름으로 바꿔 복원한다.
-      title: st.title === '전체 보기' ? '로컬 터미널' : st.title,
+      title: st.title === '전체 보기' ? t('host.localTerminal') : st.title, // i18n-ok 옛 저장 이름
       broadcast: !!st.broadcast,
       group: st.group === 1 ? 1 : undefined,
       root,

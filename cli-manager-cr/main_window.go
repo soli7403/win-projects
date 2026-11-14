@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"dariterm/internal/i18n"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -99,9 +100,9 @@ func (pWin *lifecycleWindow) beforeClose(pService *app.Service) bool {
 			Type:          runtime.QuestionDialog,
 			Title:         "DariTerm",
 			Message:       app.CloseConfirmText(len(slConnected), app.CountKeepSessions(slConnected)),
-			Buttons:       []string{"종료", "취소"},
-			DefaultButton: "취소",
-			CancelButton:  "취소",
+			Buttons:       []string{i18n.T("be.close.quit"), i18n.T("common.cancel")},
+			DefaultButton: i18n.T("common.cancel"),
+			CancelButton:  i18n.T("common.cancel"),
 		})
 		if !app.IsQuitChoice(szChoice, errDialog != nil) {
 			return true
@@ -126,7 +127,7 @@ func (pWin *lifecycleWindow) saveWindow() {
 // SaveFile 은 백업 저장 대화상자를 연다 (기본 폴더는 문서 폴더). 취소하면 bOk=false.
 func (pWin *lifecycleWindow) SaveFile(szDefaultName string, szFilterName string, szPattern string) (string, bool) {
 	szPath, errDialog := runtime.SaveFileDialog(pWin.context(), runtime.SaveDialogOptions{
-		Title:            "백업 저장",
+		Title:            i18n.T("be.dlg.saveBackup"),
 		DefaultDirectory: documentsDir(),
 		DefaultFilename:  szDefaultName,
 		Filters:          []runtime.FileFilter{{DisplayName: szFilterName, Pattern: szPattern}},
@@ -140,7 +141,7 @@ func (pWin *lifecycleWindow) SaveFile(szDefaultName string, szFilterName string,
 // OpenFile 은 백업 열기 대화상자를 연다. 취소하면 bOk=false.
 func (pWin *lifecycleWindow) OpenFile(szFilterName string, szPattern string) (string, bool) {
 	szPath, errDialog := runtime.OpenFileDialog(pWin.context(), runtime.OpenDialogOptions{
-		Title:   "백업 파일 선택",
+		Title:   i18n.T("be.dlg.openBackup"),
 		Filters: []runtime.FileFilter{{DisplayName: szFilterName, Pattern: szPattern}},
 	})
 	if errDialog != nil || szPath == "" {

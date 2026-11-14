@@ -1,8 +1,8 @@
 package sshconn
 
 import (
+	"dariterm/internal/i18n"
 	"errors"
-	"fmt"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -16,7 +16,7 @@ type askedSecret struct {
 }
 
 // errCancelled 는 사용자가 묻는 창을 취소했을 때의 오류다.
-var errCancelled = errors.New("취소되었습니다")
+var errCancelled = i18n.NewError("be.cancelled")
 
 // authMethodsFor 는 protocols.md §2.2 의 순서로 인증 방법 목록을 만든다.
 // 순서: 개인 키 → 에이전트(agent·key 일 때) → 저장된 비밀번호 → 키보드-인터랙티브 → 비밀번호 직접 입력(최대 4번).
@@ -40,7 +40,7 @@ func authMethodsFor(tgt *Target, username string, prompt Prompter, agentSigners 
 
 // askPassword 는 비밀번호 요청 창을 띄운다. 인증 성공 시 저장할지는 asked 에 남겨 두었다가 호출자가 판단한다.
 func askPassword(tgt *Target, username string, prompt Prompter, asked *askedSecret, bFailed bool) (string, error) {
-	szPrompt := fmt.Sprintf("%s@%s 비밀번호", username, tgt.Host)
+	szPrompt := i18n.T("be.ssh.passwordPrompt", "user", username, "host", tgt.Host)
 	szPassword, bSave, bOk := prompt.Password(tgt.Title, szPrompt, username, bFailed)
 	if !bOk {
 		return "", errCancelled
@@ -83,7 +83,7 @@ func keyLoader(tgt *Target, prompt Prompter, notice func(string)) func() ([]ssh.
 		}
 		var errMissing *ssh.PassphraseMissingError
 		if !errors.As(errParse, &errMissing) {
-			notice(fmt.Sprintf("개인 키를 읽을 수 없습니다: %v (PPK 키는 PuTTYgen 에서 OpenSSH 형식으로 내보내 주세요)", errParse))
+			notice(i18n.T("be.ssh.keyParse", "error", errParse))
 			return nil, errParse
 		}
 		szPass := tgt.Passphrase
@@ -103,7 +103,7 @@ func keyLoader(tgt *Target, prompt Prompter, notice func(string)) func() ([]ssh.
 			errLast = errWith
 			szPass = ""
 		}
-		notice(fmt.Sprintf("개인 키를 읽을 수 없습니다: %v (PPK 키는 PuTTYgen 에서 OpenSSH 형식으로 내보내 주세요)", errLast))
+		notice(i18n.T("be.ssh.keyParse", "error", errLast))
 		return nil, errLast
 	}
 }
