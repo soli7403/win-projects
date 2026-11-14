@@ -7,6 +7,14 @@
   "frontend:dev:watcher": "",
   "frontend:dev:serverUrl": "",
   "author": {
-    "name": "kai"
+    "name": "YangHun Lee",
+    "email": "soli97403@gmail.com"
+  },
+  "info": {
+    "companyName": "YangHun Lee",
+    "productName": "DariTerm",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright (c) 2026 YangHun Lee. All rights reserved.",
+    "comments": "SSH · Telnet · Serial · Local terminal"
   }
 }

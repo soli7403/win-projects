@@ -15,3 +15,8 @@ tidy:
 
 notices:
 	go run ./tools/notices
+
+# installer: Windows 설치 파일 build/bin/DariTerm-amd64-installer.exe 를 만든다 (D76, NSIS 필요 — docs/host-settings/01_installer-build.md).
+.PHONY: installer
+installer:
+	powershell -NoProfile -ExecutionPolicy Bypass -File tools/installer.ps1
