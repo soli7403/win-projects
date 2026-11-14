@@ -68,6 +68,9 @@ func (pApp *App) Reply(szRequestId string, szValueJson string) {
 }
 
 func main() {
+	if szVer := productVersion(gbyWailsJson); szVer != "" {
+		app.G_cszAppVersion = szVer // 버전은 wails.json 한 곳 (D82)
+	}
 	szDataDir, errDir := app.DataDir()
 	if errDir != nil {
 		log.Fatalf("cannot open data folder: %v", errDir)

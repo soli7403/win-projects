@@ -15,7 +15,8 @@ import (
 	"dariterm/internal/vault"
 )
 
-// G_cszAppVersion 은 앱 버전이다. 빌드 때 덮어쓸 수 있다.
+// G_cszAppVersion 은 앱 버전이다. 실행 파일은 시작할 때 wails.json 의 info.productVersion 으로 덮어쓴다(main.go, D82).
+// 여기 값은 그 값을 못 읽었을 때와 테스트용 기본값이다.
 var G_cszAppVersion = "0.1.0"
 
 // Service 는 백엔드 한 벌(저장소, 볼트, 라우터)이다.
