@@ -12,3 +12,5 @@ build/windows/installer/resources/license.txt
 .dariterm-signing/
 # Microsoft Store 패키지 중간물 (tools/msix.ps1, D81)
 build/msix-layout/
+# 배포 결과물(MSIX·설치 파일, 버전별로 쌓임 — tools/msix.ps1·installer.ps1)
+build/dist/

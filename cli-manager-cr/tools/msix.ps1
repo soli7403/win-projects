@@ -1,6 +1,7 @@
 ﻿# DariTerm Microsoft Store 패키지(MSIX) 만들기 (결정 D81).
-# 결과: build\bin\DariTerm-<버전>.msix (스토어 업로드용, 서명 없음 — 스토어가 서명한다)
-#       -TestSign 이면 build\bin\DariTerm-<버전>-test.msix + DariTerm-test.cer (이 PC 시험 설치용 자체 서명)
+# 결과: build\dist\DariTerm-<버전>.0.msix (스토어 업로드용, 서명 없음 — 스토어가 서명한다)
+#       -TestSign 이면 build\dist\DariTerm-<버전>.0-test.msix + DariTerm-test.cer (이 PC 시험 설치용 자체 서명)
+#       build\dist 는 빌드가 비우지 않으므로 설치 파일(tools\installer.ps1)과 이전 버전 결과물이 함께 남는다.
 # 필요: Wails CLI, Windows SDK(makeappx, signtool), ffmpeg(아이콘 크기 변환). docs/host-settings/03_msix.md
 # 사용: 저장소 루트에서  powershell -ExecutionPolicy Bypass -File tools\msix.ps1 [-Version x.y.z] [-TestSign]
 #       (또는 make msix / make msix VERSION=0.1.1 — 이 PC 의 make 는 mingw32-make)
@@ -11,15 +12,11 @@ $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
 if ($Version) {
-  $wailsPath = Join-Path $root 'wails.json'
-  $wailsText = [IO.File]::ReadAllText($wailsPath, [Text.Encoding]::UTF8)
-  $current = ($wailsText | ConvertFrom-Json).info.productVersion
-  if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "버전은 x.y.z 형식이어야 합니다: $Version" }
-  if ([version]$Version -le [version]$current) { throw "새 버전($Version)이 지금 버전($current)보다 커야 합니다." }
-  $wailsText = $wailsText -replace '("productVersion"\s*:\s*")[^"]*(")', "`${1}$Version`${2}"
-  [IO.File]::WriteAllText($wailsPath, $wailsText, (New-Object Text.UTF8Encoding($false)))
-  Write-Host "version: $current -> $Version (wails.json)"
+  & (Join-Path $PSScriptRoot 'set-version.ps1') -Version $Version
 }
+# 결과물은 build\dist\ 에 둔다. wails build -clean 은 build\bin 을 비우므로 거기 두면 다음 빌드(설치 파일 등)에 지워진다.
+$dist = Join-Path $root 'build\dist'
+New-Item -ItemType Directory -Force $dist | Out-Null
 
 $sdk = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'x64\makeappx.exe') } | Sort-Object Name -Descending | Select-Object -First 1
 if (-not $sdk) { throw 'Windows SDK(makeappx)를 찾을 수 없습니다.' }
@@ -51,7 +48,7 @@ $manifest = (Get-Content (Join-Path $root 'build\windows\msix\AppxManifest.xml')
 [IO.File]::WriteAllText((Join-Path $layout 'AppxManifest.xml'), $manifest, (New-Object Text.UTF8Encoding($false)))
 
 # 3) 묶기
-$out = Join-Path $root "build\bin\DariTerm-$ver.msix"
+$out = Join-Path $dist "DariTerm-$ver.msix"
 & $makeappx pack /d $layout /p $out /o /h SHA256
 if ($LASTEXITCODE -ne 0) { throw "makeappx 실패 ($LASTEXITCODE)" }
 Write-Host "store package: $out"
@@ -64,10 +61,10 @@ if ($TestSign) {
     $cert = New-SelfSignedCertificate -Type Custom -Subject $subject -FriendlyName 'DariTerm MSIX test' -KeyUsage DigitalSignature `
       -CertStoreLocation Cert:\CurrentUser\My -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
   }
-  $test = Join-Path $root "build\bin\DariTerm-$ver-test.msix"
+  $test = Join-Path $dist "DariTerm-$ver-test.msix"
   Copy-Item $out $test -Force
   & $signtool sign /fd SHA256 /sha1 $cert.Thumbprint $test
   if ($LASTEXITCODE -ne 0) { throw "signtool 실패 ($LASTEXITCODE)" }
-  Export-Certificate -Cert $cert -FilePath (Join-Path $root 'build\bin\DariTerm-test.cer') | Out-Null
-  Write-Host "test package: $test (trust build\bin\DariTerm-test.cer in LocalMachine\TrustedPeople first)"
+  Export-Certificate -Cert $cert -FilePath (Join-Path $dist 'DariTerm-test.cer') | Out-Null
+  Write-Host "test package: $test (trust build\dist\DariTerm-test.cer in LocalMachine\TrustedPeople first)"
 }

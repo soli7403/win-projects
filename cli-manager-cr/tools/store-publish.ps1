@@ -44,7 +44,7 @@ if ($Version) { $msixArgs += @('-Version', $Version) }
 & powershell @msixArgs
 if ($LASTEXITCODE -ne 0) { throw "msix.ps1 실패 ($LASTEXITCODE)" }
 $Version = ([IO.File]::ReadAllText((Join-Path $root 'wails.json'), [Text.Encoding]::UTF8) | ConvertFrom-Json).info.productVersion
-$msix = Join-Path $root "build\bin\DariTerm-$Version.0.msix"
+$msix = Join-Path $root "build\dist\DariTerm-$Version.0.msix"
 if (-not (Test-Path $msix)) { throw "패키지가 없습니다: $msix" }
 
 # 3) 업로드 + 제출. 이 계정은 시장 그룹 가격 방식이라 CLI 가 가격을 못 읽고 멈출 수 있어 무료(Free)를 명시한다.

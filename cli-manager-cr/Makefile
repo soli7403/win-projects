@@ -16,12 +16,12 @@ tidy:
 notices:
 	go run ./tools/notices
 
-# installer: Windows 설치 파일 build/bin/DariTerm-amd64-installer.exe 를 만든다 (D76, NSIS 필요 — docs/host-settings/01_installer-build.md).
+# installer: Windows 설치 파일 build/dist/DariTerm-<버전>-amd64-installer.exe 를 만든다 (VERSION=x.y.z 면 버전을 올린 뒤) (D76, NSIS 필요 — docs/host-settings/01_installer-build.md).
 .PHONY: installer
 installer:
-	powershell -NoProfile -ExecutionPolicy Bypass -File tools/installer.ps1
+	powershell -NoProfile -ExecutionPolicy Bypass -File tools/installer.ps1 $(if $(VERSION),-Version $(VERSION),)
 
-# msix: Microsoft Store 업로드용 패키지 build/bin/DariTerm-<버전>.0.msix 를 만든다 (D81, Windows SDK 필요 — docs/host-settings/03_msix.md).
+# msix: Microsoft Store 업로드용 패키지 build/dist/DariTerm-<버전>.0.msix 를 만든다 (D81, Windows SDK 필요 — docs/host-settings/03_msix.md).
 #   make msix VERSION=0.1.1   → wails.json 버전을 올린 뒤 만든다(D82). 결과 파일을 Partner Center > 제출 업데이트 > 패키지에 올린다.
 # 이 PC 에서 시험 설치할 자체 서명본까지: powershell -File tools/msix.ps1 -TestSign
 .PHONY: msix
