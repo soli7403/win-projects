@@ -64,7 +64,7 @@
 | `dialog.readKeyFile` | | `{path, text}` 또는 null(취소). 대화상자 제목 "개인 키 파일 선택", 시작 폴더 `~/.ssh`, 숨김 파일 표시 |
 | `dialog.chooseDir` | | 경로 또는 null |
 | `backup.export` / `backup.import` | | 경로 또는 false / true 또는 false (data/sync-backup.md §3) |
-| `app.info` | | `{version, platform, dataDir}` |
+| `app.info` | | `{version, platform, dataDir, osLanguage}` — osLanguage 는 OS 표시 언어를 지원 언어 id 로 맞춘 값(behavior/i18n.md §3, D75) |
 | `app.titlebar` | 배경색, 글자색 | 없음(현재 동작 없음, 창은 기본 프레임) |
 | `app.openLogs` | | 없음. 로그 폴더(없으면 생성)를 탐색기로 연다 |
 | `app.openExternal` | URL | 없음. **`http://` 또는 `https://` 로 시작하는 주소만** 기본 브라우저로 연다, 그 외는 무시 |

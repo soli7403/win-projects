@@ -28,6 +28,7 @@
 | behavior/shortcuts.md | 전체 단축키와 조건 (비활성 상황 포함) | ready |
 | behavior/terminal.md | 붙여넣기·복사·검색·글꼴 확대·위험 명령 가드·자동 재접속·벨·로그 | ready |
 | behavior/session.md | 접속 수명주기, 재접속, 세션 유지(tmux), 점프 호스트, 포워딩 | ready |
+| behavior/i18n.md | 10개 언어, 첫 실행 언어 선택, OS 언어 맞추기, 언어 파일(locales/*.json), 즉시 바꾸기 (D75) | ready |
 | behavior/lifecycle.md | 시작 순서, 자동 잠금, 레이아웃 복원, 첫 실행 가져오기 제안, 업데이트 확인 | ready |
 | protocols.md | SSH/SFTP/텔넷/시리얼/로컬 PTY 의 사용자 관찰 동작과 한도 | ready |
 | acceptance/ | 화면별 수용 시나리오(조건 → 기대 결과) — 01~04 파일 | ready |

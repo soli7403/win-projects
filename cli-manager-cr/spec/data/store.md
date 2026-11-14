@@ -67,6 +67,7 @@
 
 | 키 | 기본값 | 설명 |
 |---|---|---|
+| language | `""` | 화면 언어 id (`en` `ko` `ja` `zh` `tw` `de` `fr` `es` `pt` `ru`). 비면 아직 고르지 않음 → 첫 실행 언어 선택, 그동안 OS 언어 (behavior/i18n.md, D75) |
 | theme | `dark` | `dark` / `light` (앱 외형) |
 | terminalTheme | `DariTerm Dark` | 터미널 색 테마 이름 (ui/tokens.md) |
 | fontFamily | `'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace` | |
