@@ -5,7 +5,15 @@ Copyright (c) 2026 kai. All rights reserved.
 [한국어]
 
 1. 이 소프트웨어(실행 파일, 소스 코드, 문서 포함)의 저작권은 kai 에게 있습니다.
-2. 배포받은 실행 파일을 설치하고 실행해 사용할 수 있습니다. 개인과 업무 용도 모두 허용합니다.
+2. 사용 허락
+   2.1 개인 사용(무료): 개인이 업무가 아닌 목적(학습, 개인 프로젝트, 취미 등)으로 배포받은 실행 파일을
+       설치하고 실행하는 것은 무료입니다.
+   2.2 업무 사용(유료): 회사·기관·단체(영리·비영리를 가리지 않음)의 업무에 쓰거나, 개인이라도 영리 목적의
+       일에 쓰려면 이 소프트웨어를 사용하는 사람마다 업무용 라이선스를 구매해야 합니다.
+   2.3 평가: 업무 사용을 검토하기 위해 최대 30일 동안 무료로 사용할 수 있습니다. 그 뒤에도 업무에 계속
+       쓰려면 업무용 라이선스를 구매해야 합니다.
+   2.4 업무용 라이선스의 사용자 수·기간·가격은 구매할 때 안내하는 조건을 따릅니다.
+       업무용 라이선스 구매·문의: soli97403@gmail.com
 3. 저작권자의 서면 허락 없이 다음을 할 수 없습니다.
    - 소프트웨어의 복제(설치·실행·백업에 필요한 경우 제외), 수정, 번역, 파생물 작성
    - 역설계, 디컴파일, 디스어셈블(관련 법이 명시적으로 허용하는 범위는 제외)
@@ -21,7 +29,16 @@ Copyright (c) 2026 kai. All rights reserved.
 [English]
 
 1. This software (including executables, source code, and documentation) is copyrighted by kai.
-2. You may install and run the distributed executable for personal or business use.
+2. License grant
+   2.1 Personal use (free): An individual may install and run the distributed executable free of
+       charge for non-work purposes (such as learning, personal projects, or hobbies).
+   2.2 Business use (paid): Use for the work of a company, institution, or organization (whether
+       for-profit or non-profit), or use by an individual for commercial work, requires a business
+       license for each person who uses the software.
+   2.3 Evaluation: You may use the software free of charge for up to 30 days to evaluate it for
+       business use. Continued business use after that requires a business license.
+   2.4 The number of users, term, and price of a business license follow the terms presented at
+       purchase. Business license purchases and inquiries: soli97403@gmail.com
 3. Without prior written permission from the copyright holder, you may not:
    - copy (except as needed to install, run, or back up), modify, translate, or create derivative works;
    - reverse engineer, decompile, or disassemble the software, except to the extent expressly
