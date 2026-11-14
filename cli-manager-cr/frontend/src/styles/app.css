@@ -261,8 +261,8 @@ button { font: inherit; color: inherit; }
   border: 1px solid var(--border-strong); background: var(--panel); color: var(--fg-3);
 }
 .search-input { flex: 1; border: none; outline: none; background: transparent; color: var(--fg); font: inherit; min-width: 0; }
-.side-btns { display: flex; gap: 6px; }
-.side-btns .btn { flex: 1; justify-content: center; padding: 0 6px; white-space: nowrap; }
+.side-btns { display: flex; gap: 6px; flex-wrap: wrap; } /* 영어 등 긴 문구는 다음 줄로(D75) */
+.side-btns .btn { flex: 1 1 auto; justify-content: center; padding: 0 6px; white-space: nowrap; }
 .side-tree { flex: 1; overflow: auto; padding: 4px 6px; }
 .side-section { font-size: 11px; font-weight: 700; color: var(--fg-3); letter-spacing: 0.4px; padding: 10px 6px 4px; display: flex; align-items: center; gap: 4px; }
 .side-row {
