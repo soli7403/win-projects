@@ -20,3 +20,11 @@ if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
 } else {
     winget install --id Gyan.FFmpeg -e --silent --accept-source-agreements --accept-package-agreements
 }
+
+# Store update publishing (04_msstore-cli.md): Microsoft Store Developer CLI. Credentials are set by the user (msstore reconfigure).
+$msstore = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\MSStore.exe'
+if (Test-Path $msstore) {
+    Write-Host "Microsoft Store Developer CLI: already installed"
+} else {
+    winget install --id 9P53PC5S0PHJ --source msstore --silent --accept-source-agreements --accept-package-agreements
+}

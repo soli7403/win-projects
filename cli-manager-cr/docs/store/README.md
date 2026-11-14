@@ -59,11 +59,67 @@ make msix     # → build\bin\DariTerm-0.1.0.0.msix
 
 7. **스토어에 제출** → 인증은 보통 1~3 영업일. 결과는 메일과 Partner Center 에 온다.
 
-## 3. 다음 버전 올리기
+## 3. 다음 버전 올리기 (D82)
 
-1. `wails.json` 의 `info.productVersion` 을 올린다 (예: 0.1.1). 앱 안 버전(`G_cszAppVersion`)도 맞춘다(D80 메모).
-2. `make msix` → 새 `DariTerm-0.1.1.0.msix`
-3. Partner Center > 새 제출 > 패키지만 바꿔서 제출. 스토어판은 스토어가 자동 업데이트한다(앱의 업데이트 확인은 꺼져 있다, D80).
+버전은 **`wails.json` 의 `info.productVersion` 한 곳**에서만 정한다. 앱 안 버전·설치 파일·MSIX 가 모두 이 값을 쓴다(main.go 가 시작할 때 읽음).
+
+### 3.1 지금 방식: 수동 업데이트 (권장, 2026-11-14 결정)
+
+1. 패키지 만들기(버전도 함께 올림):
+   ```powershell
+   # 저장소 cli-manager-cr 에서 (이 PC 의 make 는 mingw32-make)
+   mingw32-make msix VERSION=0.1.1
+   # 또는  powershell -ExecutionPolicy Bypass -File tools\msix.ps1 -Version 0.1.1
+   ```
+   → `build\bin\DariTerm-0.1.1.0.msix`. 버전이 지금보다 작거나 같으면 만들기 전에 멈춘다.
+2. Partner Center > DariTerm > **제출 업데이트** → 이전 제출이 복사된 새 초안.
+3. **패키지**: 새 msix 를 끌어다 놓고, 이전 msix 는 **제거**. (선택) Store 목록 > "이 버전의 새로운 기능".
+4. **인증을 위해 제출**. 이전 제출이 인증 중이면 새 제출을 만들 수 없으니 통과를 기다린다.
+5. `wails.json` 버전 변경을 커밋하고 §5 제출 이력에 한 줄 적는다.
+
+### 3.2 보류: CLI 자동 제출 (msstore)
+
+`tools/store-publish.ps1`(`make store-publish VERSION=x.y.z`)은 만들어 두었지만 **쓰지 않는다**. msstore CLI 는 Microsoft Entra 테넌트의 앱 자격 증명이 필요한데, Partner Center 에서 테넌트를 만들려 하면 **Microsoft 결제 계정(billing account) 생성 + Microsoft Customer Agreement 동의 + 결제 설정** 화면으로 이어진다(2026-11-14 확인). 혼자 개발하는 앱의 드문 업데이트에는 수동(3.1)으로 충분해서 보류했다. 업데이트가 잦아지거나 회사 테넌트가 생기면 아래로 켠다.
+
+#### 켤 때: 자격 증명 준비 (사용자가 직접)
+
+1. Partner Center > ⚙ **계정 설정** > **테넌트**: Microsoft Entra ID 를 연결하거나 **만들기**(결제 계정 화면으로 이어짐 — 위 참고).
+2. 계정 설정 > **사용자 관리** > **Microsoft Entra 응용 프로그램** > **새 Microsoft Entra 응용 프로그램 만들기**(이름 예: `DariTerm Store CLI`) → 역할 **관리자(Manager)**.
+3. 만든 응용 프로그램을 눌러 **테넌트 ID**, **클라이언트 ID** 를 적고, **새 키 추가** → **키(클라이언트 비밀)** 를 바로 적는다(이 화면을 떠나면 다시 볼 수 없다).
+4. 계정 설정 > 조직 프로필 > **법률 정보**(개발자 탭)에서 **판매자 ID(Seller ID)** 를 적는다.
+5. **본인 PowerShell 창**에서 한 번 실행한다(값은 저장소·대화·문서에 남기지 않는다. CLI 가 이 PC 의 사용자 프로필에 보관한다. 지우기: `msstore reconfigure --reset`):
+   ```powershell
+   msstore reconfigure --tenantId <테넌트 ID> --sellerId <판매자 ID> --clientId <클라이언트 ID> --clientSecret <키>
+   msstore apps list      # DariTerm(9N8WBPMRNBWV) 이 보이면 성공
+   ```
+6. 키에는 만료일이 있다(보통 1~2년). 만료되면 3번에서 새 키를 만들고 5번을 다시 한다.
+
+#### 켠 뒤: 업데이트 제출
+
+```powershell
+# 저장소 cli-manager-cr 에서 (이 PC 의 make 는 mingw32-make)
+mingw32-make store-publish VERSION=0.1.1
+# 또는
+powershell -ExecutionPolicy Bypass -File tools\store-publish.ps1 -Version 0.1.1
+```
+
+스크립트가 하는 일: 버전 확인(지금보다 커야 함) → `wails.json` 버전 변경 → `tools\msix.ps1`(앱 빌드 + MSIX) → `msstore publish`(업로드 + 인증 요청) → 제출 상태 출력.
+
+| 옵션 | 뜻 |
+|---|---|
+| `-Version x.y.z` | 새 버전. 비우면 지금 버전 그대로 |
+| `-NoCommit` | 업로드만 하고 초안으로 둔다 → Partner Center 에서 확인 후 직접 제출 (처음 몇 번은 이걸 권장) |
+| `-Rollout 20` | 단계적 배포(20% 사용자에게 먼저). 이후 `msstore submission rollout update 9N8WBPMRNBWV 100` 또는 `... rollout finalize 9N8WBPMRNBWV` |
+| `-Status` | 제출 상태만 보기 (`msstore submission status 9N8WBPMRNBWV` 와 같다) |
+
+제출 뒤:
+- `wails.json` 버전 변경을 커밋하고, 아래 §5 제출 이력에 한 줄 적는다.
+- 스토어판은 스토어가 자동 업데이트한다(앱의 업데이트 확인은 꺼져 있다, D80).
+
+주의:
+- **`msstore publish` 는 마지막 게시본으로 새 초안을 만든다** — Partner Center 에서 만들어 둔 초안이 있으면 지워진다. 한 제출은 CLI 나 웹 한쪽으로만 다룬다(웹에서 고친 제출은 API 로 이어갈 수 없다).
+- 이 계정은 **시장 그룹 가격 방식**이라 CLI 가 가격을 못 읽고 멈출 수 있어 스크립트가 `--priceId Free` 를 넣는다. 유료로 바꾸면 이 줄을 고친다.
+- 소개 글·스크린샷 변경은 지금처럼 Partner Center 에서 한다(CLI 로도 가능하지만 `submission get/update` JSON 을 다뤄야 한다).
 
 ## 4. 알아둘 것
 

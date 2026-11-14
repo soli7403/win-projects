@@ -14,4 +14,13 @@ Check 'Windows SDK makeappx' ([bool]$sdk) $(if ($sdk) { $sdk.Name } else { '' })
 Check 'ffmpeg' ([bool](Get-Command ffmpeg -ErrorAction SilentlyContinue)) ''
 $cert = Get-ChildItem Cert:\CurrentUser\My | Where-Object FriendlyName -eq 'DariTerm MSIX test' | Select-Object -First 1
 Write-Host ("[INFO] MSIX test cert  " + $(if ($cert) { "$($cert.Thumbprint) until $($cert.NotAfter.ToString('yyyy-MM-dd'))" } else { 'none (created by tools\msix.ps1 -TestSign)' }))
+# Store update publishing (04_msstore-cli.md)
+$msstore = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\MSStore.exe'
+Check 'msstore CLI' (Test-Path $msstore) $msstore
+if (Test-Path $msstore) {
+    $eapSaved = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    & $msstore info *> $null; $iInfo = $LASTEXITCODE
+    $ErrorActionPreference = $eapSaved
+    Write-Host ("[INFO] msstore credentials  " + $(if ($iInfo -eq 0) { 'configured' } else { 'not set (run msstore reconfigure, docs/store/README.md section 3)' }))
+}
 if (-not $ok) { exit 1 }
