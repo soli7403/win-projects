@@ -1,12 +1,25 @@
-# DariTerm Microsoft Store 패키지(MSIX) 만들기 (결정 D81).
+﻿# DariTerm Microsoft Store 패키지(MSIX) 만들기 (결정 D81).
 # 결과: build\bin\DariTerm-<버전>.msix (스토어 업로드용, 서명 없음 — 스토어가 서명한다)
 #       -TestSign 이면 build\bin\DariTerm-<버전>-test.msix + DariTerm-test.cer (이 PC 시험 설치용 자체 서명)
 # 필요: Wails CLI, Windows SDK(makeappx, signtool), ffmpeg(아이콘 크기 변환). docs/host-settings/03_msix.md
-# 사용: 저장소 루트에서  powershell -ExecutionPolicy Bypass -File tools\msix.ps1 [-TestSign]   (또는 make msix)
-param([switch]$TestSign)
+# 사용: 저장소 루트에서  powershell -ExecutionPolicy Bypass -File tools\msix.ps1 [-Version x.y.z] [-TestSign]
+#       (또는 make msix / make msix VERSION=0.1.1 — 이 PC 의 make 는 mingw32-make)
+# -Version: 버전을 올린 뒤 만든다. 버전은 wails.json info.productVersion 한 곳(D82)이고 지금보다 커야 한다(스토어 규칙).
+param([string]$Version, [switch]$TestSign)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
+
+if ($Version) {
+  $wailsPath = Join-Path $root 'wails.json'
+  $wailsText = [IO.File]::ReadAllText($wailsPath, [Text.Encoding]::UTF8)
+  $current = ($wailsText | ConvertFrom-Json).info.productVersion
+  if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "버전은 x.y.z 형식이어야 합니다: $Version" }
+  if ([version]$Version -le [version]$current) { throw "새 버전($Version)이 지금 버전($current)보다 커야 합니다." }
+  $wailsText = $wailsText -replace '("productVersion"\s*:\s*")[^"]*(")', "`${1}$Version`${2}"
+  [IO.File]::WriteAllText($wailsPath, $wailsText, (New-Object Text.UTF8Encoding($false)))
+  Write-Host "version: $current -> $Version (wails.json)"
+}
 
 $sdk = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'x64\makeappx.exe') } | Sort-Object Name -Descending | Select-Object -First 1
 if (-not $sdk) { throw 'Windows SDK(makeappx)를 찾을 수 없습니다.' }
