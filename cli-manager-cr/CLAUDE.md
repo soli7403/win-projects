@@ -63,4 +63,5 @@ go test -race ./...
 (cd frontend && npx tsc --noEmit)
 wails build    # 프런트(npm run build)까지 함께 빌드 → build/bin/dariterm.exe (wails.json frontend:build)
 make installer # Windows 설치 파일 → build/bin/DariTerm-amd64-installer.exe (NSIS 필요, D76, docs/host-settings/01)
+make msix      # Microsoft Store 패키지 → build/bin/DariTerm-<버전>.0.msix (Windows SDK 필요, D81, docs/store/)
 ```

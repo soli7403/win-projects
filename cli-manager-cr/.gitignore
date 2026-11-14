@@ -10,3 +10,5 @@ build/windows/installer/resources/license.txt
 # 라이선스 서명 비밀키는 저장소에 두지 않는다 (D78, docs/host-settings/02)
 *-ed25519.key
 .dariterm-signing/
+# Microsoft Store 패키지 중간물 (tools/msix.ps1, D81)
+build/msix-layout/

@@ -21,10 +21,10 @@ function seedStore(): Store {
   return {
     version: 1,
     groups: [
-      { id: 'g-prod', parentId: null, name: '운영 서버', env: 'prod', sort: 0 },
-      { id: 'g-lab', parentId: null, name: '실습', sort: 1 },
+      { id: 'g-prod', parentId: null, name: 'Production', env: 'prod', sort: 0 },
+      { id: 'g-lab', parentId: null, name: 'Lab', sort: 1 },
       // 하위 폴더: 사이드바 점선 트리(D71)를 개발 서버에서 볼 수 있게 한다.
-      { id: 'g-lab-net', parentId: 'g-lab', name: '네트워크 장비', sort: 2 },
+      { id: 'g-lab-net', parentId: 'g-lab', name: 'Network', sort: 2 },
     ],
     hosts: [
       mkHost('h-1', 'g-prod', 'web-prod-01', 'ssh', '10.0.0.11', 22, 'deploy', now - 1000),
@@ -91,12 +91,26 @@ function mkHost(
 
 type Handler = (args: unknown[]) => unknown | Promise<unknown>;
 
+// 흉내 터미널(개발 서버 전용, 실제 연결 아님): 프롬프트와 몇몇 명령의 고정 출력.
+const DEMO_PROMPT = '\x1b[32mdeploy@web-prod-01\x1b[0m:\x1b[34m~\x1b[0m$ ';
+const DEMO_OUTPUT: Record<string, string> = {
+  'uptime -p': 'up 5 weeks, 6 days, 3 hours, 12 minutes',
+  'df -h': [
+    'Filesystem      Size  Used Avail Use% Mounted on',
+    '/dev/sda1        80G   31G   46G  41% /',
+    'tmpfs           3.9G     0  3.9G   0% /dev/shm',
+    '/dev/sdb1       200G  122G   68G  65% /var/lib/app',
+  ].join('\r\n'),
+  'systemctl is-active nginx': '\x1b[32mactive\x1b[0m',
+};
+
 export function createFakeBackend(): Backend {
   let store: Store = seedStore();
   let vault = { initialized: false, unlocked: false, password: '', recoveryCode: '' };
   const creds: CredMeta[] = [{ id: 'c-1', name: '배포 계정', kind: 'password', username: 'deploy', updatedAt: Date.now() }];
   const listeners = new Map<EventName, Set<EventHandler>>();
   const sessions = new Map<string, SessionInfo>();
+  const lines = new Map<string, string>(); // 세션별 입력 중인 줄(흉내 터미널)
   let seq = 0;
 
   const emit = (event: EventName, ...args: unknown[]) => {
@@ -219,7 +233,8 @@ export function createFakeBackend(): Backend {
         const s = { ...info, state: 'connected' as const, connectedAt: Date.now() };
         sessions.set(id, s);
         emit('session.state', s);
-        emit('session.data', id, '\x1b[32m[가짜 백엔드]\x1b[0m 연결을 흉내 냈습니다. 출력은 없습니다.\r\n');
+        // 화면 확인·설명서 그림용 흉내 출력(실제 연결 아님).
+        emit('session.data', id, 'Welcome to Ubuntu 24.04 LTS (demo)\r\n\r\n' + DEMO_PROMPT);
       }, 30);
       return info;
     },
@@ -267,8 +282,18 @@ export function createFakeBackend(): Backend {
       return (await h(args)) as any;
     },
     termInput(sessionId, text) {
-      // 가짜 백엔드는 입력을 그대로 되돌려 준다(에코).
-      emit('session.data', sessionId, text);
+      // 가짜 백엔드는 입력을 그대로 되돌려 준다(에코). Enter 면 몇몇 명령에 흉내 출력을 내고 프롬프트를 다시 보인다(스크린샷용).
+      for (const ch of text) {
+        if (ch !== '\r') {
+          lines.set(sessionId, (lines.get(sessionId) ?? '') + ch);
+          emit('session.data', sessionId, ch);
+          continue;
+        }
+        const szCmd = (lines.get(sessionId) ?? '').trim();
+        lines.set(sessionId, '');
+        const szOut = szCmd === '' ? '' : (DEMO_OUTPUT[szCmd] ?? `${szCmd}: command not found (demo)`) + '\r\n';
+        emit('session.data', sessionId, '\r\n' + szOut + DEMO_PROMPT);
+      }
     },
     termResize() {
       /* 가짜 백엔드: 크기 변경은 무시 */

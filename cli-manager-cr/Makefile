@@ -20,3 +20,9 @@ notices:
 .PHONY: installer
 installer:
 	powershell -NoProfile -ExecutionPolicy Bypass -File tools/installer.ps1
+
+# msix: Microsoft Store 업로드용 패키지 build/bin/DariTerm-<버전>.msix 를 만든다 (D81, Windows SDK 필요 — docs/host-settings/03_msix.md).
+# 이 PC 에서 시험 설치할 자체 서명본까지: powershell -File tools/msix.ps1 -TestSign
+.PHONY: msix
+msix:
+	powershell -NoProfile -ExecutionPolicy Bypass -File tools/msix.ps1

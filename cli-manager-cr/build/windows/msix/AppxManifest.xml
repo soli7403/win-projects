@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DariTerm Microsoft Store 패키지(MSIX) 매니페스트 (결정 D81). tools/msix.ps1 이 {{VERSION}} 을 채워 쓴다.
+  Identity 값은 Partner Center > 제품 ID(Product identity) 그대로 — 바꾸면 스토어 업로드가 거부된다.
+  runFullTrust: 터미널 앱이라 로컬 셸(cmd·PowerShell·WSL)·SSH 를 실행하고 사용자 폴더 파일을 다루므로 일반 데스크톱 앱 권한이 필요하다.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="YangHunLee.DariTerm"
+    Publisher="CN=0AEF544B-0B89-41A6-861B-39FF4DB0031F"
+    Version="{{VERSION}}"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>DariTerm</DisplayName>
+    <PublisherDisplayName>YangHun Lee</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <!-- 스토어 소개 글을 낼 수 있는 언어 = 여기 적은 언어(앱의 10개 언어와 같게). 첫째가 기본. -->
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="ko-kr" />
+    <Resource Language="ja-jp" />
+    <Resource Language="zh-cn" />
+    <Resource Language="zh-tw" />
+    <Resource Language="de-de" />
+    <Resource Language="fr-fr" />
+    <Resource Language="es-es" />
+    <Resource Language="pt-br" />
+    <Resource Language="ru-ru" />
+  </Resources>
+
+  <Applications>
+    <Application Id="DariTerm" Executable="dariterm.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="DariTerm"
+        Description="SSH, Telnet, serial and local terminal with SFTP"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" Square71x71Logo="Assets\Square71x71Logo.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
