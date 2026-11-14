@@ -18,7 +18,7 @@
 ## 1. 패키지 만들기
 
 ```powershell
-make msix     # → build\bin\DariTerm-0.1.0.0.msix
+make msix     # → build\dist\DariTerm-0.1.0.0.msix
 ```
 
 ## 2. Partner Center 제출 순서
@@ -35,7 +35,7 @@ make msix     # → build\bin\DariTerm-0.1.0.0.msix
    - 웹사이트·지원 연락처: `soli97403@gmail.com`
    - 시스템 요구사항: 키보드·마우스 권장
 3. **연령 등급**: 설문(IARC)에 답한다. 폭력·도박·사용자 간 대화 기능이 없으므로 "아니요"로 답하면 보통 3+ 가 나온다. 터미널이 인터넷에 접속하므로 "인터넷 접속/웹 콘텐츠" 질문에는 사실대로 답한다.
-4. **패키지**: `build\bin\DariTerm-0.1.0.0.msix` 를 끌어다 놓는다.
+4. **패키지**: `build\dist\DariTerm-0.1.0.0.msix` 를 끌어다 놓는다.
    - 장치 패밀리: **Windows 10/11 데스크톱**만 체크
    - **제한된 기능(runFullTrust) 사유** 칸이 나오면 아래 문장을 그대로 넣는다:
 
@@ -71,7 +71,7 @@ make msix     # → build\bin\DariTerm-0.1.0.0.msix
    mingw32-make msix VERSION=0.1.1
    # 또는  powershell -ExecutionPolicy Bypass -File tools\msix.ps1 -Version 0.1.1
    ```
-   → `build\bin\DariTerm-0.1.1.0.msix`. 버전이 지금보다 작거나 같으면 만들기 전에 멈춘다.
+   → `build\dist\DariTerm-0.1.1.0.msix`. 버전이 지금보다 작거나 같으면 만들기 전에 멈춘다.
 2. Partner Center > DariTerm > **제출 업데이트** → 이전 제출이 복사된 새 초안.
 3. **패키지**: 새 msix 를 끌어다 놓고, 이전 msix 는 **제거**. (선택) Store 목록 > "이 버전의 새로운 기능".
 4. **인증을 위해 제출**. 이전 제출이 인증 중이면 새 제출을 만들 수 없으니 통과를 기다린다.

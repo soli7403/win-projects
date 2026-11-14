@@ -17,7 +17,7 @@ make installer
 powershell -ExecutionPolicy Bypass -File tools\installer.ps1
 ```
 
-결과: `build\bin\DariTerm-amd64-installer.exe` (+ `build\bin\dariterm.exe`).
+결과: `build\dist\DariTerm-<버전>-amd64-installer.exe` (`make installer VERSION=x.y.z` 면 버전을 올린 뒤). `build\bin\` 은 빌드 중간물이라 다음 빌드 때 비워지고, `build\dist\` 는 MSIX·이전 버전과 함께 남는다(D83).
 
 ## 설치 파일 구성 (build/windows/installer/project.nsi)
 

@@ -62,8 +62,8 @@ go build ./...
 go test -race ./...
 (cd frontend && npx tsc --noEmit)
 wails build    # 프런트(npm run build)까지 함께 빌드 → build/bin/dariterm.exe (wails.json frontend:build)
-make installer # Windows 설치 파일 → build/bin/DariTerm-amd64-installer.exe (NSIS 필요, D76, docs/host-settings/01)
-make msix VERSION=x.y.z  # 버전 올리고 Microsoft Store 패키지 → build/bin/DariTerm-<버전>.0.msix → Partner Center 에 수동 업로드 (D81·D82, docs/store/README.md §3)
+make installer VERSION=x.y.z  # Windows 설치 파일 → build/dist/DariTerm-<버전>-amd64-installer.exe (NSIS 필요, D76, docs/host-settings/01). VERSION 생략 시 지금 버전
+make msix VERSION=x.y.z  # 버전 올리고 Microsoft Store 패키지 → build/dist/DariTerm-<버전>.0.msix → Partner Center 에 수동 업로드 (D81·D82, docs/store/README.md §3)
 # make store-publish VERSION=x.y.z  # (보류) msstore CLI 자동 제출 — Entra 결제 계정이 필요해 쓰지 않음 (D82)
 # 버전은 wails.json info.productVersion 한 곳(D82). 이 PC 의 make 는 mingw32-make
 ```

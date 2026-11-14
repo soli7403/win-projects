@@ -21,7 +21,7 @@ make msix                                                    # 스토어 업로�
 powershell -ExecutionPolicy Bypass -File tools\msix.ps1 -TestSign   # + 이 PC 시험 설치용 서명본
 ```
 
-결과(`build\bin\`):
+결과(`build\dist\` — 빌드가 비우지 않아 설치 파일·이전 버전과 함께 남는다, D83):
 
 | 파일 | 용도 |
 |---|---|
@@ -35,9 +35,9 @@ powershell -ExecutionPolicy Bypass -File tools\msix.ps1 -TestSign   # + 이 PC �
 
 ```powershell
 # 관리자 PowerShell. 시험 인증서를 "신뢰할 수 있는 사람"에 등록 (한 번만)
-Import-Certificate -FilePath build\bin\DariTerm-test.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
+Import-Certificate -FilePath build\dist\DariTerm-test.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
 # 일반 PowerShell 에서 설치
-Add-AppxPackage build\bin\DariTerm-0.1.0.0-test.msix
+Add-AppxPackage build\dist\DariTerm-0.1.0.0-test.msix
 ```
 
 - 설치 후 시작 메뉴의 DariTerm 으로 실행한다.
