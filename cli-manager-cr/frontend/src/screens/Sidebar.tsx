@@ -1,8 +1,9 @@
 // 사이드바: 검색 · 즐겨찾기 · 최근 접속 · 서버/폴더 트리. 근거: spec/ui/sidebar.md §1~§7, §10.
 // 이번 라운드 제외: 끌어 놓기(§9), 칸으로 끌기(panes), 행 호버 버튼의 실제 연결(탭 단계에서 연결).
-import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, Clock, Download, FolderOpen, FolderPlus, Plus, Search, Star, Terminal, Network, Usb, Monitor } from 'lucide-react';
-import type { Group, Host, Protocol } from '../ipc/types';
+import { isValidElement, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
+import { ChevronDown, ChevronRight, Clock, Download, Folder, FolderOpen, FolderPlus, Plus, Search, Star } from 'lucide-react';
+import { FOLDER_ICON_COLOR, PROTOCOL_ICON, protocolIconColor } from '../ui/protocolIcon';
+import type { Group, Host } from '../ipc/types';
 import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { useUi, type MenuItem } from '../state/ui';
@@ -65,8 +66,26 @@ function openSmart(hostId: string): void {
 
 const ENV_COLOR = Object.fromEntries(Object.entries(ENV_INFO).map(([k, v]) => [k, v.color])) as Record<string, string>;
 
-const PROTOCOL_ICON: Record<Protocol, typeof Terminal> = { ssh: Terminal, telnet: Network, serial: Usb, local: Monitor };
-const INDENT = 14;
+/** 단계마다 들여쓰기(px). 점선 연결선의 가로 줄 길이도 이 값에서 나온다. */
+const INDENT = 16;
+/** 행의 기본 왼쪽 여백(px)과 펼침 화살표(13px) 가운데까지의 거리. 하위 항목의 세로 점선이 이 위치를 지난다. */
+const ROW_PAD = 6;
+const CHEVRON_MID = 6;
+
+/** 펼친 폴더의 하위 항목들을 탐색기 형태의 점선(├ └)으로 잇는다. depth 는 부모 폴더의 단계. */
+function TreeChildren({ depth, children }: { depth: number; children: ReactNode[] }) {
+  const items = children.filter((c) => c !== null && c !== undefined && c !== false);
+  const style = { '--gx': `${ROW_PAD + depth * INDENT + CHEVRON_MID}px`, '--indent': `${INDENT}px` } as CSSProperties;
+  return (
+    <div className="tree-children" style={style}>
+      {items.map((node, i) => (
+        <div key={isValidElement(node) && node.key !== null ? node.key : i} className={`tree-item${i === items.length - 1 ? ' last' : ''}`}>
+          {node}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /** 여러 서버를 끌 때 커서 옆에 "서버 N개" 표시(브라우저 기본 끌기 그림 대신). */
 function setDragBadge(e: DragEvent<HTMLElement>, text: string): void {
@@ -375,10 +394,10 @@ export function Sidebar() {
         }}
         onMouseEnter={() => setHoverId(h.id)}
         onMouseLeave={() => setHoverId((cur) => (cur === h.id ? null : cur))}
-        style={{ paddingLeft: 6 + depth * INDENT, background: isSel ? 'var(--accent-soft)' : undefined }}
+        style={{ paddingLeft: ROW_PAD + depth * INDENT, background: isSel ? 'var(--accent-soft)' : undefined }}
       >
         <span className="strip" style={{ background: color ?? 'transparent' }} />
-        <Icon size={13} />
+        <Icon size={13} className="side-icon" color={protocolIconColor(h)} aria-hidden="true" />
         <span className="side-name">{h.alias || h.host}</span>
         <span className="faint small side-sub">{sidebarSubtitle(h)}</span>
         {openByHost[h.id] ? (
@@ -434,7 +453,7 @@ export function Sidebar() {
             handleDrop(g.id);
           }}
           style={{
-            paddingLeft: 6 + depth * INDENT,
+            paddingLeft: ROW_PAD + depth * INDENT,
             outline: dropTarget === g.id ? '1px dashed var(--accent)' : undefined,
             background: dropTarget === g.id ? 'var(--accent-soft)' : undefined,
           }}
@@ -444,17 +463,21 @@ export function Sidebar() {
             openMenu(e.clientX, e.clientY, folderMenu(g));
           }}
         >
-          {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-          <FolderOpen size={14} color={color ?? (g.env && g.env !== 'none' ? ENV_COLOR[g.env] : 'var(--fg-3)')} />
+          {/* 펼침 화살표 · 폴더 아이콘(펼치면 열린 폴더). 폴더 색(없으면 환경 색)은 폴더 아이콘에 칠한다 (D71). */}
+          {expanded ? <ChevronDown size={13} className="side-icon" aria-hidden="true" /> : <ChevronRight size={13} className="side-icon" aria-hidden="true" />}
+          {expanded ? (
+            <FolderOpen size={14} className="side-icon" color={color ?? (g.env && g.env !== 'none' ? ENV_COLOR[g.env] : FOLDER_ICON_COLOR)} aria-hidden="true" />
+          ) : (
+            <Folder size={14} className="side-icon" color={color ?? (g.env && g.env !== 'none' ? ENV_COLOR[g.env] : FOLDER_ICON_COLOR)} aria-hidden="true" />
+          )}
           <span className="side-name" style={{ fontWeight: 700 }}>{g.name}</span>
           {g.env && g.env !== 'none' && <EnvPill env={g.env} />}
           <span className="faint small" style={{ marginLeft: 'auto' }}>{count}</span>
         </div>
         {expanded && (
-          <>
-            {childGroups.map((c) => folderRow(c, depth + 1))}
-            {childHosts.map((h) => hostRow(h, depth + 1))}
-          </>
+          <TreeChildren depth={depth}>
+            {[...childGroups.map((c) => folderRow(c, depth + 1)), ...childHosts.map((h) => hostRow(h, depth + 1))]}
+          </TreeChildren>
         )}
       </div>
     );

@@ -1,7 +1,6 @@
 // 시작 화면(탭이 하나도 없을 때 작업 영역). 근거: spec/ui/shell.md §4.
 // 단축키 표(12개)는 behavior/shortcuts.md §4 가 필요하므로 4단계에서 채운다.
-import { Download, Plus, Terminal, Zap, Network, Usb, Monitor } from 'lucide-react';
-import type { Protocol } from '../ipc/types';
+import { Download, Plus, Terminal, Zap } from 'lucide-react';
 import { useApp } from '../state/app';
 import { effectiveColor, recentHosts } from '../lib/hosts';
 import { sidebarSubtitle } from '../lib/tree';
@@ -9,13 +8,7 @@ import { START_SHORTCUTS } from '../lib/shortcuts';
 import { LogoMark } from '../ui/Logo';
 import { openHost, runShortcut } from '../state/actions';
 import { useUi } from '../state/ui';
-
-const PROTOCOL_ICON: Record<Protocol, typeof Terminal> = {
-  ssh: Terminal,
-  telnet: Network,
-  serial: Usb,
-  local: Monitor,
-};
+import { PROTOCOL_ICON, protocolIconColor } from '../ui/protocolIcon';
 
 export function Welcome() {
   const store = useApp((s) => s.store);
@@ -54,7 +47,7 @@ export function Welcome() {
                 <button key={h.id} className="recent-card" onClick={() => void openHost(h.id)}>
                   <span className="strip" style={{ background: color }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
-                    <Icon size={14} />
+                    <Icon size={14} color={protocolIconColor(h)} />
                     <span className="selectable" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.alias}</span>
                   </div>
                   <div className="faint small selectable">{sidebarSubtitle(h)}</div>

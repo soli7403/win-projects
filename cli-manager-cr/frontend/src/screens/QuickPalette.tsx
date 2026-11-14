@@ -1,9 +1,7 @@
 // 빠른 접속 팔레트(Ctrl+K). 근거: spec/ui/dialogs.md §2.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { Monitor, Network, Terminal, Usb, Zap } from 'lucide-react';
-import type { Protocol } from '../ipc/types';
-
-const PROTO_ICON: Record<Protocol, typeof Terminal> = { ssh: Terminal, telnet: Network, serial: Usb, local: Monitor };
+import { Zap } from 'lucide-react';
+import { PROTOCOL_ICON as PROTO_ICON, protocolIconColor } from '../ui/protocolIcon';
 import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
 import { useWorkspace } from '../state/workspace';
@@ -169,7 +167,7 @@ export function QuickPalette() {
               }}
             >
               {r.kind === 'host' && <span className="strip" style={{ background: r.color ?? 'transparent' }} />}
-              {r.kind === 'host' && (() => { const Icon = PROTO_ICON[hosts.find((x) => x.id === r.hostId)?.protocol ?? 'ssh']; return <Icon size={14} />; })()}
+              {r.kind === 'host' && (() => { const h = hosts.find((x) => x.id === r.hostId); const Icon = PROTO_ICON[h?.protocol ?? 'ssh']; return <Icon size={14} color={h ? protocolIconColor(h) : undefined} />; })()}
               <span className="quick-label">{r.label}</span>
               <span className="faint small quick-sub">{r.sub}</span>
               {i === sel && <span className="kbd">Enter</span>}

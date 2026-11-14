@@ -23,11 +23,13 @@ function seedStore(): Store {
     groups: [
       { id: 'g-prod', parentId: null, name: '운영 서버', env: 'prod', sort: 0 },
       { id: 'g-lab', parentId: null, name: '실습', sort: 1 },
+      // 하위 폴더: 사이드바 점선 트리(D71)를 개발 서버에서 볼 수 있게 한다.
+      { id: 'g-lab-net', parentId: 'g-lab', name: '네트워크 장비', sort: 2 },
     ],
     hosts: [
       mkHost('h-1', 'g-prod', 'web-prod-01', 'ssh', '10.0.0.11', 22, 'deploy', now - 1000),
       mkHost('h-2', 'g-prod', 'db-prod-01', 'ssh', '10.0.0.21', 2222, 'dba', now - 5000),
-      mkHost('h-3', 'g-lab', 'lab-box', 'ssh', 'lab.example.test', 22, 'student', now - 9000),
+      mkHost('h-3', 'g-lab-net', 'lab-box', 'ssh', 'lab.example.test', 22, 'student', now - 9000),
       mkHost('h-4', null, 'switch-core', 'telnet', '192.168.1.1', 23, 'admin', now - 20000),
     ],
     snippets: [{ id: 's-1', name: '디스크 사용량', body: 'df -h', sendEnter: true }],

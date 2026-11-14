@@ -260,6 +260,15 @@ button { font: inherit; color: inherit; }
 .side-row .strip { position: absolute; left: 0; top: 7px; width: 3px; height: 16px; border-radius: 2px; }
 .side-row .side-name { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .side-row .side-sub { overflow: hidden; text-overflow: ellipsis; min-width: 0; margin-left: auto; }
+/* 서버·폴더 행의 앞 아이콘(서버 아이콘 / 펼침 화살표)은 같은 13px 열에 놓인다 (D71). */
+.side-row .side-icon { flex: none; color: var(--fg-2); }
+/* 탐색기 형태 점선: 펼친 폴더의 하위 항목마다 부모 화살표 가운데(--gx)에서 세로 점선, 행 가운데로 가로 점선.
+   마지막 항목은 세로 점선을 행 가운데에서 멈춘다(└). 행 높이 30px·아래 간격 6px 기준. */
+.tree-item { position: relative; }
+.tree-item::before, .tree-item::after { content: ''; position: absolute; pointer-events: none; z-index: 1; opacity: 0.7; }
+.tree-item::before { left: var(--gx); top: -6px; bottom: 0; border-left: 1px dotted var(--fg-3); }
+.tree-item.last::before { bottom: auto; height: 21px; }
+.tree-item::after { left: var(--gx); top: 15px; width: calc(var(--indent) - 8px); border-top: 1px dotted var(--fg-3); }
 /* 서버 여러 개 선택 상태 줄(D59) */
 .side-multi { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 10px 6px; padding: 6px 10px; border-radius: 7px; background: var(--accent-soft); font-size: 12px; }
 .side-multi .link-btn { margin-left: auto; }

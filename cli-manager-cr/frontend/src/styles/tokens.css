@@ -21,6 +21,11 @@
   --danger-soft: rgba(239, 68, 68, 0.14);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   --overlay: rgba(4, 6, 12, 0.55);
+  /* 사이드바·목록 아이콘 기본 색 (D72): 폴더는 노랑, 서버 종류는 채도를 낮춘 옅은 색(원격 하늘·시리얼 보라·로컬 초록). */
+  --icon-folder: #f2b63c;
+  --icon-server: #86a9c6;
+  --icon-serial: #a99cc6;
+  --icon-local: #8bb59e;
   --font: Pretendard, 'Segoe UI Variable', 'Segoe UI', 'Malgun Gothic', system-ui, sans-serif;
   --mono: 'Cascadia Mono', Consolas, monospace;
 }
@@ -42,4 +47,8 @@
   --accent-soft: rgba(37, 99, 235, 0.12);
   --shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
   --overlay: rgba(4, 6, 12, 0.55);
+  --icon-folder: #d99a0b;
+  --icon-server: #6a8fb0;
+  --icon-serial: #8e82b3;
+  --icon-local: #6c9a80;
 }
