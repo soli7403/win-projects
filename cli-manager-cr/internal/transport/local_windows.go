@@ -14,12 +14,15 @@ import (
 
 // LocalConn 은 ConPTY 위에서 도는 셸 하나다.
 type LocalConn struct {
-	hPty     windows.Handle
-	hProcess windows.Handle
-	hInWrite windows.Handle
-	hOutRead windows.Handle
-	mtxWrite sync.Mutex
-	mtxClose sync.Once
+	hPty        windows.Handle
+	hProcess    windows.Handle
+	hInWrite    windows.Handle
+	hOutRead    windows.Handle
+	mtxWrite    sync.Mutex
+	bInClosed   bool // 입력 핸들을 닫았다 (mtxWrite 로 보호, 닫힌 핸들에 쓰지 않게)
+	mtxClose    sync.Once
+	mtxProcess  sync.Mutex // hProcess 사용·닫기를 배타한다 (닫힌 핸들 값 재사용 방지)
+	bProcClosed bool
 }
 
 func coordValue(iCols int, iRows int) uintptr {
@@ -131,8 +134,13 @@ func (pLocal *LocalConn) Read(bBuf []byte) (int, error) {
 	return int(nRead), nil
 }
 
-// exitReason 은 셸 종료 이유 문구를 만든다 (protocols.md §6).
+// exitReason 은 셸 종료 이유 문구를 만든다 (protocols.md §6). 사용자가 닫아 핸들이 이미 없으면 일반 문구다.
 func (pLocal *LocalConn) exitReason() error {
+	pLocal.mtxProcess.Lock()
+	defer pLocal.mtxProcess.Unlock()
+	if pLocal.bProcClosed {
+		return i18n.Errorf("be.shell.exited", nil)
+	}
 	_, _ = windows.WaitForSingleObject(pLocal.hProcess, windows.INFINITE)
 	var dwCode uint32
 	if errCode := windows.GetExitCodeProcess(pLocal.hProcess, &dwCode); errCode == nil && dwCode != 0 {
@@ -145,6 +153,9 @@ func (pLocal *LocalConn) exitReason() error {
 func (pLocal *LocalConn) Write(bData []byte) error {
 	pLocal.mtxWrite.Lock()
 	defer pLocal.mtxWrite.Unlock()
+	if pLocal.bInClosed {
+		return windows.ERROR_BROKEN_PIPE
+	}
 	var nWritten uint32
 	return windows.WriteFile(pLocal.hInWrite, bData, &nWritten, nil)
 }
@@ -164,11 +175,19 @@ func (pLocal *LocalConn) Resize(iCols int, iRows int) error {
 // Close 는 셸을 강제 종료하고 핸들을 닫는다 (사용자가 닫을 때).
 func (pLocal *LocalConn) Close() error {
 	pLocal.mtxClose.Do(func() {
+		// 먼저 끝내야 exitReason 이 mtxProcess 를 쥔 채 기다리는 WaitForSingleObject 가 바로 풀린다.
+		// 순서를 바꿔 잠금부터 잡으면 교착한다.
 		_ = windows.TerminateProcess(pLocal.hProcess, 1)
 		go g_procClosePseudoConsole.Call(uintptr(pLocal.hPty))
+		pLocal.mtxWrite.Lock()
 		_ = windows.CloseHandle(pLocal.hInWrite)
+		pLocal.bInClosed = true
+		pLocal.mtxWrite.Unlock()
 		_ = windows.CloseHandle(pLocal.hOutRead)
+		pLocal.mtxProcess.Lock()
 		_ = windows.CloseHandle(pLocal.hProcess)
+		pLocal.bProcClosed = true
+		pLocal.mtxProcess.Unlock()
 	})
 	return nil
 }

@@ -64,3 +64,36 @@ func TestListShellsHasDefault(t *testing.T) {
 		t.Fatal("Windows 에서는 최소한 셸 하나가 있어야 함")
 	}
 }
+
+// Read 가 막혀 있는 동안 Close 해도 Read 가 오류로 돌아오고 닫힌 프로세스 핸들을 쓰지 않는다 (통합 계획 §4).
+func TestLocalCloseWhileReading(t *testing.T) {
+	szCmd := os.Getenv("ComSpec")
+	if szCmd == "" {
+		szCmd = `C:\Windows\System32\cmd.exe`
+	}
+	pLocal, errOpen := OpenLocal(LocalOptions{Shell: szCmd, Cols: 80, Rows: 24, Env: os.Environ()})
+	if errOpen != nil {
+		t.Skip(errOpen)
+	}
+	chErr := make(chan error, 1)
+	go func() {
+		bBuf := make([]byte, 4096)
+		for {
+			if _, errRead := pLocal.Read(bBuf); errRead != nil {
+				chErr <- errRead
+				return
+			}
+		}
+	}()
+	time.Sleep(500 * time.Millisecond) // 셸이 프롬프트를 내고 Read 가 막힐 때까지
+	_ = pLocal.Close()
+	select {
+	case <-chErr:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close 뒤 Read 가 돌아오지 않음")
+	}
+	if errWrite := pLocal.Write([]byte("x")); errWrite == nil {
+		t.Fatal("닫은 뒤 쓰기는 오류여야 함")
+	}
+	_ = pLocal.Close() // 두 번 닫아도 안전
+}
