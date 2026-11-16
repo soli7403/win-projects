@@ -288,10 +288,10 @@ func TestLogStripAndFileName(t *testing.T) {
 	}
 	pLogger.Write("x")
 	_ = pLogger.Close()
-	if _, errStat := filepath.Glob(filepath.Join(szDir, "logs", "a_b_c-20261110-0905.log")); errStat != nil {
+	if _, errStat := filepath.Glob(filepath.Join(szDir, "logs", "a_b_c-20261110-090500.log")); errStat != nil {
 		t.Fatal(errStat)
 	}
-	matches, _ := filepath.Glob(filepath.Join(szDir, "logs", "a_b_c-20261110-0905.log"))
+	matches, _ := filepath.Glob(filepath.Join(szDir, "logs", "a_b_c-20261110-090500.log"))
 	if len(matches) != 1 {
 		t.Fatalf("로그 파일 이름 규칙 불일치")
 	}

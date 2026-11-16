@@ -14,7 +14,7 @@ import (
 const g_ciMaxBrokenBytes = 4
 
 // encodingByName 은 설정값을 인코더로 바꾼다. utf-8 과 알 수 없는 값은 nil(UTF-8)이다.
-// cp949 는 EUC-KR 디코더로 처리한다 (x/text 에 별도 CP949 가 없음, 알려진 한계).
+// cp949 와 euc-kr 은 같은 디코더를 쓴다: x/text 의 EUCKR 은 Code Page 949(UHC) 전체 표라 확장 한글("똠" 등)도 된다.
 func encodingByName(szName string) encoding.Encoding {
 	switch szName {
 	case "cp949", "euc-kr":
