@@ -20,7 +20,10 @@ import (
 const (
 	cfUnicodeText = 13
 	cfDIB         = 8
+	cfHDrop       = 15 // 탐색기에서 복사한 파일 목록 (DROPFILES)
 	gmemMoveable  = 0x0002
+	// g_ciDragQueryCount 를 DragQueryFileW 의 순번으로 주면 파일 개수를 돌려준다.
+	g_ciDragQueryCount = 0xFFFFFFFF
 )
 
 var (
@@ -35,6 +38,8 @@ var (
 	g_procGlobalAlloc            = g_modKernel32Clip.NewProc("GlobalAlloc")
 	g_procGlobalLock             = g_modKernel32Clip.NewProc("GlobalLock")
 	g_procGlobalUnlock           = g_modKernel32Clip.NewProc("GlobalUnlock")
+	g_modShell32Clip             = windows.NewLazySystemDLL("shell32.dll")
+	g_procDragQueryFileW         = g_modShell32Clip.NewProc("DragQueryFileW")
 )
 
 // ErrNoImage 는 클립보드에 이미지가 없을 때의 오류다.
@@ -110,14 +115,35 @@ func HasImage() bool {
 	return r != 0
 }
 
-// Files 는 탐색기에서 복사한 파일 목록 중 디스크에 실제로 있는 것만 돌려준다 (CF_HDROP 대신 같은 목록을 PowerShell 로 읽는다).
+// Files 는 탐색기에서 복사한 파일 목록 중 디스크에 실제로 있는 것만 돌려준다.
+// CF_HDROP 을 Win32 로 바로 읽는다 (붙여넣기마다 불리므로 빨라야 한다 — 예전 PowerShell 방식은 0.3~0.8초 걸렸다).
+// 파일 목록 형식이 없으면 클립보드를 열지도 않고 바로 돌아온다.
 func Files() ([]string, error) {
-	out, errRun := runPS(`Add-Type -AssemblyName System.Windows.Forms; if ([System.Windows.Forms.Clipboard]::ContainsFileDropList()) { [System.Windows.Forms.Clipboard]::GetFileDropList() | ForEach-Object { Write-Output $_ } }`)
-	if errRun != nil {
-		return nil, errRun
+	if r, _, _ := g_procIsClipboardFormatAvail.Call(cfHDrop); r == 0 {
+		return nil, nil
 	}
+	closeFn, errOpen := openClip()
+	if errOpen != nil {
+		return nil, errOpen
+	}
+	defer closeFn()
+	hDrop, _, _ := g_procGetClipboardData.Call(cfHDrop)
+	if hDrop == 0 {
+		return nil, nil
+	}
+	nCount, _, _ := g_procDragQueryFileW.Call(hDrop, g_ciDragQueryCount, 0, 0)
 	var slOut []string
-	for _, szPath := range out {
+	for iIndex := uintptr(0); iIndex < nCount; iIndex++ {
+		nLen, _, _ := g_procDragQueryFileW.Call(hDrop, iIndex, 0, 0) // 끝 NUL 을 뺀 글자 수
+		if nLen == 0 {
+			continue
+		}
+		slBuf := make([]uint16, nLen+1)
+		nGot, _, _ := g_procDragQueryFileW.Call(hDrop, iIndex, uintptr(unsafe.Pointer(&slBuf[0])), nLen+1)
+		if nGot == 0 {
+			continue
+		}
+		szPath := windows.UTF16ToString(slBuf[:nGot])
 		if _, errStat := os.Stat(szPath); errStat == nil {
 			slOut = append(slOut, szPath)
 		}
