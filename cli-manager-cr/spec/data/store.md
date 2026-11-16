@@ -94,6 +94,7 @@
 | transferTempDir | `""` | 서버 ↔ 서버 복사 때 거쳐 가는 이 PC 임시 폴더. 빈 값 = OS 임시 폴더 아래 dariterm-transfer ([../behavior/file-panel.md](../behavior/file-panel.md) §4) |
 | insertPathQuote | true | 경로 삽입 시 따옴표 |
 | sessionLog | false | |
+| sessionLogKeepDays | 30 | 세션 로그 보관 일수. 0 이면 지우지 않음 ([../behavior/session.md](../behavior/session.md) §6) |
 | bell | false | |
 | shiftEnterNewline | true | Shift+Enter 로 줄바꿈 입력 |
 | rememberWindow | true | 창 크기·위치 기억 |

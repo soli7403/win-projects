@@ -51,6 +51,7 @@
 | `session.open` | `{hostId?, adhoc?, cols?, rows?}` (`adhoc`: host, cwd?, port?, username?, protocol?) | 세션 정보 `{id, hostId|null, title, protocol, target, color?, env?, state, connectedAt?, message?, canSftp, keepSession?}`. 서버 id 도 즉석 정보도 없으면 오류 "서버를 찾을 수 없습니다". **연결은 바로 시작하지 않고 약 30ms 뒤** 시작한다(프런트가 터미널을 등록할 시간). **로컬 터미널**: 저장된 로컬 서버는 `hostId` 로 열고(셸·시작 폴더는 서버 설정의 `local` 값), 즉석 로컬은 `adhoc: {host: "", protocol: "local", cwd?: 시작 폴더}` 로 연다 — 즉석 로컬에는 셸 지정이 없고 기본 셸을 쓴다. 즉석 SSH/텔넷은 `{host, port?, username?, protocol?}` |
 | `session.close` | id | 없음. SFTP 캐시도 정리 |
 | `session.reconnect` | id | 없음 |
+| `session.ack` | id, 처리한 출력 묶음 수(정수) | 없음. 프런트가 `session.data` 묶음을 터미널에 다 쓴 뒤 보낸다(출력 흐름 제어, behavior/session.md §8). 모르는 id·넘치는 수는 무시 |
 | `local.shells` | | `[{path, label}]` (첫 항목이 기본) |
 | `local.tmuxAvailable` | | 불리언 |
 | `serial.list` | | `[{path, label}]` |
@@ -131,7 +132,7 @@
 ## 4. 이벤트 (백엔드 → 프런트)
 | 이벤트 | 값 | 시점 |
 |---|---|---|
-| `session.data` | 세션 id, 텍스트 | 세션 출력. **약 12ms 단위로 묶어서** 보낸다 |
+| `session.data` | 세션 id, 텍스트 | 세션 출력. **약 12ms 단위로 묶어서** 보낸다(묶음 하나는 256KB 이하). 프런트는 묶음을 터미널에 쓴 뒤(또는 쓸 터미널이 없어 버린 뒤) `session.ack` 로 처리 개수를 알린다(behavior/session.md §8) |
 | `session.state` | 세션 정보. **`state` 값은 정확히 `connecting` · `connected` · `reconnecting` · `closed`(끊김) · `error`(실패)** — behavior/session.md §1 | 상태 변경(접속 중·연결됨·재접속·끊김·오류) |
 | `ui.request` | 요청 객체 | §3 |
 | `transfer.update` | 전송 정보 `{id, sessionId, name, direction, bytes, total, state, error?, remotePath, localPath?}` | 전송 진행(최소 150ms 간격) |
