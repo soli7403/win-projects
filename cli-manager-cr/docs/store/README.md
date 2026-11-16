@@ -75,7 +75,8 @@ make msix     # → build\dist\DariTerm-0.1.0.0.msix
 2. Partner Center > DariTerm > **제출 업데이트** → 이전 제출이 복사된 새 초안.
 3. **패키지**: 새 msix 를 끌어다 놓고, 이전 msix 는 **제거**. (선택) Store 목록 > "이 버전의 새로운 기능".
 4. **인증을 위해 제출**. 이전 제출이 인증 중이면 새 제출을 만들 수 없으니 통과를 기다린다.
-5. `wails.json` 버전 변경을 커밋하고 §5 제출 이력에 한 줄 적는다.
+5. [CHANGELOG.md](../../CHANGELOG.md) 에 버전 절을 쓰고, [listing.md](./listing.md) 의 "이 버전의 새로운 기능"(영어·한국어)을 바꿔 3번에 붙여 넣는다.
+6. `wails.json` 버전 변경을 커밋하고 §5 제출 이력에 한 줄 적는다.
 
 ### 3.2 보류: CLI 자동 제출 (msstore)
 
@@ -132,4 +133,5 @@ powershell -ExecutionPolicy Bypass -File tools\store-publish.ps1 -Version 0.1.1
 
 | 날짜 | 버전 | 내용 | 결과 |
 |---|---|---|---|
-| 2026-11-14 | 0.1.0.0 | 첫 제출(Partner Center 수동). 무료, 전 세계, 개발자 도구. 스토어 목록 영어·한국어(나머지 8개 언어는 목록에서 뺌 — 앱 화면은 10개 언어 그대로), 인증 통과 즉시 게시. runFullTrust 사유 447자(칸 제한 500자) | 인증 대기 |
+| 2026-11-16 | 0.2.0.0 | 업데이트 패키지 `build\dist\DariTerm-0.2.0.0.msix`(`make msix VERSION=0.2.0`). 변경은 [CHANGELOG.md](../../CHANGELOG.md) 0.2.0, "이 버전의 새로운 기능" 문구는 [listing.md](./listing.md) | 제출 전(Partner Center 업로드 대기) |
+| 2026-11-14 | 0.1.0.0 | 첫 제출(Partner Center 수동). 무료, 전 세계, 개발자 도구. 스토어 목록 영어·한국어(나머지 8개 언어는 목록에서 뺌 — 앱 화면은 10개 언어 그대로), 인증 통과 즉시 게시. runFullTrust 사유 447자(칸 제한 500자) | 인증 통과·게시됨 (2026-11-16 Partner Center 에서 확인) |

@@ -46,6 +46,7 @@
 | [docs/clean-room-protocol.md](./docs/clean-room-protocol.md) | 역할·절차·체크리스트 |
 | [docs/implementer-start.md](./docs/implementer-start.md) | 구현자 새 세션 시작 절차와 첫 메시지 |
 | [docs/decisions.md](./docs/decisions.md) | 결정 기록 |
+| [CHANGELOG.md](./CHANGELOG.md) | 버전 이력 (배포할 때마다 한 절) |
 | [docs/import-plans/](./docs/import-plans/) | 수정 계획서(원인·코드·테스트). 2026-11-16 의 3건은 구현 완료(D84~D90) |
 | [docs/host-settings/](./docs/host-settings/README.md) | 빌드 PC 에 설치한 도구(NSIS 등), 라이선스 서명 비밀키 위치, 점검·설치 스크립트 |
 | [.claude/known-issues.md](./.claude/known-issues.md) | 알려진 지뢰 |
