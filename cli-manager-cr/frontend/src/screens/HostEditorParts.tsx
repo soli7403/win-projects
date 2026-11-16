@@ -128,7 +128,7 @@ export function SerialFields({
         </Field>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <Field label={t('serial.flow')}>
+        <Field label={t('serial.flow')} help={t('serial.flowNotYet')}>
           <select className="input" value={value.flowControl} onChange={(e) => set('flowControl', e.target.value as SerialFlow)}>
             {FLOW.map((o) => <option key={o.value} value={o.value}>{o.value === 'none' ? t('serial.flowNone') : o.label}</option>)}
           </select>

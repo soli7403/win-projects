@@ -10,6 +10,7 @@ import (
 	"dariterm/internal/i18n"
 	"dariterm/internal/ipc"
 	"dariterm/internal/license"
+	"dariterm/internal/logclean"
 	"dariterm/internal/session"
 	"dariterm/internal/store"
 	"dariterm/internal/vault"
@@ -30,7 +31,11 @@ type Service struct {
 	pDialogs  BackupDialogs
 	pUpdate   *updateState
 	pLock     *lockState
+	pLogClean *logclean.Cleaner
 }
+
+// G_ciSessionLogKeepDaysDefault 는 설정 sessionLogKeepDays 의 기본값이다 (data/store.md, session.md §6).
+const G_ciSessionLogKeepDaysDefault = 30
 
 // DataDir 은 datadir.go (DariTerm 폴더).
 
@@ -84,6 +89,7 @@ func NewService(szDataDir string, emitter ipc.Emitter) (*Service, error) {
 	pService.startSyncLoop()
 	pService.registerSftp()
 	pService.registerClipboard()
+	pService.startLogClean()
 	return pService, nil
 }
 
@@ -115,6 +121,7 @@ func (pService *Service) Close() error {
 	pService.stopSync()
 	pService.stopAutoLock()
 	pService.stopUpdate()
+	pService.pLogClean.Stop()
 	chDone := make(chan struct{})
 	go func() {
 		pService.pSessions.CloseAll()
@@ -138,10 +145,26 @@ func (pService *Service) registerStore() {
 		if errArg := argInto(slArgs, 0, &mapPatch); errArg != nil {
 			return nil, errArg
 		}
+		iKeepBefore := pService.logKeepDays()
 		errPatch := pService.pStore.Patch(mapPatch)
 		pService.applyLanguage()
+		if pService.logKeepDays() != iKeepBefore {
+			pService.pLogClean.Kick() // 보관 기간을 바꾸면 곧바로 한 번 정리한다 (session.md §6)
+		}
 		return nil, errPatch
 	})
+}
+
+// logKeepDays 는 세션 로그 보관 일수 설정이다 (0 = 지우지 않음).
+func (pService *Service) logKeepDays() int {
+	return pService.settingInt("sessionLogKeepDays", G_ciSessionLogKeepDaysDefault)
+}
+
+// startLogClean 은 오래된 세션 로그 정리 루프를 시작한다 (시작 10초 뒤, 그 뒤 1시간마다).
+// 지금 기록 중인 로그 파일은 건너뛴다.
+func (pService *Service) startLogClean() {
+	pService.pLogClean = logclean.New(filepath.Join(pService.szDataDir, "logs"), pService.logKeepDays, session.IsLogOpen)
+	pService.pLogClean.Start()
 }
 
 // applyLanguage 는 백엔드 문구 언어를 설정(settings.language, 비면 OS 언어)에 맞춘다 (D75).

@@ -95,6 +95,8 @@ export interface Settings {
   maxVerticalSplits: number;
   insertPathQuote: boolean;
   sessionLog: boolean;
+  /** 세션 로그 보관 일수. 0 이면 지우지 않음 (behavior/session.md §6). */
+  sessionLogKeepDays: number;
   bell: boolean;
   shiftEnterNewline: boolean;
   rememberWindow: boolean;

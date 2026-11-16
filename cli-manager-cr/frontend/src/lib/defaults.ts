@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxVerticalSplits: 3,
   insertPathQuote: true,
   sessionLog: false,
+  sessionLogKeepDays: 30,
   bell: false,
   shiftEnterNewline: true,
   rememberWindow: true,

@@ -40,6 +40,7 @@
     "rightPanelWidth": 340,
     "scrollback": 10000,
     "sessionLog": false,
+    "sessionLogKeepDays": 30,
     "shiftEnterNewline": true,
     "sidebarWidth": 260,
     "syncAuto": true,
