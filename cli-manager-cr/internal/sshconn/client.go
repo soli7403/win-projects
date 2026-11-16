@@ -26,17 +26,24 @@ type Conn struct {
 	Asked      askedSecret // 대상 서버의 비밀번호 입력 결과 (인증 성공 후 저장 판단에 쓴다)
 	mtxSftp    sync.Mutex
 	sftpClient *sftp.Client
+	chClosed   chan struct{} // Close 때 닫힌다 (keepalive 루프 종료용)
+	onceClose  sync.Once
 }
 
-// Close 는 대상과 모든 점프 연결을 닫는다 (protocols.md §2.4).
+// Close 는 대상과 모든 점프 연결을 닫는다 (protocols.md §2.4). 두 번 불러도 안전하다.
 func (pConn *Conn) Close() error {
 	var errFirst error
-	if pConn.Client != nil {
-		errFirst = pConn.Client.Close()
-	}
-	for iIndex := len(pConn.Hops) - 1; iIndex >= 0; iIndex-- {
-		_ = pConn.Hops[iIndex].Close()
-	}
+	pConn.onceClose.Do(func() {
+		if pConn.chClosed != nil {
+			close(pConn.chClosed)
+		}
+		if pConn.Client != nil {
+			errFirst = pConn.Client.Close()
+		}
+		for iIndex := len(pConn.Hops) - 1; iIndex >= 0; iIndex-- {
+			_ = pConn.Hops[iIndex].Close()
+		}
+	})
 	return errFirst
 }
 
@@ -89,7 +96,7 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 	}
 	client, errHandshake := handshake(conn, addr, config)
 	if errHandshake == nil {
-		return &Conn{Client: client, Hops: hops, Username: szUsername, Asked: *asked}, nil
+		return &Conn{Client: client, Hops: hops, Username: szUsername, Asked: *asked, chClosed: make(chan struct{})}, nil
 	}
 	if !isAuthFailure(errHandshake) {
 		_ = conn.Close()
@@ -117,7 +124,7 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 		}
 		client, errPw := handshake(nextConn, addr, cfgPw)
 		if errPw == nil {
-			return &Conn{Client: client, Hops: hops, Username: szUsername, Asked: *asked}, nil
+			return &Conn{Client: client, Hops: hops, Username: szUsername, Asked: *asked, chClosed: make(chan struct{})}, nil
 		}
 		if !isAuthFailure(errPw) {
 			closeHops(hops)

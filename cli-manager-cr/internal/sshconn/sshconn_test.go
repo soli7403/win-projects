@@ -290,3 +290,48 @@ func TestKeepaliveRequestReachesServer(t *testing.T) {
 	}
 	_ = strconv.Itoa
 }
+
+// 응답이 없으면 시한 안에 false 로 돌아온다 (protocols.md §2.6 응답 시한).
+func TestKeepaliveOnceTimesOut(t *testing.T) {
+	chNever := make(chan struct{})
+	defer close(chNever)
+	fnBlock := func() error { <-chNever; return nil } // 영원히 응답하지 않는 요청
+	tStart := time.Now()
+	if keepaliveOnce(fnBlock, 100*time.Millisecond, make(chan struct{})) {
+		t.Fatal("응답이 없으면 실패여야 함")
+	}
+	if durTook := time.Since(tStart); durTook > 500*time.Millisecond {
+		t.Fatalf("시한 안에 돌아와야 함: %v", durTook)
+	}
+}
+
+// 즉시 성공·즉시 실패는 그대로 전달하고, 닫힘 신호가 오면 바로 실패로 돌아온다.
+func TestKeepaliveOnceReturnsResult(t *testing.T) {
+	if !keepaliveOnce(func() error { return nil }, time.Second, make(chan struct{})) {
+		t.Fatal("성공이어야 함")
+	}
+	if keepaliveOnce(func() error { return errors.New("eof") }, time.Second, make(chan struct{})) {
+		t.Fatal("실패여야 함")
+	}
+	chClosed := make(chan struct{})
+	close(chClosed)
+	chNever := make(chan struct{})
+	defer close(chNever)
+	if keepaliveOnce(func() error { <-chNever; return nil }, time.Minute, chClosed) {
+		t.Fatal("닫혔으면 실패여야 함")
+	}
+}
+
+// 연결을 닫으면 keepalive 루프가 바로 끝나 onFail 이 불리지 않는다. Close 는 두 번 불러도 안전하다.
+func TestKeepaliveStopsOnClose(t *testing.T) {
+	pConn := &Conn{chClosed: make(chan struct{})}
+	chFail := make(chan struct{}, 1)
+	pConn.StartKeepalive(60, func() { chFail <- struct{}{} }) // Client 가 nil 이라 첫 tick(60초) 전에 닫아야 한다
+	_ = pConn.Close()
+	_ = pConn.Close()
+	select {
+	case <-chFail:
+		t.Fatal("닫은 뒤에는 onFail 이 불리면 안 됨")
+	case <-time.After(200 * time.Millisecond):
+	}
+}
