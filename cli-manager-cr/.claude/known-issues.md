@@ -6,12 +6,117 @@
 
 ## ✅ ACTIVE
 
-(아직 등록된 항목 없음)
+(없음)
 
 ## ⏸️ DISMISSED
 
-(없음)
+### KI-009: 텔넷·시리얼 끊김 이유가 원래 오류 대신 고정 문구
+- **Status**: dismissed
+- **Severity**: low
+- **Module**: internal/transport (telnet.go, serial.go)
+- **Trigger areas**: 텔넷·시리얼 끊김 안내 문구
+- **증상**: 끊긴 원인(소켓 오류 등)이 아니라 "연결이 종료되었습니다" / "포트가 닫혔습니다" 만 보인다.
+- **원인**: spec/protocols.md §4·§5 가 고정 문구를 요구한다.
+- **History**:
+  - 2026-11-16: 세션·전송 계층 점검(docs/import-plans/2026-11-16-session-transport-issues.md §8)에서 발견. 명세대로의 동작이라 dismissed (사유: 명세의 고정 문구).
 
 ## ✔️ RESOLVED
 
-(없음)
+### KI-010: 오른쪽 클릭·Ctrl+V 붙여넣기가 0.3~0.8초 늦음
+- **Status**: resolved
+- **Severity**: medium
+- **Module**: internal/clipboard (clipboard_windows.go)
+- **Trigger areas**: clip.info, 붙여넣기, 클립보드 파일 목록
+- **증상**: 오른쪽 클릭(기본 설정에서는 붙여넣기)과 Ctrl+V 가 눈에 띄게 늦었다.
+- **원인**: clip.info 가 파일 목록을 확인하려고 붙여넣기마다 `powershell.exe` 를 새로 띄웠다(이 PC 측정 0.3~0.85초). 클립보드에 텍스트만 있어도 거쳤다.
+- **History**:
+  - 2026-11-16: 사용자 보고("마우스 오른쪽 버튼으로 복사하는 것이 느린데")
+  - 2026-11-16: CF_HDROP 을 Win32(IsClipboardFormatAvailable → GetClipboardData → DragQueryFileW)로 바로 읽도록 수정, 없으면 즉시 반환 (D91)
+
+### KI-001: 같은 별칭 세션을 같은 분에 열면 세션 로그가 한 파일에 섞임
+- **Status**: resolved
+- **Severity**: medium
+- **Module**: internal/session (log.go)
+- **Trigger areas**: 세션 로그 파일 이름·열기
+- **증상**: `{별칭}-{YYYYMMDD-HHmm}.log` 를 이어 쓰기로 열어 같은 분에 연 세션들의 출력이 한 파일에 번갈아 섞였다.
+- **원인**: 이름이 분 단위 + `O_APPEND|O_CREATE`.
+- **History**:
+  - 2026-11-16: 발견, 계획서 docs/import-plans/2026-11-16-log-filename-collision.md
+  - 2026-11-16: 초 단위 이름 + 겹치면 `-2`… 접미, `O_EXCL` 로 새 파일만 만들도록 수정(log.go), 명세 session.md §6 개정 (D85)
+
+### KI-002: SSH keepalive 가 조용히 끊긴 연결을 몇 분 뒤에야 감지
+- **Status**: resolved
+- **Severity**: high
+- **Module**: internal/sshconn (keepalive_forward.go, client.go)
+- **Trigger areas**: SSH keepalive, 끊김 감지·자동 재접속
+- **증상**: 상대가 FIN/RST 없이 사라지면 "4번 실패" 가 세어지지 않고 OS TCP 시한까지 멈춰 있었다.
+- **원인**: `SendRequest(wantReply=true)` 에 시한이 없어 응답이 안 오면 루프가 막혔다. 닫은 뒤에도 루프가 살아 있었다.
+- **History**:
+  - 2026-11-16: 발견(통합 계획서 §1)
+  - 2026-11-16: 요청마다 keepalive 간격만큼 시한(keepaliveOnce), Conn 닫힘 신호로 루프 종료, Close 는 Once (D86)
+
+### KI-003: 시리얼 로컬 에코가 장치가 뭔가 보낼 때까지 안 보임
+- **Status**: resolved
+- **Severity**: high
+- **Module**: internal/transport (serial.go)
+- **Trigger areas**: 시리얼 Read·로컬 에코
+- **증상**: 조용한 장치에서 입력한 글자가 화면에 안 나오다가 장치가 데이터를 보내면 한꺼번에 나왔다.
+- **원인**: 포트 Read 에 시한이 없어 대기 중인 에코를 내보낼 기회가 없었다.
+- **History**:
+  - 2026-11-16: 발견(통합 계획서 §2)
+  - 2026-11-16: 읽기 시한 50ms, 시한마다 대기 에코를 먼저 내보냄. 흐름 제어 미적용 안내 문구도 서버 편집에 추가 (D87)
+
+### KI-004: 세션 로그에 ANSI 조각이 남고, 로그 쓰기가 읽기 고루틴에서 동기 디스크 I/O
+- **Status**: resolved
+- **Severity**: medium
+- **Module**: internal/session (log.go)
+- **Trigger areas**: 세션 로그 내용·성능
+- **증상**: `[31m` 같은 조각이 로그에 남았다. 느린 디스크에서 로그가 켜진 세션 출력이 밀렸다.
+- **원인**: 묶음 단위로만 정규식 제거(경계에서 잘린 시퀀스), 묶음마다 `WriteString`.
+- **History**:
+  - 2026-11-16: 발견(통합 계획서 §3·§10)
+  - 2026-11-16: 미완성 시퀀스 꼬리 보관(최대 256B) + bufio 64KB, 1초마다·닫을 때 flush (D88)
+
+### KI-005: 로컬 셸 Close 뒤 닫힌 프로세스 핸들 사용
+- **Status**: resolved
+- **Severity**: medium
+- **Module**: internal/transport (local_windows.go)
+- **Trigger areas**: 로컬(ConPTY) 세션 닫기
+- **증상**: 닫은 뒤 읽기 고루틴의 exitReason 이 이미 닫힌 hProcess 로 Wait/GetExitCode 를 불렀다(핸들 값 재사용 위험).
+- **원인**: Close 가 핸들을 닫는 것과 exitReason 의 사용 사이에 배타가 없었다.
+- **History**:
+  - 2026-11-16: 발견(통합 계획서 §4)
+  - 2026-11-16: mtxProcess 로 배타 + 닫힘 표시, Terminate 를 잠금 밖에서 먼저, 닫은 입력 핸들에 쓰지 않음 (D89)
+
+### KI-006: 닫은 세션의 session.data 가 한두 번 더 옴
+- **Status**: resolved
+- **Severity**: low
+- **Module**: internal/session (session.go, batch.go)
+- **Trigger areas**: 세션 닫기, 접속 실패 안내
+- **증상**: 닫은 직후 그 id 로 출력 이벤트가 오고, 닫은 뒤 늦게 끝난 접속 시도의 실패 안내가 나갔다.
+- **원인**: readLoop 의 마지막 조각, onConnectFailed 가 세대 검사 전에 안내를 썼다.
+- **History**:
+  - 2026-11-16: 발견(통합 계획서 §7)
+  - 2026-11-16: isCurrent(세대·닫힘) 검사, Batcher.Close 로 닫은 뒤 Add 무시 (D84)
+
+### KI-007: 로그 파일 별칭이 길거나 제어 문자를 품으면 열기 실패·이상한 이름
+- **Status**: resolved
+- **Severity**: low
+- **Module**: internal/session (log.go)
+- **Trigger areas**: 세션 로그 파일 이름
+- **증상**: 아주 긴 별칭은 경로 한도로 로그 없이 열렸고, 탭·개행이 파일 이름에 들어갔다.
+- **원인**: 금지 문자만 바꾸고 길이·제어 문자·끝 공백/점을 다루지 않았다.
+- **History**:
+  - 2026-11-16: 발견(통합 계획서 §9)
+  - 2026-11-16: 제어 문자 치환, 앞뒤 공백·점 제거, 80자 자름, 비면 `session` (D88)
+
+### KI-008: 한 세션의 고속 출력이 앱 전체를 느리게 함
+- **Status**: resolved
+- **Severity**: high
+- **Module**: internal/session, internal/app, frontend (state/workspace.ts, screens/TerminalView.tsx)
+- **Trigger areas**: 출력 전달 경로(session.data), xterm 렌더링
+- **증상**: 초당 수 MB 출력 세션이 있으면 다른 탭의 입력·출력·UI 가 같이 느려지고 메모리가 불어났다.
+- **원인**: 역압 없이 읽는 만큼 프런트로 보냄 + JS 스레드 하나 + DOM 렌더러 + 숨은 탭도 즉시 처리.
+- **History**:
+  - 2026-11-16: 발견, 계획서 docs/import-plans/2026-11-16-output-backpressure.md
+  - 2026-11-16: ack 크레딧(512KB/128KB, 안전 시한 3초) + 묶음 256KB 상한 + WebGL 렌더러(실패 시 DOM) + 숨은 탭 100ms 몰아쓰기 (D84)
