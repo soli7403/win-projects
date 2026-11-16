@@ -243,6 +243,7 @@ export function createFakeBackend(): Backend {
       return undefined;
     },
     'session.reconnect': () => undefined,
+    'session.ack': () => undefined,
     'clip.writeText': () => undefined,
     'clip.readText': () => '',
     'clip.info': () => ({ type: 'empty' }),

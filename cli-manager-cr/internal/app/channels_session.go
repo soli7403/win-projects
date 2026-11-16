@@ -126,6 +126,23 @@ func (pService *Service) registerSession() {
 		pSession.Reconnect()
 		return nil, nil
 	})
+	// session.ack: 프런트가 session.data 묶음을 터미널에 다 쓴 뒤 처리 개수를 알린다 (출력 흐름 제어, session.md §8).
+	pRouter.Handle("session.ack", func(slArgs []json.RawMessage) (any, error) {
+		szId, errArg := argString(slArgs, 0)
+		if errArg != nil {
+			return nil, errArg
+		}
+		var iCount int
+		if errCount := argInto(slArgs, 1, &iCount); errCount != nil {
+			return nil, errCount
+		}
+		pSession, errGet := pService.pSessions.Get(szId)
+		if errGet != nil {
+			return nil, nil // 이미 닫힌 세션의 늦은 ack 는 조용히 무시 (ipc.md: 모르는 id 는 무시)
+		}
+		pSession.AckOutput(iCount)
+		return nil, nil
+	})
 	pRouter.Handle("local.tmuxAvailable", func(slArgs []json.RawMessage) (any, error) {
 		return session.TmuxAvailable(), nil
 	})

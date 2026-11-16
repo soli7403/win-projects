@@ -83,14 +83,23 @@ func (pSession *Session) Close() {
 	pSession.logger = nil
 	pSession.mtxData.Unlock()
 
+	pSession.credit.Close() // 크레딧을 기다리던 readLoop 를 깨운다 (transport 가 nil 이어도 안전)
 	if transport != nil {
 		_ = transport.Close()
 	}
-	pSession.batcher.Flush()
+	pSession.batcher.Close()
 	if pLogger != nil {
 		_ = pLogger.Close()
 	}
 	pSession.publishState()
+}
+
+// AckOutput 은 프런트가 출력 묶음 iCount 개를 처리했음을 반영한다 (spec/ipc.md session.ack).
+func (pSession *Session) AckOutput(iCount int) {
+	if iCount <= 0 {
+		return
+	}
+	pSession.credit.Ack(iCount)
 }
 
 // Transport 는 현재 연결된 전송을 돌려준다 (연결이 없으면 nil). SFTP 처럼 프로토콜 기능을 찾을 때 쓴다.

@@ -8,6 +8,7 @@ import {
 } from '../lib/layout';
 import { useApp } from './app';
 import { relabel, t } from '../i18n';
+import { ackOutput } from '../lib/outputAck';
 
 export interface Tab {
   id: string;
@@ -37,14 +38,18 @@ interface WorkspaceState {
   groupRatio: number;
   setGroupRatio: (pct: number) => void;
   sessions: Record<string, SessionEntry>;
-  /** 열린 세션의 터미널 기록기(xterm 인스턴스 등록). 출력 기록과 크기 맞춤에 쓴다. */
-  writers: Record<string, (text: string) => void>;
+  /** 열린 세션의 터미널 기록기(xterm 인스턴스 등록). 출력 기록과 크기 맞춤에 쓴다.
+   *  done 은 xterm 이 text 를 다 쓴 뒤 불린다(출력 흐름 제어 ack, behavior/session.md §8). */
+  writers: Record<string, Writer>;
   /** 세션 터미널의 현재 열×행(상태 표시줄 표시용). */
   sizes: Record<string, { cols: number; rows: number }>;
   setSize: (sessionId: string, cols: number, rows: number) => void;
 
-  registerWriter: (sessionId: string, fn: ((text: string) => void) | null) => void;
+  registerWriter: (sessionId: string, fn: Writer | null) => void;
+  /** 백엔드의 session.data 묶음 하나. 다 쓴 뒤 session.ack 로 알린다. 숨은 세션은 100ms 단위로 몰아서 쓴다. */
   writeOutput: (sessionId: string, text: string) => void;
+  /** 숨은 탭에서 모아 둔 출력을 지금 쓴다(탭이 보이게 될 때). */
+  flushDeferred: (sessionId: string) => void;
   upsertSession: (info: SessionInfo) => void;
   removeSession: (sessionId: string) => void;
 
@@ -75,6 +80,62 @@ interface WorkspaceState {
   splitEmpty: (paneId: string, dir: Dir, before?: boolean) => void;
 }
 
+/** 터미널 기록기. done 은 다 쓴 뒤 부른다(없으면 ack 를 바로 보낸다). */
+export type Writer = (text: string, done?: () => void) => void;
+
+/** 세션이 지금 화면에 보이는 탭(왼쪽·오른쪽 그룹의 선택 탭 또는 활성 탭) 안에 있는지. */
+function isSessionVisible(s: WorkspaceState, sessionId: string): boolean {
+  for (const tab of s.tabs) {
+    if (tab.id !== s.activeByGroup[0] && tab.id !== s.activeByGroup[1] && tab.id !== s.activeTabId) continue;
+    if (findPaneBySession(tab.root, sessionId)) return true;
+  }
+  return false;
+}
+
+/** 숨은 세션 출력의 몰아쓰기 주기(ms, behavior/session.md §8). */
+export const HIDDEN_FLUSH_MS = 100;
+
+/** 숨은 세션의 출력 대기분(세션 id → 조각들, 타이머). 스토어 밖에 둔다(매 묶음마다 상태 갱신을 피함). */
+const deferred = new Map<string, { parts: string[]; timer: ReturnType<typeof setTimeout> | null }>();
+
+/** 묶음 count 개를 쓴다: 다 쓴 뒤 ack. writer 가 done 을 부르지 않는 구현이면(인자 1개) 바로 ack. */
+function writeWithAck(sessionId: string, w: Writer, text: string, count: number): void {
+  if (w.length < 2) {
+    w(text);
+    ackOutput(sessionId, count);
+    return;
+  }
+  w(text, () => ackOutput(sessionId, count));
+}
+
+function writeDeferred(sessionId: string, w: Writer): void {
+  const d = deferred.get(sessionId);
+  if (!d) return;
+  if (d.timer) {
+    clearTimeout(d.timer);
+    d.timer = null;
+  }
+  if (d.parts.length === 0) return;
+  const count = d.parts.length;
+  const text = d.parts.join('');
+  d.parts = [];
+  writeWithAck(sessionId, w, text, count);
+}
+
+/** 세션이 사라지거나 writer 가 빠질 때: 대기분을 버리고 ack 만 보낸다(백엔드가 읽기를 멈추지 않게). */
+function dropDeferred(sessionId: string): void {
+  const d = deferred.get(sessionId);
+  if (!d) return;
+  if (d.timer) clearTimeout(d.timer);
+  if (d.parts.length) ackOutput(sessionId, d.parts.length);
+  deferred.delete(sessionId);
+}
+
+/** 테스트용: 몰아쓰기 대기분을 비운다(타이머 포함, ack 없음). */
+export function resetDeferredForTest(): void {
+  for (const d of deferred.values()) if (d.timer) clearTimeout(d.timer);
+  deferred.clear();
+}
 
 function tabOf(state: WorkspaceState, tabId: string): Tab | undefined {
   return state.tabs.find((t) => t.id === tabId);
@@ -147,6 +208,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   },
 
   registerWriter(sessionId, fn) {
+    if (!fn) dropDeferred(sessionId);
     set((s) => {
       const writers = { ...s.writers };
       if (fn) writers[sessionId] = fn;
@@ -158,13 +220,44 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   writeOutput(sessionId, text) {
     const s = get();
     const w = s.writers[sessionId];
-    if (w) w(text);
-    // 활성 탭에 보이지 않는 세션이면 활동 표시를 켠다.
-    const shown = s.tabs.filter((t) => t.id === s.activeByGroup[0] || t.id === s.activeByGroup[1] || t.id === s.activeTabId);
-    const visible = shown.some((t) => findPaneBySession(t.root, sessionId));
-    if (!visible && s.sessions[sessionId] && !s.sessions[sessionId].activity) {
+    if (!w) {
+      // 터미널이 아직 없거나 이미 버려짐: 출력은 버리되 ack 는 보낸다(안 보내면 백엔드가 읽기를 멈춘다).
+      ackOutput(sessionId);
+      return;
+    }
+    if (isSessionVisible(s, sessionId)) {
+      // 보이는 세션이 다시 보이게 된 직후라면 모아 둔 것부터 쓴다(순서 유지).
+      if (deferred.get(sessionId)?.parts.length) writeDeferred(sessionId, w);
+      writeWithAck(sessionId, w, text, 1);
+      return;
+    }
+    // 숨은 탭: 100ms 단위로 몰아서 쓴다(보이는 탭에 프레임 시간을 양보).
+    let d = deferred.get(sessionId);
+    if (!d) {
+      d = { parts: [], timer: null };
+      deferred.set(sessionId, d);
+    }
+    d.parts.push(text);
+    if (!d.timer) {
+      d.timer = setTimeout(() => {
+        const entry = deferred.get(sessionId);
+        if (entry) entry.timer = null;
+        const w2 = get().writers[sessionId];
+        if (w2) writeDeferred(sessionId, w2);
+        else dropDeferred(sessionId);
+      }, HIDDEN_FLUSH_MS);
+    }
+    // 활성 탭에 보이지 않는 세션이면 활동 표시를 켠다(이미 켜져 있으면 상태 갱신 없음).
+    const entry = s.sessions[sessionId];
+    if (entry && !entry.activity) {
       set((st) => ({ sessions: { ...st.sessions, [sessionId]: { ...st.sessions[sessionId], activity: true } } }));
     }
+  },
+
+  flushDeferred(sessionId) {
+    const w = get().writers[sessionId];
+    if (w) writeDeferred(sessionId, w);
+    else dropDeferred(sessionId);
   },
 
   upsertSession(info) {
@@ -174,6 +267,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   },
 
   removeSession(sessionId) {
+    dropDeferred(sessionId);
     set((s) => {
       const sessions = { ...s.sessions };
       delete sessions[sessionId];

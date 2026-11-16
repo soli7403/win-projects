@@ -4,6 +4,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { WebglAddon } from '@xterm/addon-webgl';
 import '@xterm/xterm/css/xterm.css';
 import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
@@ -217,6 +218,19 @@ interface KeptTerm {
 }
 const keptTerms = new Map<string, KeptTerm>();
 
+/** WebGL 렌더러를 붙인다. 만들 수 없으면(소프트웨어 렌더링·RDP 등) 조용히 DOM 렌더러를 유지하고,
+ *  쓰다가 컨텍스트를 잃으면 애드온을 버려 DOM 렌더러로 돌아간다 (behavior/session.md §8 렌더러). */
+function attachWebgl(t: Terminal): void {
+  if (typeof WebGL2RenderingContext === 'undefined') return; // 테스트(jsdom)·미지원 환경
+  try {
+    const gl = new WebglAddon();
+    gl.onContextLoss(() => gl.dispose());
+    t.loadAddon(gl);
+  } catch {
+    // WebGL 불가: DOM 렌더러 그대로
+  }
+}
+
 function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): KeptTerm {
   const el = document.createElement('div');
   el.className = 'term-keep';
@@ -260,7 +274,9 @@ function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): K
   // open 은 문서에 붙은 요소에서 해야 글자 크기를 잴 수 있으므로 칸에 먼저 붙인다.
   host.appendChild(el);
   t.open(el);
-  useWorkspace.getState().registerWriter(sessionId, (text) => t.write(text));
+  attachWebgl(t);
+  // done 은 xterm 이 다 쓴 뒤 불린다 → session.ack (출력 흐름 제어, behavior/session.md §8).
+  useWorkspace.getState().registerWriter(sessionId, (text, done) => t.write(text, done));
 
   // 입력: 동시 입력 대상으로 보낸다. Enter 는 위험 명령 가드를 거친다.
   t.onData((data) => {
@@ -408,6 +424,7 @@ export function TerminalView({ paneId, sessionId, focused }: Props) {
     const t = k.term;
     const fit = k.fit;
     host.appendChild(k.el);
+    useWorkspace.getState().flushDeferred(sessionId); // 숨어 있던 동안 모아 둔 출력을 먼저 쓴다
     termRef.current = t;
     fitRef.current = fit;
     termHandles.set(paneId, t);

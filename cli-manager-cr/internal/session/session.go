@@ -31,6 +31,7 @@ type Session struct {
 	timerStartup *time.Timer
 	decoder      *Decoder
 	batcher      *Batcher
+	credit       *Credit // 출력 흐름 제어 (session.md §8)
 	logger       *Logger
 }
 
@@ -44,7 +45,10 @@ func newSession(cfg OpenConfig, emit EmitFunc) *Session {
 	}
 	pSession.info.M_szState = G_cszStateConnecting
 	szId := cfg.Info.M_szId
+	pSession.credit = NewCredit()
+	pCredit := pSession.credit
 	pSession.batcher = NewBatcher(func(szText string) {
+		pCredit.Sent(len(szText)) // emit 보다 먼저 (ack 가 먼저 오면 빈 큐에서 무시되므로)
 		emit("session.data", szId, szText)
 	})
 	return pSession
@@ -152,6 +156,9 @@ func (pSession *Session) connect() {
 
 // onConnectFailed 는 접속 실패를 처리한다: 자동 재접속 규칙이 맞으면 예약, 아니면 error 상태.
 func (pSession *Session) onConnectFailed(errDial error, iGen int, bLocal bool) {
+	if !pSession.isCurrent(iGen) {
+		return // 닫았거나 다른 시도가 시작됐다: 안내도 내지 않는다 (session.md §8)
+	}
 	szReason := errDial.Error()
 	if bLocal {
 		pSession.writeOutput(MsgShellFailed(szReason))
@@ -226,8 +233,11 @@ func (pSession *Session) onDisconnected(szReason string, iGen int) {
 func (pSession *Session) readLoop(transport Transport, iGen int) {
 	bBuf := make([]byte, 32*1024)
 	for {
+		// 프런트가 아직 처리하지 않은 출력이 상한을 넘으면 여기서 멈춘다 (session.md §8 출력 흐름 제어).
+		// 읽기를 멈추면 TCP 윈도우·PTY 파이프가 차서 상대 프로세스가 스스로 느려진다.
+		pSession.credit.Wait()
 		nRead, errRead := transport.Read(bBuf)
-		if nRead > 0 {
+		if nRead > 0 && pSession.isCurrent(iGen) { // 닫힌 뒤 읽힌 조각은 버린다
 			pSession.writeOutput(pSession.decoder.Decode(bBuf[:nRead]))
 		}
 		if errRead != nil {
@@ -239,6 +249,13 @@ func (pSession *Session) readLoop(transport Transport, iGen int) {
 			return
 		}
 	}
+}
+
+// isCurrent 는 이 세대가 아직 유효하고 사용자가 닫지 않았는지 본다.
+func (pSession *Session) isCurrent(iGen int) bool {
+	pSession.mtxData.Lock()
+	defer pSession.mtxData.Unlock()
+	return iGen == pSession.gen && !pSession.userClosed
 }
 
 // scheduleStartup 은 접속 직후 입력(tmux 한 줄 또는 자동 실행 명령)을 예약한다.
