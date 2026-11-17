@@ -14,7 +14,7 @@
     !define INFO_PRODUCTNAME "DariTerm"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "0.1.0"
+    !define INFO_PRODUCTVERSION "0.3.0"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "Copyright (c) 2026 YangHun Lee. All rights reserved."
