@@ -4,6 +4,7 @@
 // 해당 전역이 없으면 가짜 백엔드(fakeBackend.ts)를 쓴다(개발 서버·테스트).
 
 import { t } from '../i18n';
+import { createInputQueue } from './inputQueue';
 
 export type EventName =
   | 'session.data'
@@ -34,7 +35,8 @@ export interface Backend {
 
 interface WailsAppBinding {
   Invoke(channel: string, argsJson: string): Promise<string>;
-  TermInput(sessionId: string, text: string): void;
+  /** Wails 는 백엔드 처리가 끝나면 풀리는 Promise 를 돌려준다. */
+  TermInput(sessionId: string, text: string): Promise<void> | void;
   TermResize(sessionId: string, cols: number, rows: number): void;
   Reply(requestId: string, valueJson: string): void;
 }
@@ -58,6 +60,8 @@ function errorMessage(e: unknown): string {
 
 /** Wails 전역이 있을 때의 실제 어댑터. */
 export function createWailsBackend(app: WailsAppBinding, runtime: WailsRuntime | undefined): Backend {
+  // 세션별로 한 번에 한 호출만 띄워 입력 순서를 지킨다(inputQueue.ts).
+  const sendInput = createInputQueue((sessionId, text) => app.TermInput(sessionId, text));
   return {
     async invoke<T = any>(channel: string, args: unknown[] = []): Promise<T> {
       let raw: string;
@@ -68,7 +72,7 @@ export function createWailsBackend(app: WailsAppBinding, runtime: WailsRuntime |
       }
       return (raw ? JSON.parse(raw) : undefined) as T;
     },
-    termInput: (sessionId, text) => app.TermInput(sessionId, text),
+    termInput: (sessionId, text) => sendInput(sessionId, text),
     termResize: (sessionId, cols, rows) => app.TermResize(sessionId, cols, rows),
     reply: (requestId, value) => app.Reply(requestId, JSON.stringify(value ?? null)),
     on(event, handler) {

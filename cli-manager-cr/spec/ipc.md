@@ -9,7 +9,7 @@
 | 메서드 | 인자 | 설명 |
 |---|---|---|
 | `Invoke(channel, argsJson)` | 채널 이름, **JSON 배열 문자열** | 요청-응답. 결과는 JSON 문자열(값이 없으면 빈 문자열 → 프런트는 `undefined`). 오류는 거부(reject)되며 메시지 문자열을 쓴다 |
-| `TermInput(sessionId, text)` | | 터미널 입력(UTF-8 문자열). 응답 없음 |
+| `TermInput(sessionId, text)` | | 터미널 입력(UTF-8 문자열). 응답 없음. **한 세션의 입력은 보낸 순서대로 전송에 쓰인다**(호출 처리 순서를 앱 틀이 보장하지 않으므로 프런트가 세션별로 한 번에 한 호출만 보내고, 기다리는 동안 온 입력은 이어 붙여 다음 호출로 보낸다. 2026-11-17) |
 | `TermResize(sessionId, cols, rows)` | | 터미널 크기. 응답 없음 |
 | `Reply(requestId, valueJson)` | | 백엔드가 낸 질문(`ui.request`)에 대한 답. 응답 없음 |
 
