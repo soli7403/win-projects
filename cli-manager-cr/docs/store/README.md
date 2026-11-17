@@ -133,5 +133,6 @@ powershell -ExecutionPolicy Bypass -File tools\store-publish.ps1 -Version 0.1.1
 
 | 날짜 | 버전 | 내용 | 결과 |
 |---|---|---|---|
+| 2026-11-17 | 0.3.0.0 | 업데이트 패키지 `build\dist\DariTerm-0.3.0.0.msix`(`make msix VERSION=0.3.0`, SHA256 `4786A1814B679D168F0AF07BBA8F6004A1A785FFF6A91FF06212FE8B5C8D7825`). 스토어 밖 설치 파일 `DariTerm-0.3.0-amd64-installer.exe` 도 함께. 변경은 [CHANGELOG.md](../../CHANGELOG.md) 0.3.0, "이 버전의 새로운 기능" 문구는 [listing.md](./listing.md). 0.2.0.0 을 아직 제출하지 않았으면 그 초안의 0.2.0.0 패키지를 빼고 이것만 올린다 | 제출 전(Partner Center 업로드 대기) |
 | 2026-11-16 | 0.2.0.0 | 업데이트 패키지 `build\dist\DariTerm-0.2.0.0.msix`(`make msix VERSION=0.2.0`). 변경은 [CHANGELOG.md](../../CHANGELOG.md) 0.2.0, "이 버전의 새로운 기능" 문구는 [listing.md](./listing.md) | 제출 전(Partner Center 업로드 대기) |
 | 2026-11-14 | 0.1.0.0 | 첫 제출(Partner Center 수동). 무료, 전 세계, 개발자 도구. 스토어 목록 영어·한국어(나머지 8개 언어는 목록에서 뺌 — 앱 화면은 10개 언어 그대로), 인증 통과 즉시 게시. runFullTrust 사유 447자(칸 제한 500자) | 인증 통과·게시됨 (2026-11-16 Partner Center 에서 확인) |
