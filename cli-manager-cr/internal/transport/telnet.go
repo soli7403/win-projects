@@ -17,6 +17,10 @@ const G_cdurTelnetConnect = 15 * time.Second
 // ErrRemoteClosed 는 상대가 연결을 끊었을 때의 오류다 (protocols.md §4: "연결이 종료되었습니다").
 var ErrRemoteClosed = i18n.NewError("be.remote.closed")
 
+// ErrRemoteExited 는 서버가 셸을 정상적으로 끝냈을 때(종료 코드·신호와 함께 채널을 닫음)의 오류다.
+// 세션은 이 오류면 자동 재접속하지 않는다 (session.md §4). 지금은 SSH 만 돌려준다(텔넷은 구분할 수 없음).
+var ErrRemoteExited = i18n.NewError("be.remote.exited")
+
 // 텔넷 명령·옵션 바이트 (RFC 854/855, NAWS=31, TERMINAL-TYPE=24).
 const (
 	g_byteSE      = 240

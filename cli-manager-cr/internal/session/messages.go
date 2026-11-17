@@ -64,6 +64,16 @@ func MsgReconnectScheduled(iSec int) string {
 	return notice(G_cszColorInfo, i18n.T("be.session.reconnectIn", "sec", iSec))
 }
 
+// MsgRemoteExited 는 서버가 셸을 정상 종료했을 때의 안내다 (뒤에 MsgGiveUp 을 붙인다).
+func MsgRemoteExited() string {
+	return notice(G_cszColorInfo, i18n.T("be.session.remoteExited"))
+}
+
+// MsgWaitUnlock 은 앱 잠금 해제를 기다릴 때의 안내다 (회색).
+func MsgWaitUnlock() string {
+	return notice(G_cszColorInfo, i18n.T("be.session.waitUnlock"))
+}
+
 // MsgGiveUp 는 재접속을 포기했을 때의 안내다.
 func MsgGiveUp() string {
 	return notice(G_cszColorInfo, i18n.T("be.session.pressEnter"))

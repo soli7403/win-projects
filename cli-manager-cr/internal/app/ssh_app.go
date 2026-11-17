@@ -3,7 +3,9 @@ package app
 import (
 	"dariterm/internal/i18n"
 	"encoding/json"
+	"errors"
 	"io"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/sftp"
@@ -34,19 +36,36 @@ func (pSess *sshSession) Close() error {
 }
 
 // sshDialer 는 SSH 접속 함수다 (protocols.md §2). 접속 뒤 keepalive·포워딩·저장 처리를 한다.
-func (pService *Service) sshDialer(record hostRecord) session.Dialer {
-	return func(notify func(string)) (session.Transport, error) {
-		tgt, errBuild := pService.buildSSHTarget(record, 0)
+// 세션마다 하나씩 만들며, 그 세션이 접속에 쓴 계정 사본(sessionCreds)을 들고 있다.
+// 돌려주는 두 번째 함수는 세션을 닫을 때 불러 사본을 지운다.
+//
+// 앱 잠금(볼트 잠김) 동안의 규칙 (protocols.md §2.2):
+//   - 볼트 대신 사본으로 채워 접속한다(질문 없이 재접속).
+//   - 어떤 질문 창(비밀번호·호스트 키·키 암호·사용자 이름·키보드-인터랙티브)도 띄우지 않는다.
+//     사본이 없거나 사본으로 안 되면 session.ErrWaitUnlock 을 돌려 잠금 해제를 기다린다.
+func (pService *Service) sshDialer(record hostRecord) (session.Dialer, func()) {
+	creds := newSessionCreds()
+	dial := func(notify func(string)) (session.Transport, error) {
+		bNeedUnlock := false
+		tgt, errBuild := pService.buildSSHTarget(record, 0, creds, &bNeedUnlock)
 		if errBuild != nil {
 			return nil, errBuild
+		}
+		if bNeedUnlock {
+			return nil, session.ErrWaitUnlock
 		}
 		allowSave := record.M_szId != ""
 		prompt := &askPrompter{pService: pService, allowSave: allowSave}
 		store := &knownHostStore{pService: pService}
 		conn, errConnect := sshconn.Connect(tgt, store, prompt, notify)
 		if errConnect != nil {
+			if prompt.blocked.Load() {
+				// 잠긴 동안 질문이 필요했다: 실패로 세지 않고 잠금 해제를 기다린다.
+				return nil, errors.Join(session.ErrWaitUnlock, errConnect)
+			}
 			return nil, errConnect
 		}
+		creds.remember(tgt)
 		shell, errShell := sshconn.OpenShell(conn, record.M_szTermType, 120, 32)
 		if errShell != nil {
 			_ = conn.Close()
@@ -60,10 +79,18 @@ func (pService *Service) sshDialer(record hostRecord) session.Dialer {
 		}
 		return sess, nil
 	}
+	return dial, creds.clear
 }
 
-// buildSSHTarget 는 저장 서버 기록으로 접속 대상을 만든다. 계정은 볼트에서 읽는다 (볼트가 잠겨 있으면 비밀 없이 진행).
-func (pService *Service) buildSSHTarget(record hostRecord, depth int) (*sshconn.Target, error) {
+// vaultLocked 는 볼트가 만들어져 있고 잠겨 있는지 본다. 볼트를 만들지 않았으면 false (기다려도 열 볼트가 없다).
+func (pService *Service) vaultLocked() bool {
+	status := pService.pVault.Status()
+	return status.M_bInitialized && !status.M_bUnlocked
+}
+
+// buildSSHTarget 는 저장 서버 기록으로 접속 대상을 만든다. 계정은 볼트에서 읽고, 비어 있는 필드는 세션 사본으로 채운다.
+// 저장된 계정이 있는데 볼트가 잠겨 있고 사본도 없으면 *pbNeedUnlock 을 true 로 둔다 (접속하지 않고 잠금 해제를 기다린다).
+func (pService *Service) buildSSHTarget(record hostRecord, depth int, creds *sessionCreds, pbNeedUnlock *bool) (*sshconn.Target, error) {
 	if depth > 5 {
 		return nil, i18n.NewError("be.ssh.jumpTooDeep")
 	}
@@ -85,7 +112,7 @@ func (pService *Service) buildSSHTarget(record hostRecord, depth int) (*sshconn.
 	if tgt.AuthType == "" {
 		tgt.AuthType = "ask"
 	}
-	pService.applyCredential(tgt, record.M_szCredentialId)
+	pService.fillCredential(tgt, record.M_szCredentialId, creds, pbNeedUnlock)
 	switch {
 	case record.M_szJumpHostId == "direct" && record.M_pJumpDirect != nil:
 		jd := record.M_pJumpDirect
@@ -105,14 +132,14 @@ func (pService *Service) buildSSHTarget(record hostRecord, depth int) (*sshconn.
 		if jump.AuthType == "" {
 			jump.AuthType = "ask"
 		}
-		pService.applyCredential(jump, jd.M_szCredentialId)
+		pService.fillCredential(jump, jd.M_szCredentialId, creds, pbNeedUnlock)
 		tgt.Jump = jump
 	case record.M_szJumpHostId != "":
 		jumpRecord, bFound := pService.findHost(record.M_szJumpHostId)
 		if !bFound {
 			return nil, i18n.NewError("be.jump.notFound")
 		}
-		jump, errJump := pService.buildSSHTarget(jumpRecord, depth+1)
+		jump, errJump := pService.buildSSHTarget(jumpRecord, depth+1, creds, pbNeedUnlock)
 		if errJump != nil {
 			return nil, errJump
 		}
@@ -122,14 +149,29 @@ func (pService *Service) buildSSHTarget(record hostRecord, depth int) (*sshconn.
 	return tgt, nil
 }
 
-// applyCredential 은 볼트 항목의 비밀을 대상에 채운다. 잠겨 있거나 항목이 없으면 아무것도 하지 않는다.
-func (pService *Service) applyCredential(tgt *sshconn.Target, szCredentialId string) {
+// credResult 는 볼트에서 계정을 읽은 결과다.
+type credResult int
+
+const (
+	credNone   credResult = iota // 연결된 계정이 없거나, 항목이 없거나, 볼트를 만들지 않았다
+	credRead                     // 읽어서 채웠다
+	credLocked                   // 계정이 연결되어 있지만 볼트가 잠겨 읽을 수 없다
+)
+
+// applyCredential 은 볼트 항목의 비밀을 대상에 채우고 결과를 돌려준다. "잠김"과 "없음"을 구분한다.
+func (pService *Service) applyCredential(tgt *sshconn.Target, szCredentialId string) credResult {
 	if szCredentialId == "" {
-		return
+		return credNone
 	}
 	body, errGet := pService.pVault.Get(szCredentialId)
+	if errors.Is(errGet, vault.ErrLocked) {
+		if pService.vaultLocked() {
+			return credLocked
+		}
+		return credNone // 볼트를 만들지 않음 (Get 은 키가 없으면 먼저 ErrLocked 를 돌려준다)
+	}
 	if errGet != nil || body == nil {
-		return
+		return credNone
 	}
 	if tgt.Username == "" {
 		tgt.Username = body.M_szUsername
@@ -137,6 +179,17 @@ func (pService *Service) applyCredential(tgt *sshconn.Target, szCredentialId str
 	tgt.Password = body.M_szPassword
 	tgt.PrivateKey = []byte(body.M_szPrivateKey)
 	tgt.Passphrase = body.M_szPassphrase
+	return credRead
+}
+
+// fillCredential 은 볼트 값을 먼저 채우고, 비어 있는 필드는 세션 사본으로 채운다.
+// 볼트가 잠겨 저장된 계정을 읽지 못했는데 사본도 없으면 *pbNeedUnlock 을 true 로 둔다.
+func (pService *Service) fillCredential(tgt *sshconn.Target, szCredentialId string, creds *sessionCreds, pbNeedUnlock *bool) {
+	result := pService.applyCredential(tgt, szCredentialId)
+	bHadCopy := creds != nil && creds.fill(tgt)
+	if result == credLocked && !bHadCopy && pbNeedUnlock != nil {
+		*pbNeedUnlock = true
+	}
 }
 
 // forwardsOf 는 서버의 포워딩 설정을 연결 쪽 형식으로 바꾼다.
@@ -263,12 +316,19 @@ func (pStore *knownHostStore) Save(szHostPort string, szKeyType string, szFinger
 }
 
 // askPrompter 는 sshconn.Prompter 를 ui.request 질문으로 구현한다 (spec/ipc.md §3).
+// 볼트가 잠겨 있으면 창을 띄우지 않고 취소로 답하며 blocked 를 켠다 → 다이얼러가 잠금 해제 대기로 바꾼다.
+// 잠금 화면 뒤의 창에 자동으로 답하지 않기 위해서다 (protocols.md §2.2).
 type askPrompter struct {
 	pService  *Service
 	allowSave bool
+	blocked   atomic.Bool
 }
 
 func (pPrompt *askPrompter) ask(szKind string, mapFields map[string]any) (json.RawMessage, bool) {
+	if pPrompt.pService.vaultLocked() {
+		pPrompt.blocked.Store(true)
+		return nil, false
+	}
 	return pPrompt.pService.pRouter.Asker().Ask(szKind, mapFields)
 }
 

@@ -2,6 +2,7 @@ package session
 
 import (
 	"dariterm/internal/i18n"
+	"dariterm/internal/transport"
 	"errors"
 	"io"
 	"sync"
@@ -33,6 +34,8 @@ type Session struct {
 	batcher      *Batcher
 	credit       *Credit // 출력 흐름 제어 (session.md §8)
 	logger       *Logger
+	dialing      bool // Dialer 를 부르는 중 (같은 세션에 접속이 두 번 겹치지 않게)
+	waitUnlock   bool // 앱 잠금 해제를 기다리는 중 (ErrWaitUnlock, session.md §4)
 }
 
 // newSession 은 세션을 만든다. 접속은 start 에서 시작한다.
@@ -102,6 +105,7 @@ func (pSession *Session) connect() {
 	}
 	pSession.gen++
 	iGen := pSession.gen
+	pSession.dialing = true
 	bRetry := pSession.attempts > 0
 	pSession.timerRetry = nil
 	if bRetry {
@@ -118,22 +122,32 @@ func (pSession *Session) connect() {
 		pSession.writeOutput(MsgConnecting(szTitle, szTarget))
 	}
 
-	transport, errDial := pSession.cfg.Dialer(pSession.writeOutput)
+	conn, errDial := pSession.cfg.Dialer(pSession.writeOutput)
 
 	pSession.mtxData.Lock()
+	if iGen == pSession.gen {
+		pSession.dialing = false
+	}
 	if iGen != pSession.gen || pSession.userClosed {
 		pSession.mtxData.Unlock()
-		if transport != nil {
-			_ = transport.Close()
+		if conn != nil {
+			_ = conn.Close()
 		}
 		return
 	}
+	if errors.Is(errDial, ErrWaitUnlock) {
+		pSession.onWaitUnlockLocked()
+		pSession.mtxData.Unlock()
+		pSession.publishState()
+		return
+	}
+	pSession.waitUnlock = false
 	if errDial != nil {
 		pSession.mtxData.Unlock()
 		pSession.onConnectFailed(errDial, iGen, bLocal)
 		return
 	}
-	pSession.transport = transport
+	pSession.transport = conn
 	pSession.attempts = 0
 	pSession.wasConnected = true
 	pSession.info.M_szState = G_cszStateConnected
@@ -143,14 +157,14 @@ func (pSession *Session) connect() {
 	pSession.mtxData.Unlock()
 
 	if iCols > 0 && iRows > 0 {
-		_ = transport.Resize(iCols, iRows)
+		_ = conn.Resize(iCols, iRows)
 	}
 	if !bLocal {
 		// 접속 중 안내 줄을 지운다 (session.md §3).
 		pSession.writeOutput(G_cszClearLine)
 	}
 	pSession.publishState()
-	go pSession.readLoop(transport, iGen)
+	go pSession.readLoop(conn, iGen)
 	pSession.scheduleStartup(iGen)
 }
 
@@ -182,6 +196,32 @@ func (pSession *Session) onConnectFailed(errDial error, iGen int, bLocal bool) {
 	pSession.mtxData.Unlock()
 	pSession.writeOutput(MsgGiveUp())
 	pSession.publishState()
+}
+
+// onWaitUnlockLocked 는 mtxData 를 잡은 상태에서 "앱 잠금 해제 대기"로 둔다 (session.md §4).
+// 안내 줄은 대기에 처음 들어올 때 한 번만 낸다. 재시도 횟수는 늘리지 않고 타이머도 걸지 않는다 —
+// 볼트가 열리면 Manager.ResumeUnlockWaiters 가 다시 접속시킨다.
+func (pSession *Session) onWaitUnlockLocked() {
+	if !pSession.waitUnlock {
+		pSession.writeOutputUnlockedNotice(MsgWaitUnlock())
+	}
+	pSession.waitUnlock = true
+	pSession.info.M_szState = G_cszStateReconnecting
+	pSession.info.M_szMessage = i18n.T("be.session.waitUnlock")
+}
+
+// resumeIfWaiting 은 잠금 해제를 기다리던 세션이면 곧바로 다시 접속한다. 기다리던 세션이었는지 돌려준다.
+func (pSession *Session) resumeIfWaiting() bool {
+	pSession.mtxData.Lock()
+	if !pSession.waitUnlock || pSession.userClosed || pSession.dialing || pSession.transport != nil {
+		pSession.mtxData.Unlock()
+		return false
+	}
+	pSession.waitUnlock = false
+	pSession.dialing = true // Reconnect 와 같은 이유
+	pSession.mtxData.Unlock()
+	go pSession.connect()
+	return true
 }
 
 // scheduleRetryLocked 는 mtxData 를 잡은 상태에서 다음 재접속을 예약한다 (session.md §4).
@@ -229,18 +269,44 @@ func (pSession *Session) onDisconnected(szReason string, iGen int) {
 	pSession.publishState()
 }
 
+// onRemoteExited 는 서버가 셸을 정상적으로 끝낸 것을 처리한다: 자동 재접속하지 않고 닫힘 + 안내 두 줄 (session.md §4).
+// Enter·[재연결] 로 다시 연결하는 동작은 그대로다. 남은 연결(SSH 접속·keepalive·포워딩)은 닫는다.
+func (pSession *Session) onRemoteExited(iGen int) {
+	pSession.mtxData.Lock()
+	if iGen != pSession.gen || pSession.userClosed {
+		pSession.mtxData.Unlock()
+		return
+	}
+	conn := pSession.transport
+	pSession.transport = nil
+	pSession.attempts = 0
+	pSession.info.M_szState = G_cszStateClosed
+	pSession.info.M_szMessage = ""
+	pSession.writeOutputUnlockedNotice(MsgRemoteExited())
+	pSession.writeOutputUnlockedNotice(MsgGiveUp())
+	pSession.mtxData.Unlock()
+	if conn != nil {
+		_ = conn.Close()
+	}
+	pSession.publishState()
+}
+
 // readLoop 는 연결의 출력을 읽어 화면과 로그로 보낸다. 끝나면 끊김 처리한다.
-func (pSession *Session) readLoop(transport Transport, iGen int) {
+func (pSession *Session) readLoop(conn Transport, iGen int) {
 	bBuf := make([]byte, 32*1024)
 	for {
 		// 프런트가 아직 처리하지 않은 출력이 상한을 넘으면 여기서 멈춘다 (session.md §8 출력 흐름 제어).
 		// 읽기를 멈추면 TCP 윈도우·PTY 파이프가 차서 상대 프로세스가 스스로 느려진다.
 		pSession.credit.Wait()
-		nRead, errRead := transport.Read(bBuf)
+		nRead, errRead := conn.Read(bBuf)
 		if nRead > 0 && pSession.isCurrent(iGen) { // 닫힌 뒤 읽힌 조각은 버린다
 			pSession.writeOutput(pSession.decoder.Decode(bBuf[:nRead]))
 		}
 		if errRead != nil {
+			if errors.Is(errRead, transport.ErrRemoteExited) {
+				pSession.onRemoteExited(iGen)
+				return
+			}
 			szReason := ""
 			if !errors.Is(errRead, io.EOF) {
 				szReason = errRead.Error()

@@ -72,6 +72,24 @@ func (pManager *Manager) CloseAll() {
 	}
 }
 
+// ResumeUnlockWaiters 는 앱 잠금 해제를 기다리던 세션을 모두 곧바로 다시 접속시킨다 (볼트가 열릴 때 부른다).
+// 기다리던 세션 수를 돌려준다. 닫힌 세션·접속 중인 세션은 건드리지 않는다.
+func (pManager *Manager) ResumeUnlockWaiters() int {
+	pManager.mtxData.Lock()
+	slSessions := make([]*Session, 0, len(pManager.mapSessions))
+	for _, pSession := range pManager.mapSessions {
+		slSessions = append(slSessions, pSession)
+	}
+	pManager.mtxData.Unlock()
+	iCount := 0
+	for _, pSession := range slSessions {
+		if pSession.resumeIfWaiting() {
+			iCount++
+		}
+	}
+	return iCount
+}
+
 // Count 는 열린 세션 수를 돌려준다 (종료 확인 문구에 쓴다).
 func (pManager *Manager) Count() int {
 	pManager.mtxData.Lock()

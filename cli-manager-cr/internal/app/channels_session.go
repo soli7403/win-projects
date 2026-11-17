@@ -167,6 +167,7 @@ func (pService *Service) openSession(args sessionOpenArgs) (session.Info, error)
 		}
 		record = adhocRecord(*args.M_pAdhoc)
 	}
+	dialer, onClose := pService.dialerFor(record)
 	cfg := session.OpenConfig{
 		Info: session.Info{
 			M_szTitle:      record.M_szAlias,
@@ -178,7 +179,8 @@ func (pService *Service) openSession(args sessionOpenArgs) (session.Info, error)
 		Encoding:      record.M_szEncoding,
 		AutoReconnect: pService.settingBool("autoReconnect", true),
 		IsSerial:      record.M_szProtocol == "serial",
-		Dialer:        pService.dialerFor(record),
+		Dialer:        dialer,
+		OnClose:       onClose,
 		DataDir:       pService.szDataDir,
 		LogEnabled:    pService.settingBool("sessionLog", false),
 		LogAlias:      record.M_szAlias,

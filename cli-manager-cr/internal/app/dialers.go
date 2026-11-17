@@ -11,10 +11,17 @@ import (
 )
 
 // dialerFor 는 프로토콜별 접속 함수를 고른다 (protocols.md §2~§6).
-func (pService *Service) dialerFor(record hostRecord) session.Dialer {
-	switch record.M_szProtocol {
-	case "ssh":
+// 두 번째 값은 세션을 닫을 때 부를 정리 함수다 (없으면 nil).
+func (pService *Service) dialerFor(record hostRecord) (session.Dialer, func()) {
+	if record.M_szProtocol == "ssh" {
 		return pService.sshDialer(record)
+	}
+	return pService.plainDialerFor(record), nil
+}
+
+// plainDialerFor 는 세션 상태가 없는 프로토콜의 접속 함수다.
+func (pService *Service) plainDialerFor(record hostRecord) session.Dialer {
+	switch record.M_szProtocol {
 	case "local":
 		return func(notify func(string)) (session.Transport, error) {
 			return openLocalTransport(record, notify)

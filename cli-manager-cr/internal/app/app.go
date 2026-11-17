@@ -59,6 +59,10 @@ func NewService(szDataDir string, emitter ipc.Emitter) (*Service, error) {
 	pVault.SetOnLockChanged(func(bOpen bool) {
 		pService.pRouter.Emit("vault.changed", bOpen)
 		pService.onVaultLockChanged(bOpen)
+		if bOpen && pService.pSessions != nil {
+			// 잠금 해제를 기다리던 세션을 곧바로 다시 접속한다 (session.md §4).
+			go pService.pSessions.ResumeUnlockWaiters()
+		}
 	})
 	pStore.SetOnSyncKeys(func() {
 		pService.scheduleSync()

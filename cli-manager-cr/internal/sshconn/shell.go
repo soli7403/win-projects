@@ -1,6 +1,7 @@
 package sshconn
 
 import (
+	"errors"
 	"io"
 	"sync"
 
@@ -57,18 +58,42 @@ func OpenShell(conn *Conn, termType string, iCols int, iRows int) (*Shell, error
 		return nil, errShell
 	}
 	sh := &Shell{conn: conn, session: session, stdin: stdin, outReader: outReader, outWriter: outWriter}
-	// 셸이 끝나면 출력 파이프를 닫아 Read 가 끝나게 한다.
+	// 셸이 끝나면 출력 파이프를 닫아 Read 가 끝나게 한다. 끝난 방식을 파이프 오류로 넘긴다:
+	// 서버가 종료 코드·신호를 보내고 끝냈으면 정상 종료(errShellExited), 그 밖에는 끊김.
+	// 먼저 닫은 쪽의 오류가 남으므로(io.Pipe), Close·keepalive 실패로 먼저 닫히면 끊김이 된다.
 	go func() {
-		_ = session.Wait()
+		errWait := session.Wait()
+		if isNormalExit(errWait) {
+			_ = outWriter.CloseWithError(errShellExited)
+			return
+		}
 		_ = outWriter.Close()
 	}()
 	return sh, nil
 }
 
-// Read 는 셸 출력을 읽는다. 끝나면 "연결이 종료되었습니다" 이유를 돌려준다 (protocols.md §2.1 6번).
+// errShellExited 는 셸이 정상 종료됐음을 출력 파이프로 알리는 내부 표시다.
+var errShellExited = errors.New("shell exited")
+
+// isNormalExit 는 session.Wait 결과가 서버의 정상 종료인지 본다.
+// 오류 없음(종료 코드 0) 또는 *ssh.ExitError(0 이 아닌 종료 코드나 신호)면 정상 종료다.
+// *ssh.ExitMissingError(종료 코드 없이 채널이 닫힘)와 전송 오류는 끊김이다.
+func isNormalExit(errWait error) bool {
+	if errWait == nil {
+		return true
+	}
+	var pExit *ssh.ExitError
+	return errors.As(errWait, &pExit)
+}
+
+// Read 는 셸 출력을 읽는다. 서버가 셸을 정상 종료했으면 transport.ErrRemoteExited,
+// 그 밖에 끝나면 "연결이 종료되었습니다"(transport.ErrRemoteClosed) 를 돌려준다 (protocols.md §2.1 6번).
 func (pShell *Shell) Read(bBuf []byte) (int, error) {
 	nRead, errRead := pShell.outReader.Read(bBuf)
 	if errRead != nil {
+		if errors.Is(errRead, errShellExited) {
+			return nRead, transport.ErrRemoteExited
+		}
 		return nRead, transport.ErrRemoteClosed
 	}
 	return nRead, nil

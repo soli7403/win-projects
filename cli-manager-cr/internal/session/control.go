@@ -45,7 +45,7 @@ func (pSession *Session) Resize(iCols int, iRows int) {
 // 이미 연결되어 있으면 아무 일도 하지 않는다.
 func (pSession *Session) Reconnect() {
 	pSession.mtxData.Lock()
-	if pSession.userClosed || pSession.transport != nil || pSession.info.M_szState == G_cszStateConnecting {
+	if pSession.userClosed || pSession.transport != nil || pSession.dialing || pSession.info.M_szState == G_cszStateConnecting {
 		pSession.mtxData.Unlock()
 		return
 	}
@@ -54,6 +54,7 @@ func (pSession *Session) Reconnect() {
 		pSession.timerRetry = nil
 	}
 	pSession.attempts = 0
+	pSession.dialing = true // go 로 띄우기 전에 켠다: 그사이 온 Reconnect·잠금 해제 재개가 겹치지 않게
 	pSession.mtxData.Unlock()
 	go pSession.connect()
 }
@@ -90,6 +91,9 @@ func (pSession *Session) Close() {
 	pSession.batcher.Close()
 	if pLogger != nil {
 		_ = pLogger.Close()
+	}
+	if pSession.cfg.OnClose != nil {
+		pSession.cfg.OnClose()
 	}
 	pSession.publishState()
 }

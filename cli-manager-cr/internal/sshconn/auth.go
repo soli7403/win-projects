@@ -98,6 +98,7 @@ func keyLoader(tgt *Target, prompt Prompter, notice func(string)) func() ([]ssh.
 			}
 			signer, errWith := ssh.ParsePrivateKeyWithPassphrase(tgt.PrivateKey, []byte(szPass))
 			if errWith == nil {
+				tgt.Passphrase = szPass // 세션 사본용 (rememberWorking 참고)
 				return []ssh.Signer{signer}, nil
 			}
 			errLast = errWith

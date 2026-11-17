@@ -96,6 +96,7 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 	}
 	client, errHandshake := handshake(conn, addr, config)
 	if errHandshake == nil {
+		rememberWorking(tgt, szUsername, asked)
 		return &Conn{Client: client, Hops: hops, Username: szUsername, Asked: *asked, chClosed: make(chan struct{})}, nil
 	}
 	if !isAuthFailure(errHandshake) {
@@ -124,6 +125,7 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 		}
 		client, errPw := handshake(nextConn, addr, cfgPw)
 		if errPw == nil {
+			rememberWorking(tgt, szUsername, asked)
 			return &Conn{Client: client, Hops: hops, Username: szUsername, Asked: *asked, chClosed: make(chan struct{})}, nil
 		}
 		if !isAuthFailure(errPw) {
@@ -133,6 +135,16 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 	}
 	closeHops(hops)
 	return nil, i18n.NewError("be.err.auth")
+}
+
+// rememberWorking 은 접속에 성공했을 때 실제로 쓰인 사용자 이름과 사용자가 입력한 비밀번호를 tgt 에 남긴다.
+// 호출자는 접속 뒤 tgt(와 Jump 체인)를 읽어 세션 동안의 계정 사본으로 쓴다 (protocols.md §2.2 세션 사본).
+// 입력한 키 암호는 keyLoader 가 성공할 때 tgt.Passphrase 에 남긴다.
+func rememberWorking(tgt *Target, szUsername string, asked *askedSecret) {
+	tgt.Username = szUsername
+	if asked.Asked && asked.Password != "" {
+		tgt.Password = asked.Password
+	}
 }
 
 // askPasswordFor 는 비밀번호 요청 창을 띄운다 (bFailed 면 실패 표시).

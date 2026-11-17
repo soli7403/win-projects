@@ -1,6 +1,9 @@
 package session
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // Transport 는 프로토콜 연결 하나다 (SSH·텔넷·시리얼·로컬 셸이 구현한다).
 // 접속은 Dialer 가 끝낸 뒤 돌려주므로 Transport 는 이미 연결된 상태다.
@@ -16,7 +19,12 @@ type Transport interface {
 }
 
 // Dialer 는 접속을 시도하고 성공하면 Transport 를 돌려준다. notify 는 터미널 안내 줄을 보낸다.
+// 앱 잠금(볼트)이 풀려야 접속할 수 있으면 ErrWaitUnlock(을 감싼 오류)을 돌려준다.
 type Dialer func(notify func(string)) (Transport, error)
+
+// ErrWaitUnlock 은 앱 잠금이 풀리기를 기다려야 접속할 수 있다는 뜻이다 (session.md §4 잠금 해제 대기).
+// 세션은 실패로 세지 않고 "재접속 중"으로 기다리다가 Manager.ResumeUnlockWaiters 로 다시 접속한다.
+var ErrWaitUnlock = errors.New("waiting for app unlock")
 
 // Info 는 session.open 결과와 session.state 이벤트의 세션 정보다 (session.md §1, spec/ipc.md §2).
 type Info struct {
@@ -50,4 +58,6 @@ type OpenConfig struct {
 	StartupDelay time.Duration
 	// OpenDelay 는 열기 후 접속을 시작하기까지의 대기다 (기본 30ms, 프런트가 터미널을 등록할 시간).
 	OpenDelay time.Duration
+	// OnClose 는 세션을 닫을 때 한 번 부른다 (다이얼러가 들고 있던 계정 사본 지우기 등). nil 이면 부르지 않는다.
+	OnClose func()
 }
