@@ -113,6 +113,7 @@ Tick what you want and click **Import N**. Passwords are not imported; enter eac
    - **Upload**: drag files from Explorer onto the list
    - **Download / edit**: right-click a file → Download / "Edit with an app on this PC" (saving uploads it automatically)
    - **Preview**: double-click a file
+   - **Sort**: click Name, Size, or Modified above the list; click again to reverse (folders stay on top)
    - **Move terminal to this folder (cd)**
 3. **Server-to-server copy**: drag a file from one server's tab to another server's tab. Progress appears in the copy list at the bottom of the window.
 

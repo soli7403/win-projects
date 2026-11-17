@@ -5,6 +5,7 @@ import { AlertCircle, ArrowDown, ArrowUp, ArrowUpFromLine, Check, CircleAlert, F
 import { useWorkspace, type SessionEntry } from '../state/workspace';
 import { findPane } from '../lib/layout';
 import { formatBytes, transferPercent } from '../lib/sftpPath';
+import { DEFAULT_SORT, nextSort, sortEntries, type SortKey, type SortState } from '../lib/sftpSort';
 import { useCopyJobs } from '../state/copyJobs';
 import { lastDir, isFileDrag, startFileDrag, dropFiles } from './fileDrag';
 import { useTransfers, type TransferInfo } from '../state/transfers';
@@ -18,6 +19,8 @@ import { t as tr } from '../i18n';
 
 /** 세션별 마지막으로 본 경로(세션마다 기억, fileDrag.lastDir). 패널을 닫아도 유지된다. */
 const lastPath = lastDir;
+// 목록 정렬은 앱을 켜 둔 동안 모든 패널·폴더 이동에 이어진다 (sftp-snippets.md §2.3).
+let lastSort: SortState = DEFAULT_SORT;
 
 /** 그룹(없으면 포커스 그룹)의 선택 탭에서 포커스된 칸의 세션 id(없으면 null). */
 function useFocusedSid(group?: 0 | 1): string | null {
@@ -56,6 +59,17 @@ export function SftpPanel({ group, onClose }: { group?: 0 | 1; onClose?: () => v
   const ready = !!sid && sftpOk && connected;
 
   const [st, setSt] = useState<State>(EMPTY);
+  const [sort, setSort] = useState<SortState>(lastSort);
+  const sortRef = useRef(sort);
+  sortRef.current = sort;
+  // 머리 줄 클릭: 정렬을 바꾸고 지금 목록을 다시 줄 세운다. 선택은 유지하고 Shift 범위의 기준 행만 푼다.
+  const onSort = (key: SortKey) => {
+    const next = nextSort(sortRef.current, key);
+    lastSort = next;
+    sortRef.current = next;
+    setSort(next);
+    setSt((x) => ({ ...x, entries: sortEntries(x.entries, next), anchor: null }));
+  };
   const [pathDraft, setPathDraft] = useState('');
   /** 끌어 놓기 중인 대상 폴더와 종류(패널 항목 끌기면 file) */
   const [drop, setDrop] = useState<{ dir: string; file: boolean } | null>(null);
@@ -77,7 +91,7 @@ export function SftpPanel({ group, onClose }: { group?: 0 | 1; onClose?: () => v
       setPathDraft(listing.path);
       setSt({
         path: listing.path, parent: listing.parent ?? listing.path, sep: listing.sep ?? '/', local: !!listing.local, home: '',
-        entries: listing.entries, loading: false, error: null, selected: new Set(), anchor: null,
+        entries: sortEntries(listing.entries, sortRef.current), loading: false, error: null, selected: new Set(), anchor: null,
       });
     } catch (e) {
       if (seq !== reqSeq.current) return;
@@ -304,6 +318,8 @@ export function SftpPanel({ group, onClose }: { group?: 0 | 1; onClose?: () => v
               sid={sid}
               path={st.path}
               entries={st.entries}
+              sort={sort}
+              onSort={onSort}
               selected={st.selected}
               onSelect={onSelect}
               onSelectAll={selectAll}

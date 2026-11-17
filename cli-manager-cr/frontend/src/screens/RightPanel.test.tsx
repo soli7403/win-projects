@@ -65,6 +65,31 @@ describe('F2 · 홈 목록: 폴더 우선, 이름순', () => {
     expect(names.slice(0, 2)).toEqual(['current', 'logs']);
     expect(names.slice(2)).toEqual(['app.conf', 'big.txt', 'shot.png']);
   });
+
+  it('머리 줄을 누르면 그 열로 정렬하고, 다시 누르면 방향을 뒤집는다(폴더는 항상 앞)', async () => {
+    await openSession(true);
+    render(<SftpPanel />);
+    await screen.findAllByRole('option');
+    const namesNow = () => screen.getAllByRole('option').map((r) => r.querySelector('.name')?.textContent?.replace(/\s+$/, ''));
+    const sizeHead = screen.getByRole('button', { name: '크기' });
+    const nameHead = screen.getByRole('button', { name: '이름' });
+    expect(nameHead.getAttribute('aria-sort')).toBe('ascending');
+
+    fireEvent.click(nameHead);
+    expect(nameHead.getAttribute('aria-sort')).toBe('descending');
+    expect(namesNow()).toEqual(['logs', 'current', 'shot.png', 'big.txt', 'app.conf']);
+
+    fireEvent.click(sizeHead); // 크기는 큰 것 먼저로 시작
+    expect(sizeHead.getAttribute('aria-sort')).toBe('descending');
+    expect(nameHead.getAttribute('aria-sort')).toBe('none');
+    const files = namesNow().slice(2);
+    expect(namesNow().slice(0, 2)).toEqual(['current', 'logs']);
+    fireEvent.click(sizeHead);
+    expect(namesNow().slice(2)).toEqual([...files].reverse());
+
+    fireEvent.click(nameHead); // 다음 테스트를 위해 기본(이름 오름차순)으로 되돌린다
+    expect(nameHead.getAttribute('aria-sort')).toBe('ascending');
+  });
 });
 
 describe('F3·F4 · 삭제 확인 문구', () => {

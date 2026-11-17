@@ -1,6 +1,7 @@
 // SFTP 목록 행·선택·키보드·우클릭 메뉴. 근거: spec/ui/sftp-snippets.md §2.3~§2.5, spec/ui/tokens.md §3(SFTP 행).
 import type { DragEvent, KeyboardEvent, MouseEvent as RMouseEvent } from 'react';
-import { File, FileImage, Folder, Link2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, File, FileImage, Folder, Link2 } from 'lucide-react';
+import type { SortKey, SortState } from '../lib/sftpSort';
 import { formatBytes, formatMtime, isImageName } from '../lib/sftpPath';
 import { useUi, type MenuItem } from '../state/ui';
 import type { Entry } from './sftpOps';
@@ -11,6 +12,9 @@ export interface ListProps {
   sid: string;
   path: string;
   entries: Entry[];
+  /** 지금 정렬과 머리 줄 클릭 처리 (§2.3) */
+  sort: SortState;
+  onSort: (key: SortKey) => void;
   selected: Set<string>;
   onSelect: (index: number, mods: { ctrl: boolean; shift: boolean }) => void;
   onSelectAll: () => void;
@@ -39,6 +43,26 @@ function EntryIcon({ e }: { e: Entry }) {
   if (e.isDir) return <Folder size={14} className="ico-dir" fill="#f5b942" color="#f5b942" />;
   if (isImageName(e.name)) return <FileImage size={14} color="var(--fg-2)" />;
   return <File size={14} color="var(--fg-2)" />;
+}
+
+/** 머리 줄의 정렬 버튼 하나. 지금 정렬 열이면 방향 화살표를 붙인다. */
+function SortHead({ k, label, sort, onSort, right }: { k: SortKey; label: string; sort: SortState; onSort: (key: SortKey) => void; right?: boolean }) {
+  const on = sort.key === k;
+  const Arrow = sort.dir === 'asc' ? ChevronUp : ChevronDown;
+  return (
+    <button
+      type="button"
+      className={`sftp-sort${on ? ' on' : ''}${right ? ' right' : ''}`}
+      aria-sort={on ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+      title={label}
+      onClick={() => onSort(k)}
+      // 목록 포커스(키보드 조작)를 빼앗지 않는다.
+      onMouseDown={(ev) => ev.preventDefault()}
+    >
+      <span className="lbl">{label}</span>
+      {on && <Arrow size={11} aria-hidden="true" />}
+    </button>
+  );
 }
 
 export function SftpList(p: ListProps) {
@@ -130,11 +154,11 @@ export function SftpList(p: ListProps) {
 
   return (
     <div className="sftp-list" tabIndex={0} onKeyDown={onKey} role="listbox" aria-label={t('sftp.fileList')} aria-multiselectable="true">
-      <div className="sftp-head" aria-hidden="true">
+      <div className="sftp-head" role="presentation">
         <span />
-        <span>{t('sftp.colName')}</span>
-        <span style={{ textAlign: 'right' }}>{t('sftp.colSize')}</span>
-        <span style={{ textAlign: 'right' }}>{t('sftp.colModified')}</span>
+        <SortHead k="name" label={t('sftp.colName')} sort={p.sort} onSort={p.onSort} />
+        <SortHead k="size" label={t('sftp.colSize')} sort={p.sort} onSort={p.onSort} right />
+        <SortHead k="mtime" label={t('sftp.colModified')} sort={p.sort} onSort={p.onSort} right />
       </div>
       {p.entries.length === 0 && (
         <div className="sftp-empty">{p.local ? t('sftp.emptyCopy') : t('sftp.emptyUpload')}</div>
