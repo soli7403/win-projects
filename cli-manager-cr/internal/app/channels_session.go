@@ -19,6 +19,7 @@ type hostRecord struct {
 	M_szHost           string            `json:"host"`
 	M_iPort            int               `json:"port"`
 	M_szUsername       string            `json:"username"`
+	M_szGroupId        string            `json:"groupId"`
 	M_szColor          string            `json:"color"`
 	M_szEnv            string            `json:"env"`
 	M_bKeepSession     bool              `json:"keepSession"`
@@ -189,8 +190,8 @@ func (pService *Service) openSession(args sessionOpenArgs) (session.Info, error)
 	if bHasSaved {
 		szId := record.M_szId
 		cfg.Info.M_pszHostId = &szId
-		cfg.Info.M_szColor = record.M_szColor
-		cfg.Info.M_szEnv = record.M_szEnv
+		// 색·환경은 서버에 없으면 폴더 것을 물려받는다 (session.md §1, D105).
+		cfg.Info.M_szColor, cfg.Info.M_szEnv = resolveLook(record, pService.loadGroups())
 	} else {
 		cfg.Info.M_szEnv = "none"
 	}
