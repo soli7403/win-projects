@@ -13,6 +13,7 @@ import { useUi, SNIPPET_RATIO_DEFAULT } from '../state/ui';
 import { Welcome } from './Welcome';
 import { PanelHost, SftpDock } from './RightPanel';
 import { CopyJobs } from './CopyJobs';
+import { useSplitDropHint } from './splitDropHint';
 import { SnippetsPanel } from './SnippetsPanel';
 import { Sidebar } from './Sidebar';
 import { UpdateBadge } from '../ui/UpdateBadge';
@@ -259,9 +260,9 @@ export function Shell() {
   const ratio = useWorkspace((s) => s.groupRatio);
   const canSplit = useWorkspace((s) => s.tabs.length >= 2);
   const snippetsOpen = useUi((s) => s.snippetsOpen);
-  const [dragHint, setDragHint] = useState(false);
+  // 탭을 끄는 동안의 "여기에 놓으면 좌우로 나눕니다" 안내. 끌기가 어떻게 끝나든 지워진다(splitDropHint.ts).
+  const dragHint = useSplitDropHint(!split && canSplit, TAB_MIME, '.tabbar');
   const groupsRef = useRef<HTMLDivElement>(null);
-  const isTabDrag = (e: React.DragEvent) => !split && canSplit && e.dataTransfer.types.includes(TAB_MIME);
   return (
     <div className="app">
       <div className="body">
@@ -290,32 +291,19 @@ export function Shell() {
             <ToolRow vertical />
           </div>
         )}
-        <main
-          className="workspace"
-          onDragOver={(e) => {
-            if (isTabDrag(e)) {
-              e.preventDefault();
-              setDragHint(true);
-            }
-          }}
-          onDragLeave={(e) => {
-            if (e.currentTarget === e.target) setDragHint(false);
-          }}
-          onDrop={() => setDragHint(false)}
-        >
+        <main className="workspace" {...dragHint.zone}>
           <div className={`tabgroups${split ? ' split' : ''}`} ref={groupsRef}>
             <TabGroupColumn group={0} split={split} flex={split ? ratio : 1} />
             {split && <GroupDivider containerRef={groupsRef} />}
             {split && <TabGroupColumn group={1} split={split} flex={100 - ratio} />}
           </div>
-          {dragHint && (
+          {dragHint.show && (
             <div
               className="split-drop"
               onDragOver={(e) => e.preventDefault()}
-              onDragLeave={() => setDragHint(false)}
               onDrop={(e) => {
                 const id = e.dataTransfer.getData(TAB_MIME);
-                setDragHint(false);
+                dragHint.hide();
                 if (!id) return;
                 e.preventDefault();
                 useWorkspace.getState().moveTabToGroup(id, 1);
