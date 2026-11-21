@@ -27,6 +27,24 @@ function tabDot(t: Tab, sessions: Record<string, { info: { state: string }; acti
   return 'closed';
 }
 
+/** 선택되지 않은 탭의 배경에 섞는 세션 색 비율(%)과 선택된 탭의 비율 (shell.md §2.1). */
+const TINT_INACTIVE = 7;
+const TINT_ACTIVE = 14;
+
+/**
+ * 탭의 색 표시(shell.md §2.1, D103).
+ * 색 막대(bar)는 그룹에서 선택된 탭에만 둔다: 세션 색, 없으면 강조색.
+ * 선택되지 않은 탭은 세션 색이 있을 때 옅은 배경(tint)만 가진다.
+ */
+export function tabMark(active: boolean, color: string | undefined): { bar?: string; tint?: string } {
+  const c = color || (active ? 'var(--accent)' : undefined);
+  if (!c) return {};
+  return {
+    bar: active ? c : undefined,
+    tint: `color-mix(in srgb, ${c} ${active ? TINT_ACTIVE : TINT_INACTIVE}%, transparent)`,
+  };
+}
+
 /** 탭 막대. group 을 주면 그 그룹의 탭만 보이는 열 안 탭 막대(화면 나누기, ui/shell.md §2.3). */
 export function TabBar({ group }: { group?: 0 | 1 }) {
   const allTabs = useWorkspace((s) => s.tabs);
@@ -143,7 +161,7 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
         const i = allTabs.indexOf(t);
         const active = t.id === activeId;
         const focusedSid = t.focusedPane ? findPane(t.root, t.focusedPane)?.sessionId : null;
-        const env = focusedSid ? sessions[focusedSid]?.info.color : undefined;
+        const mark = tabMark(active, focusedSid ? sessions[focusedSid]?.info.color : undefined);
         const title = tabTitle(t, sessions);
         const dot = tabDot(t, sessions);
         return (
@@ -198,9 +216,9 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
               activate(t.id);
               openMenu(e.clientX, e.clientY, menuFor(t));
             }}
-            style={env ? { background: `color-mix(in srgb, ${env} ${active ? 14 : 7}%, transparent)` } : undefined}
+            style={mark.tint ? { background: mark.tint } : undefined}
           >
-            {env && <span className="bar" style={{ background: env }} />}
+            {mark.bar && <span className="bar" style={{ background: mark.bar }} />}
             <span className={`dot ${dot}`} />
             <span className="title">{title}</span>
             {t.broadcast && <Radio size={12} color="var(--warn)" aria-label={tr('tab.broadcastAria')} />}
