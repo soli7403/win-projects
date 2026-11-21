@@ -2,7 +2,7 @@
 
 DariTerm is a terminal app for people who work on servers. Use SSH, Telnet, serial devices and your PC's own shells (cmd, PowerShell, WSL) side by side in tabs and split panes. Server passwords and keys are encrypted and stored only on your PC.
 
-> This guide covers version 0.1.0. 한국어: [user-guide.ko.md](./user-guide.ko.md)
+> This guide covers version 1.0.0. 한국어: [user-guide.ko.md](./user-guide.ko.md)
 
 ---
 
@@ -52,6 +52,7 @@ The first launch takes four short steps:
 2. **General** tab: protocol (SSH/Telnet/Serial/Local), display name, address, port, user name.
    - Typing `user@10.0.0.11:22` in the address field fills in user, host and port for you.
    - Set **Environment** to *Production* to get a red border and an extra confirmation before dangerous commands.
+   - A server with no color or environment of its own **inherits them from its folder**. If a folder is *Production*, the servers in it are protected as Production too (an environment set on the server itself wins).
 3. **Sign-in** tab: password / key file / SSH agent / ask every time.
 4. Click **Save and connect**.
 
@@ -93,7 +94,9 @@ When asked for a password, tick **"Save encrypted and sign in automatically next
 | Type the same command into several servers | Ctrl+Shift+B (broadcast input on/off) |
 | Close | Ctrl+Shift+W |
 | Open every server in a folder | Right-click the folder → "Open all folder servers tiled" |
-| Two side-by-side views | Right-click a tab → "Move to right side" |
+| Two side-by-side views | Right-click a tab → "Move to right side", or drag a tab to the right edge and drop it when "Drop here to split left and right" appears |
+
+The tab you are looking at has a color bar on top (its server color, or blue). Other tabs get a light tint of their server color.
 
 ## 7. Import from other apps
 
@@ -116,6 +119,7 @@ Tick what you want and click **Import N**. Passwords are not imported; enter eac
    - **Sort**: click Name, Size, or Modified above the list; click again to reverse (folders stay on top)
    - **Move terminal to this folder (cd)**
 3. **Server-to-server copy**: drag a file from one server's tab to another server's tab. Progress appears in the copy list at the bottom of the window.
+4. **If a transfer drops or is cancelled**: an existing file with the same name on the receiving side keeps its old content (DariTerm writes to a temporary `name.dtpart-xxxxxxxx` and renames it only when done). If a network drop leaves a `.dtpart-` file behind, delete it by hand.
 
 ## 9. Snippets
 

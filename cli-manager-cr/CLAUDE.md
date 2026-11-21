@@ -47,7 +47,8 @@
 | [docs/implementer-start.md](./docs/implementer-start.md) | 구현자 새 세션 시작 절차와 첫 메시지 |
 | [docs/decisions.md](./docs/decisions.md) | 결정 기록 |
 | [CHANGELOG.md](./CHANGELOG.md) | 버전 이력 (배포할 때마다 한 절) |
-| [docs/import-plans/](./docs/import-plans/) | 수정 계획서(원인·코드·테스트). 2026-11-16 의 3건은 구현 완료(D84~D90), 2026-11-17 의 2건도 구현 완료(D92~D94, 화면 보호기 오인 판정 안 C 만 보류) |
+| [docs/releases/](./docs/releases/1.0.0.md) | 버전별 배포 안내(배포 파일·SHA256·설치·업그레이드·배포 전 확인). 최신 1.0.0 (D106) |
+| [docs/import-plans/](./docs/import-plans/) | 수정 계획서(원인·코드·테스트). 2026-11-16 의 3건은 구현 완료(D84~D90), 2026-11-17 의 2건도 구현 완료(D92~D94, 화면 보호기 오인 판정 안 C 만 보류), 2026-11-19·20 의 3건도 구현 완료(D101~D105, 앱 수동 검증은 각 계획서의 수동 표) |
 | [docs/host-settings/](./docs/host-settings/README.md) | 빌드 PC 에 설치한 도구(NSIS 등), 라이선스 서명 비밀키 위치, 점검·설치 스크립트 |
 | [.claude/known-issues.md](./.claude/known-issues.md) | 알려진 지뢰 |
 

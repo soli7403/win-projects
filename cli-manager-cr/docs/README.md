@@ -8,6 +8,7 @@
 - 동작 시나리오(상황 → 조작 → 앱 동작): [한국어](./scenarios.md) · [English](./scenarios.en.md)
 - 사용 설명서: [한국어](./manual/user-guide.ko.md) · [English](./manual/user-guide.en.md)
 - PDF 매뉴얼: [한국어](./manual/DariTerm-user-manual.ko.pdf) · [English](./manual/DariTerm-user-manual.en.pdf) — 다시 만들기 `node tools/manual/build.mjs ko` / `en`
+- 배포 안내(버전별 배포 파일·SHA256·설치·업그레이드·확인 목록): [releases/](./releases/1.0.0.md) — 최신 [1.0.0](./releases/1.0.0.md)
 - Microsoft Store 제출(MSIX `make msix`, 등록 정보, 개인정보 처리방침): [store/](./store/README.md)
 - 빌드 PC 설치 기록: [host-settings/](./host-settings/README.md)
 

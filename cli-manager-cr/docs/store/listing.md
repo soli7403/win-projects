@@ -42,11 +42,12 @@ Free for personal use. Business use requires a license — contact soli97403@gma
 **Additional license terms**
 Free for personal, non-commercial use. Use by or for a business, organization or government requires a paid license per user. Contact soli97403@gmail.com. The full license is shown in the app under Settings > About.
 
-**What's new in this version** (0.3.0 — 이 버전의 새로운 기능, 1500자 이내. 전체 이력은 [CHANGELOG.md](../../CHANGELOG.md))
-- SSH no longer asks for your password again after the screen saver or app lock: a dropped session reconnects with the credentials it signed in with (kept in memory only for that session). If that is not enough, it waits and reconnects as soon as you unlock the app.
-- When the server ends the session (idle auto-logout, exit), DariTerm no longer logs back in on its own. Press Enter to reconnect. Network drops still reconnect automatically.
-- File panel: sort by Name, Size or Modified by clicking the column header (click again to reverse; folders stay on top). The header stays visible while scrolling.
-- Fixed rare out-of-order input when keys were sent in very quick succession (e.g. right after Korean/Japanese/Chinese input composition).
+**What's new in this version** (1.0.0 — 이 버전의 새로운 기능, 1500자 이내. 전체 이력은 [CHANGELOG.md](../../CHANGELOG.md))
+DariTerm 1.0 — the first full release.
+- File transfers are safer: uploads, downloads, copies and edit-and-save now write to a temporary name and replace the file only when finished. If a transfer drops or is cancelled, the existing file keeps its old content and permissions.
+- Servers without their own color or environment now inherit them from their folder. A server in a Production folder gets the red border and the dangerous-command check.
+- The selected tab is easy to spot: the color bar on top follows the tab you select (blue if the server has no color).
+- The "drop here to split" hint appears only when you drag a tab to the right edge, and no longer stays on screen after a cancelled drag.
 
 ## 한국어 (ko-kr)
 
@@ -88,8 +89,9 @@ SSH, 텔넷, 시리얼 포트로 접속하거나 로컬 셸(명령 프롬프트,
 **추가 사용 조건**
 개인의 비상업적 사용은 무료입니다. 기업·단체·공공기관에서 또는 이를 위해 사용하려면 사용자별 유료 라이선스가 필요합니다. 문의: soli97403@gmail.com. 전체 라이선스는 앱의 설정 > 정보에서 볼 수 있습니다.
 
-**이 버전의 새로운 기능** (0.3.0)
-- 화면 보호기·앱 잠금 뒤에 SSH 비밀번호를 다시 묻지 않습니다. 끊긴 세션은 처음 접속에 쓴 계정으로 다시 연결합니다(그 세션의 메모리에만 보관). 그래도 안 되면 기다렸다가 앱 잠금을 풀면 곧바로 다시 연결합니다.
-- 서버가 세션을 끝내면(유휴 자동 로그아웃, exit) 저절로 다시 로그인하지 않습니다. Enter 를 누르면 다시 연결합니다. 네트워크 끊김은 지금처럼 자동으로 다시 연결합니다.
-- 파일 창: 머리 줄의 이름·크기·수정일을 눌러 정렬(다시 누르면 반대 순서, 폴더는 항상 위). 스크롤해도 머리 줄이 보입니다.
-- 아주 빠르게 연달아 보낸 입력(한글 조합 직후의 키 등)의 순서가 드물게 바뀌던 문제를 고쳤습니다.
+**이 버전의 새로운 기능** (1.0.0)
+DariTerm 1.0 — 첫 정식 버전입니다.
+- 파일 전송이 더 안전해졌습니다: 올리기·받기·복사·편집 저장은 임시 이름에 쓰고 끝나야 원래 파일을 바꿉니다. 전송이 끊기거나 취소돼도 기존 파일은 전 내용과 권한 그대로입니다.
+- 색·환경을 정하지 않은 서버는 폴더의 색·환경을 물려받습니다. "운영" 폴더 안의 서버는 빨간 테두리와 위험 명령 확인을 받습니다.
+- 선택한 탭이 잘 보입니다: 위쪽 색 막대가 선택한 탭을 따라갑니다(서버 색이 없으면 파랑).
+- "여기에 놓으면 좌우로 나눕니다" 안내는 탭을 오른쪽 가장자리로 끌 때만 나오고, 끌기를 취소하면 사라집니다.

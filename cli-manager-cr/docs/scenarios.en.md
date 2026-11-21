@@ -1,6 +1,6 @@
 # DariTerm behavior scenarios
 
-> English version of [scenarios.md](./scenarios.md) (as of 2026-11-14, app 0.1.0). Format: "situation → what you do → what the app does".
+> English version of [scenarios.md](./scenarios.md) (as of 2026-11-21, app 1.0.0). Format: "situation → what you do → what the app does".
 
 ## Contents
 
@@ -40,7 +40,7 @@
 |---|---|---|---|
 | 2-1 | App start | — | Lock screen "DariTerm is locked". Enter the app lock password → [Unlock]. |
 | 2-2 | Unlock with Windows | Settings > Security "Unlock with Windows sign-in" on | The lock screen shows [Unlock with Windows account] (DPAPI). |
-| 2-3 | Stepping away | — | Locks automatically after 15 minutes without input (setting, 0 = off) or when Windows locks/sleeps. **Connected sessions stay open** (the lock screen covers them). |
+| 2-3 | Stepping away | — | Locks automatically after 15 minutes without input (setting, 0 = off) or when Windows locks/sleeps. **Connected sessions stay open** (the lock screen covers them). If SSH drops while locked, the session reconnects with the credentials it first signed in with, without asking; if that is not enough it shows "Will reconnect when you unlock the app." and reconnects as soon as you unlock. |
 | 2-4 | Lock now | Click "Unlocked" in the status bar, or Quick connect `> Lock app` | Locks immediately. |
 | 2-5 | Wrong password | — | "The password is incorrect". |
 | 2-6 | Forgot password | [Forgot the password? Reset with recovery code] | 24-character recovery code + new password → saved accounts are kept. |
@@ -56,7 +56,7 @@
 | 3-3 | Saving a password while locked | [Save] | "The app is locked, so the password cannot be saved". |
 | 3-4 | PPK v3 key | Choose key file | "Convert PPK v3 keys with PuTTYgen → Conversions → Export OpenSSH key". OpenSSH·PEM·PPK v2 work (key contents are stored encrypted). |
 | 3-5 | Folders | [Add folder], right-click a folder (New subfolder · Edit folder · Delete) | Servers inherit the folder's environment color. Delete: empty folders go immediately; with servers you choose [Delete servers too] / [No (delete folder only — servers move up)] / [Cancel]. |
-| 3-6 | Environment | Environment = Production/Staging/Load test/Development/Network device | Shown as a color bar and pill. **Production** gets a red border and a dangerous-command check (6-6). |
+| 3-6 | Environment | Environment = Production/Staging/Load test/Development/Network device | Shown as a color bar and pill. **Production** gets a red border and a dangerous-command check (6-6). A server with no color or environment of its own inherits them from its folder (and parent folders) — color order: server color → server environment → folder color → folder environment. A server inside a Production folder is protected as Production. The color bar on top of a tab appears on the selected tab only (blue if it has no color); other tabs keep a light tint of their server color. |
 | 3-7 | Search | Sidebar "Search servers" | Filters by name, address and tags. Otherwise "No servers match …". |
 | 3-8 | Favorites and recent | Right-click a server "Add to favorites" | "Favorites" and "Recent" sections at the top of the list. |
 | 3-9 | Move | Drag servers/folders onto another folder | Reorders/moves and saves right away. |
@@ -119,7 +119,7 @@
 | 7-4 | Maximize a pane | Ctrl+Shift+Enter / header [Maximize] | That pane only ↔ restore. |
 | 7-5 | Switch tabs | Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1–8, Ctrl+9 (last), Ctrl+Shift+←/→ (reorder) | |
 | 7-6 | Tab menu | Right-click a tab | Rename tab (also double-click) · Move to right/left side · Merge into one view · Broadcast input · Split panes into tabs · Tile all tabs in one view · Close other tabs · Close tab. |
-| 7-7 | Two side-by-side views | Drag a tab to the right edge / "Move to right side" | Tabs split into left and right groups (max 2). Drag the divider to resize. |
+| 7-7 | Two side-by-side views | Drag a tab to the right edge / "Move to right side" | Dragging a tab into the right edge of the workspace (10% of its width, at least 100 px) shows "Drop here to split left and right" over the right half; dropping splits the tabs into left and right groups (max 2). Esc, dropping elsewhere or dragging back to the left half removes the hint. Drag the divider to resize. |
 | 7-8 | Same command to many panes | Ctrl+Shift+B (this tab), top-left chain icon (all visible panes) | "Broadcast on" → input goes to every pane. Only with 2+ panes. |
 | 7-9 | Close a tab | Ctrl+Shift+W, the tab's X, middle-click | With several connections: "Close all N connections in this tab?". |
 | 7-10 | Reopen an open server | Pick an already-open server in the sidebar | Jump to that pane or open another (Open beside / Open new buttons). |
@@ -128,11 +128,11 @@
 
 | # | Situation | What you do | What the app does |
 |---|---|---|---|
-| 8-1 | Browse server files | Ctrl+Shift+S / top-right icon | SFTP panel: files of the current pane's SSH session (name, size, modified). Parent folder, home, path field, refresh, new folder, upload, [Move terminal to this folder (cd)]. |
+| 8-1 | Browse server files | Ctrl+Shift+S / top-right icon | SFTP panel: files of the current pane's SSH session (name, size, modified; click a column header to sort, again to reverse, folders stay on top, header stays visible). Parent folder, home, path field, refresh, new folder, upload, [Move terminal to this folder (cd)]. |
 | 8-2 | Local terminal files | Same shortcut in a local session | "Files" panel: this PC's start folder. |
 | 8-3 | File context menu | — | Open/Preview · Download (local: copy to another folder) · Edit with an app on this PC (auto-upload on save) · Type path into terminal · cd · Copy path · Rename · Change permissions (not on local Windows) · Delete (permanent-delete confirmation). |
 | 8-4 | Preview | Double-click a file | Text and images up to 512 KB. Otherwise "Preview is not available for this file". |
-| 8-5 | Upload | Drag files from Explorer onto the SFTP list | "Drop here to upload to …" → progress in the transfer list. |
+| 8-5 | Upload | Drag files from Explorer onto the SFTP list | "Drop here to upload to …" → progress in the transfer list. While writing, DariTerm writes to `name.dtpart-xxxxxxxx` in the same folder and renames it when done — if the transfer drops or is cancelled, an existing file with the same name keeps its old content and permissions. A `.dtpart-` file left behind by a network drop must be deleted by hand (downloads, copies and edit-and-save work the same way). |
 | 8-6 | Server → server copy | Drag from one tab's SFTP list to another server's tab (terminal or list) | Asks before overwriting the same names. Copies through a temp folder on this PC (Settings > File transfer) and deletes the temp files afterwards. The **copy list** at the bottom shows phase, progress, [Cancel], [Clear finished]. A folder cannot be copied into itself. |
 | 8-7 | Clean up old uploads | Settings > File transfer | Deletes uploads starting with `dt-` after N days (default 7, 0 = off). |
 
@@ -169,6 +169,7 @@
 | # | Situation | What the app does |
 |---|---|---|
 | 12-1 | Connection drops | "Disconnected: …", then reconnects at 2, 4, 8, 16, 30 s, up to 5 times (setting). Serial does not reconnect automatically. |
+| 12-1a | Server ended the session | When the shell ends on the server (idle auto-logout, `exit`), DariTerm does not log back in; it shows "The server ended the session." + "Press Enter to reconnect." Only network drops reconnect automatically. |
 | 12-2 | Reconnecting gave up | "Press Enter to reconnect." → Enter reconnects immediately. The pane header [Reconnect] does the same. |
 | 12-3 | First connection failed | No automatic reconnect; the error is shown. |
 | 12-4 | Keep session with tmux | Server Advanced "Keep session (tmux)": programs on the server keep running after you close the pane or app, and reopening reattaches to the same screen. Without tmux it says so and works normally. On local Windows, WSL shells only. |
@@ -181,7 +182,7 @@
 | Appearance | Language · app theme (Dark/Light) · 6 terminal color themes (DariTerm Dark·Light, PuTTY Classic, Solarized Dark, Monokai, Nord) · font, size, line spacing · remember window size and position · [Reset to default size] · cursor style · scrollback lines · maximum vertical panes · blinking cursor · bell sound |
 | Input | Copy on select · paste with right click · paste with Ctrl+V · new line with Shift+Enter · OSC 52 · ask before pasting multiple lines · production dangerous-command warning and pattern list |
 | File transfer | Server upload folder · auto-delete days · temp folder for server-to-server copies · quote paths |
-| Connection | Reconnect when disconnected · restore last layout · log terminal output · log folder |
+| Connection | Reconnect when disconnected · restore last layout · log terminal output · log folder · log retention (default 30 days, 0 = keep) |
 | git sync | Repository address · Sync now · automatic sync |
 | Security | Auto-lock (minutes) · unlock with Windows sign-in · change password · saved accounts |
 | Backup | Export · Import |
