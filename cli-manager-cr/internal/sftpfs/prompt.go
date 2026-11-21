@@ -2,6 +2,7 @@ package sftpfs
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -102,12 +103,11 @@ func (pService *Service) CleanupOldRemotePrompt(szRemoteDir string, iDays int, t
 func (pService *Service) UploadPromptBytes(bData []byte, szGivenName string, szRemoteDir string, tNow time.Time) (string, error) {
 	szName := PromptImageName(tNow, RandHex4(), szGivenName)
 	szRemote := path.Join(szRemoteDir, szName)
-	dst, errCreate := pService.be.OpenWrite(szRemote)
-	if errCreate != nil {
-		return "", errCreate
-	}
-	defer dst.Close()
-	if _, errWrite := dst.Write(bData); errWrite != nil {
+	errWrite := writeReplace(pService.be, szRemote, func(dst io.Writer) error {
+		_, errData := dst.Write(bData)
+		return errData
+	})
+	if errWrite != nil {
 		return "", errWrite
 	}
 	return szRemote, nil

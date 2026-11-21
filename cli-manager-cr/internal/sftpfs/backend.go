@@ -1,6 +1,7 @@
 package sftpfs
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -29,6 +30,10 @@ type Backend interface {
 	MkdirAll(szPath string) error
 	Rename(szOld string, szNew string) error
 	Chmod(szPath string, mode fs.FileMode) error
+	// Replace 는 이름을 바꾸되 szNew 가 이미 있으면 그것을 대신한다 (임시 이름으로 쓴 파일을 제자리에 놓을 때).
+	Replace(szOld string, szNew string) error
+	// OwnerKey 는 파일의 소유자·그룹을 비교용 문자열로 돌려준다. 알 수 없으면 빈 값.
+	OwnerKey(info fs.FileInfo) string
 	// RemoveFile 은 파일·링크를, RemoveDir 은 빈 폴더를 지운다.
 	RemoveFile(szPath string) error
 	RemoveDir(szPath string) error
@@ -69,6 +74,36 @@ func (be sftpBackend) Join(szDir string, szName string) string { return path.Joi
 func (be sftpBackend) Base(szPath string) string               { return path.Base(szPath) }
 func (be sftpBackend) Dir(szPath string) string                { return path.Dir(szPath) }
 func (be sftpBackend) Separator() string                       { return "/" }
+
+// G_cszPosixRename 은 대상이 있어도 바꾸는 이름 바꾸기 확장 이름이다 (OpenSSH).
+const G_cszPosixRename = "posix-rename@openssh.com"
+
+// Replace 는 OpenSSH 확장(posix-rename)이 있으면 그것으로 한 번에 바꾼다.
+// 없는 서버는 표준 이름 바꾸기가 대상이 있을 때 실패할 수 있어, 실패하면 대상을 지우고 다시 한다.
+func (be sftpBackend) Replace(szOld string, szNew string) error {
+	if _, bPosix := be.client.HasExtension(G_cszPosixRename); bPosix {
+		return be.client.PosixRename(szOld, szNew)
+	}
+	errRename := be.client.Rename(szOld, szNew)
+	if errRename == nil {
+		return nil
+	}
+	if _, errStat := be.client.Lstat(szNew); errStat != nil {
+		return errRename
+	}
+	if errRemove := be.client.Remove(szNew); errRemove != nil {
+		return errRename
+	}
+	return be.client.Rename(szOld, szNew)
+}
+
+// OwnerKey 는 서버가 알려 준 uid:gid 다.
+func (be sftpBackend) OwnerKey(info fs.FileInfo) string {
+	if pStat, bOk := info.Sys().(*sftp.FileStat); bOk {
+		return fmt.Sprintf("%d:%d", pStat.UID, pStat.GID)
+	}
+	return ""
+}
 
 // LocalBackend 는 이 PC 의 파일시스템이다.
 type LocalBackend struct{}
@@ -114,6 +149,10 @@ func (LocalBackend) Join(szDir string, szName string) string     { return filepa
 func (LocalBackend) Base(szPath string) string                   { return filepath.Base(szPath) }
 func (LocalBackend) Dir(szPath string) string                    { return filepath.Dir(szPath) }
 func (LocalBackend) Separator() string                           { return string(filepath.Separator) }
+
+// Replace 는 os.Rename 이다 (Windows·Unix 모두 대상 파일이 있으면 대신한다).
+func (LocalBackend) Replace(szOld string, szNew string) error { return os.Rename(szOld, szNew) }
+func (LocalBackend) OwnerKey(info fs.FileInfo) string         { return localOwnerKey(info) }
 
 // isHomeRef 는 "~", "~/x", "~\x" 인지와 나머지 부분을 돌려준다.
 func isHomeRef(szPath string) (bool, string) {

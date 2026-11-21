@@ -209,15 +209,10 @@ func (pService *Service) uploadFile(szLocal string, szRemote string, report func
 		return errOpen
 	}
 	defer src.Close()
-	dst, errCreate := pService.be.OpenWrite(szRemote)
-	if errCreate != nil {
-		return errCreate
-	}
-	_, errCopy := io.Copy(dst, &progressReader{r: src, report: report})
-	if errClose := dst.Close(); errCopy == nil {
-		errCopy = errClose
-	}
-	return errCopy
+	return writeReplace(pService.be, szRemote, func(dst io.Writer) error {
+		_, errCopy := io.Copy(dst, &progressReader{r: src, report: report})
+		return errCopy
+	})
 }
 
 // DownloadPaths 는 원격 파일·폴더를 로컬 폴더 아래로 받는다. 개별 파일 실패는 그 항목에만 표시하고 계속한다.
@@ -273,15 +268,11 @@ func (pService *Service) downloadFile(szRemote string, szLocal string, report fu
 	if errMkdir := os.MkdirAll(filepath.Dir(szLocal), 0o700); errMkdir != nil {
 		return errMkdir
 	}
-	dst, errCreate := os.OpenFile(szLocal, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
-	if errCreate != nil {
-		return errCreate
-	}
-	_, errCopy := io.Copy(dst, &progressReader{r: src, report: report})
-	if errClose := dst.Close(); errCopy == nil {
-		errCopy = errClose
-	}
-	return errCopy
+	// 새 파일은 소유자 전용(0600)으로 만든다.
+	return writeReplace(privateLocal{}, szLocal, func(dst io.Writer) error {
+		_, errCopy := io.Copy(dst, &progressReader{r: src, report: report})
+		return errCopy
+	})
 }
 
 // progressReader 는 읽은 바이트를 누적해 알린다.

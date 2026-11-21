@@ -126,7 +126,7 @@ func StartCopy(req CopyRequest) (CopyStart, error) {
 	return result, nil
 }
 
-// CancelCopy 는 진행 중인 작업을 취소한다. 쓰던 파일은 중간까지 남을 수 있다.
+// CancelCopy 는 진행 중인 작업을 취소한다. 쓰던 파일은 임시 이름이라 지워지고 대상 이름의 파일은 그대로다 (D104).
 func CancelCopy(szJobId string) {
 	g_mtxCopyRuns.Lock()
 	pRun := g_mapCopyRuns[szJobId]
@@ -325,15 +325,11 @@ func (pRun *copyRun) copyFile(srcBe Backend, szSrc string, dstBe Backend, szDst 
 		return errOpen
 	}
 	defer src.Close()
-	dst, errCreate := dstBe.OpenWrite(szDst)
-	if errCreate != nil {
-		return errCreate
-	}
-	_, errCopy := io.Copy(&copyWriter{w: dst, pRun: pRun}, src)
-	if errClose := dst.Close(); errCopy == nil {
-		errCopy = errClose
-	}
-	return errCopy
+	// 임시 이름에 쓰고 끝까지 쓴 뒤에만 대상 이름으로 바꾼다 (D104). 취소·실패면 대상은 그대로다.
+	return writeReplace(dstBe, szDst, func(dst io.Writer) error {
+		_, errCopy := io.Copy(&copyWriter{w: dst, pRun: pRun}, src)
+		return errCopy
+	})
 }
 
 // copyWriter 는 쓴 바이트를 작업 진행에 더하고, 취소되면 멈춘다.
