@@ -12,7 +12,7 @@
 - **호스트·사용자**: `HostName` 에 `사용자@호스트` 가 들어 있으면 분리(`UserName` 이 이미 있으면 그 값 우선).
 - **포트**: `PortNumber`(없으면 22, 텔넷이고 값이 없으면 23).
 - **포트 포워딩**: `PortForwardings` 를 쉼표로 나눠 각 항목을 `[4|6]{L|R|D}[바인드:]포트=대상호스트:대상포트` 로 해석. **`D`(동적)는 건너뜀**. 바인드가 없으면 `127.0.0.1`, 대상 호스트가 없으면 `localhost`. 각 항목은 새 id 를 가진 포워딩.
-- **인코딩**: `LineCodePage`(없으면 UTF-8) 매핑 — `UTF-8`→utf-8, `CP949`→cp949, `EUC-KR`→euc-kr, `Shift_JIS`→shift_jis, `ISO-8859-1:1998 (Latin-1, West Europe)`→latin1, 그 외는 이름에 `949` 또는 `euc-kr`(대소문자 무시)가 들어 있으면 cp949, 아니면 utf-8.
+- **인코딩**: `LineCodePage`(없으면 UTF-8) 매핑 — `UTF-8`→utf-8, `CP949`→cp949, `EUC-KR`→euc-kr, `Shift_JIS`→shift_jis, `ISO-8859-1:1998 (Latin-1, West Europe)`→latin1, 그 외는 이름에(대소문자 무시) `949` 또는 `euc-kr` 이 들어 있으면 cp949, `euc-jp` 면 euc-jp, `gbk`·`936`·`gb2312` 면 gbk, `big5`·`950` 이면 big5(뒤의 셋은 2026-11-23 D118), 아니면 utf-8.
 - **터미널 종류**: `TerminalType`(비어 있거나 `xterm` 이면 `xterm-256color`).
 - **연결 유지**: `PingIntervalSecs`, 없으면 `PingInterval`, 값이 0 이거나 없으면 30.
 - **인증**: `PublicKeyFile` 이 있으면 `key`(후보의 keyFile = 그 경로), 아니면 `password`.
@@ -33,7 +33,7 @@
 - 건너뛰는 세션: ssh·telnet 인데 `Hostname` 이 빈 것.
 - **호스트·사용자**: `Hostname`, `Username`.
 - **포트**: SSH2 는 `[SSH2] Port`, SSH1 은 `[SSH1] Port`, 텔넷은 `Port`. 없거나 0 이면 22(텔넷 23).
-- **인코딩**: `Output Transformer Name` — `UTF-8`(또는 없음·`Default`)→utf-8, 이름에 `949`·`euc-kr`·`korean`(대소문자 무시)이 있으면 cp949, `shift`·`japanese` 가 있으면 shift_jis, `8859-1`·`latin` 이 있으면 latin1, 그 외 utf-8.
+- **인코딩**: `Output Transformer Name` — `UTF-8`(또는 없음·`Default`)→utf-8, 이름에 `949`·`euc-kr`·`korean`(대소문자 무시)이 있으면 cp949, `euc-jp`·`eucjp` 또는 (`japanese` 와 `euc` 가 함께) 있으면 euc-jp, 그 밖에 `shift`·`japanese` 가 있으면 shift_jis, `gbk`·`936`·`gb2312` 가 있으면 gbk, `big5`·`950` 이 있으면 big5(euc-jp·gbk·big5 는 2026-11-23 D118), `8859-1`·`latin` 이 있으면 latin1, 그 외 utf-8.
 - **터미널 종류**: 옮기지 않는다(적용 기본값 xterm-256color). SecureCRT 기본 에뮬레이션(VT100)을 그대로 쓰면 원격 프로그램의 색이 줄기 때문.
 - **연결 유지**: `Idle NO-OP Check` 가 0 이 아니고 `Idle NO-OP Timeout` 이 양수면 그 초, 아니면 30.
 - **인증·키 파일**: `Use Global Public Key` 가 0 이면 세션의 `Identity Filename V2`, 아니면(없음 포함) 설정 폴더 `SSH2.ini` 의 `Identity Filename V2`. 값이 비어 있지 않으면 인증 `key`·keyFile 은 그 경로(값에 `::` 가 있으면 그 앞까지, `%이름%`·`${이름}` 은 환경 변수로 바꾸고 `${VDS_CONFIG_PATH}` 는 설정 폴더). 비어 있으면 `password`. **저장된 비밀번호(`Password V2` 등)는 읽지 않는다.**

@@ -29,6 +29,12 @@ go run ./tools/licensekey issue "$env:USERPROFILE\.dariterm-signing\license-ed25
 
 출력된 `DT1.…` 한 줄을 앱의 설정 > 정보 > 사용 형태에 붙여 넣는다.
 
+## 발급 대장
+
+- 발급한 키는 `%USERPROFILE%\.dariterm-signing\issued.md`(번호·회사·사용자 수·기한)와 `<ID>.txt`(키 원문)에 남긴다. 고객 정보라 저장소에는 넣지 않는다.
+- 번호는 `DT-<연도>-<4자리 일련번호>`. 새로 발급할 때 대장의 마지막 번호 다음을 쓴다.
+- 기간제는 `-exp` 를 발급일 + 기간으로 넣는다(만료일 당일까지 유효, spec/behavior/license.md). 기간제는 `-ver 0`(모든 버전)으로 둔다.
+
 ## 되돌리기
 
 파일을 지우면 된다(단, 위 "잃어버리면"과 같아진다).

@@ -116,7 +116,8 @@
 | `sync.run` | 모드(`""` / `pull-vault` / `overwrite`) | 상태 `{state, message?, lastSync?, changed?}` |
 | `sync.status` | | `{configured, gitAvailable, last}` — **`last` 는 항상 객체**이며 동기화한 적이 없으면 `{"state":""}`(나머지 필드 생략). null 이 아니다 |
 | `update.check` | | `{status: newer\|latest\|error\|unconfigured, version?, url?}` (수동 확인 — 새 버전이면 안내 이벤트에 "알림 필요" 표시) |
-| `update.status` | | 마지막으로 발견한 새 버전 `{status, version, url}` 또는 null |
+| `update.status` | | 마지막으로 발견한 새 버전 `{status, version, url, store?}` 또는 null |
+| `update.install` | | `{started}` — Microsoft Store 설치본이면 Windows 의 업데이트 확인 창을 띄우고 곧바로 `started: true`(결과는 `toast` 이벤트). 그 밖의 실행은 아무 일도 하지 않고 `started: false` (lifecycle.md §6.1, D115) |
 
 ## 3. 인증·확인 요청 (백엔드가 묻는 방식)
 백엔드가 `ui.request` 이벤트로 질문을 보내고 프런트가 `Reply(requestId, 값JSON)` 로 답한다. **요청 객체의 id 필드 이름은 `requestId`** 이며 `kind` 와 아래 표의 필드를 함께 가진다. **응답이 `null` 이거나 10분 안에 없으면 "취소"** 로 본다. 종류와 응답 값:
@@ -140,4 +141,4 @@
 | `store.changed` | | 백엔드가 저장 데이터를 바꿨을 때(가져오기·동기화·비밀번호 저장 등) — 프런트가 다시 읽는다 |
 | `toast` | `{kind: ok\|error\|info, text}` | 백엔드가 띄우는 알림 |
 | `sync.status` | 동기화 상태 — **`sync.run` 의 결과와 같은 형태** `{state, message?, lastSync?, changed?}` | 동기화 종료마다 |
-| `update.available` | `{version, url, announce}` | 새 버전 발견(announce 는 처음 발견했거나 수동 확인일 때 true) |
+| `update.available` | `{version, url, announce, store?}` | 새 버전 발견(announce 는 처음 발견했거나 수동 확인일 때 true. store 는 Microsoft Store 에서 찾았을 때만 true 로 붙는다) |

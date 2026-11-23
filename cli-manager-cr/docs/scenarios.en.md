@@ -106,7 +106,7 @@
 | 6-8 | Font size | Ctrl+= / Ctrl+- / Ctrl+0 | 8–32; Ctrl+0 resets to 14. Saved in settings. |
 | 6-9 | Multi-line input (Claude Code, etc.) | Shift+Enter | New line without running (setting, on by default). |
 | 6-10 | Server writes the clipboard | tmux, vim, etc. copy via OSC 52 | Put on this PC's clipboard (setting; read requests are always refused). |
-| 6-11 | Log output | Settings > Connection "Log terminal output" on (off by default) | From connections opened afterwards, output is saved to text files. [Open log folder]. |
+| 6-11 | Log output | Settings > Logs "Log terminal output" on (off by default) | Open connections start saving output to text files from that moment, new connections from the start. Turning it off stops recording. [Open log folder]. With "Keep ANSI codes" on (off by default) the log keeps color and cursor codes exactly as received. |
 | 6-12 | Pane context menu | Right-click a pane | Clear screen, Select all, Copy, Paste, Paste image, Find, Same server to the right/below, Open SFTP (file) panel, Reconnect, Close pane. |
 
 ## 7. Tabs and split panes
@@ -169,20 +169,21 @@
 | # | Situation | What the app does |
 |---|---|---|
 | 12-1 | Connection drops | "Disconnected: …", then reconnects at 2, 4, 8, 16, 30 s, up to 5 times (setting). Serial does not reconnect automatically. |
-| 12-1a | Server ended the session | When the shell ends on the server (idle auto-logout, `exit`), DariTerm does not log back in; it shows "The server ended the session." + "Press Enter to reconnect." Only network drops reconnect automatically. |
+| 12-1a | Server ended the session | When you end the shell yourself (`exit`, `logout` — there was input within the last 10 s, or the connection was under 10 s old), DariTerm does not log back in; it shows "The server ended the session." + "Press Enter to reconnect." When the server ends an idle session (idle auto-logout, an admin closing it, a server restart), it reconnects automatically like a dropped connection. |
 | 12-2 | Reconnecting gave up | "Press Enter to reconnect." → Enter reconnects immediately. The pane header [Reconnect] does the same. |
 | 12-3 | First connection failed | No automatic reconnect; the error is shown. |
 | 12-4 | Keep session with tmux | Server Advanced "Keep session (tmux)": programs on the server keep running after you close the pane or app, and reopening reattaches to the same screen. Without tmux it says so and works normally. On local Windows, WSL shells only. |
 | 12-5 | Local shell exits | "Shell exited" → Enter starts a new shell. |
 
-## 13. Settings (gear icon, 8 sections)
+## 13. Settings (gear icon, 9 sections)
 
 | Section | Main items |
 |---|---|
 | Appearance | Language · app theme (Dark/Light) · 6 terminal color themes (DariTerm Dark·Light, PuTTY Classic, Solarized Dark, Monokai, Nord) · font, size, line spacing · remember window size and position · [Reset to default size] · cursor style · scrollback lines · maximum vertical panes · blinking cursor · bell sound |
 | Input | Copy on select · paste with right click · paste with Ctrl+V · new line with Shift+Enter · OSC 52 · ask before pasting multiple lines · production dangerous-command warning and pattern list |
 | File transfer | Server upload folder · auto-delete days · temp folder for server-to-server copies · quote paths |
-| Connection | Reconnect when disconnected · restore last layout · log terminal output · log folder · log retention (default 30 days, 0 = keep) |
+| Connection | Reconnect when disconnected · restore last layout |
+| Logs | Log terminal output · timestamp each log line · keep ANSI codes · keep session logs (days; default 30, 0 = keep) · log file update interval · log folder |
 | git sync | Repository address · Sync now · automatic sync |
 | Security | Auto-lock (minutes) · unlock with Windows sign-in · change password · saved accounts |
 | Backup | Export · Import |

@@ -44,16 +44,18 @@
 | credentialId | 문자열 또는 null(선택) | 볼트 항목 id |
 | jumpHostId | 문자열 또는 null(선택) | 점프 호스트 서버 id. 값이 `direct` 이면 jumpDirect 사용 |
 | jumpDirect | 객체(선택) | host, port, username, authType(`password`/`key`), credentialId(선택) |
+| agentForward | 불리언(선택) | SSH 에이전트 전달(2026-11-23, D111). 없으면 끔. SSH 만 쓴다 |
+| proxy | 객체(선택) | 프록시 경유(2026-11-23, D110): type(`http`/`socks5`), host, port, username(비면 인증 없음), credentialId(선택, 비밀번호 계정). 없거나 type·host 가 비면 바로 연결. SSH 만 쓴다 |
 | color | 문자열(선택) | |
 | env | 환경 값(선택) | |
 | tags | 문자열 배열 | |
-| encoding | `utf-8` `euc-kr` `cp949` `shift_jis` `latin1` | 새 서버 기본 `utf-8` |
+| encoding | `utf-8` `euc-kr` `cp949` `shift_jis` `euc-jp` `gbk` `big5` `latin1` (`euc-jp`·`gbk`·`big5` 는 2026-11-23 D118) | 새 서버 기본 `utf-8` |
 | termType | 문자열 | 새 서버 기본 `xterm-256color` |
 | startupCommand | 문자열(선택) | 접속 직후 보낼 명령 |
 | keepSession | 불리언(선택) | 세션 유지(tmux) |
 | tmuxName | 문자열(선택) | 비우면 서버 별칭(로컬은 폴더 이름) |
 | keepaliveSec | 숫자 | 새 서버 기본 30 |
-| forwards | 배열 | 포트 포워딩: id, type(`L`/`R`), bindHost, bindPort, destHost, destPort |
+| forwards | 배열 | 포트 포워딩: id, type(`L`/`R`/`D`), bindHost, bindPort, destHost, destPort. `D`(동적, 2026-11-23 D109)는 destHost·destPort 를 쓰지 않는다 |
 | serial | 객체(선택) | path, baudRate, dataBits(5/6/7/8), parity(`none` `even` `odd` `mark` `space`), stopBits(1/1.5/2), flowControl(`none` `rtscts` `xonxoff`), enterSends(`CR` `LF` `CRLF`), localEcho |
 | local | 객체(선택) | shell, cwd (비우면 기본 셸·홈 폴더) |
 | notes | 문자열(선택) | |
@@ -86,6 +88,7 @@
 | confirmMultilinePaste | true | 여러 줄 붙여넣기 확인 |
 | guardDangerousOnProd | true | 운영 환경 위험 명령 확인 |
 | dangerousPatterns | 아래 목록 | 정규식 문자열 배열 |
+| highlightRules | 빈 배열 | 키워드 강조 규칙 배열(2026-11-23, D113). 항목: id, pattern(찾을 글자 또는 정규식), color(`#RRGGBB`), regex, caseSensitive, background(바탕 칠하기), enabled. 순서가 우선순위 ([../behavior/terminal.md](../behavior/terminal.md) §9) |
 | autoReconnect | true | |
 | autoLockMinutes | 15 | 0 이면 자동 잠금 없음 |
 | uploadDir | `~/.dariterm/uploads`  | 붙여넣기 이미지·파일 업로드 폴더 |
@@ -93,8 +96,13 @@
 | maxVerticalSplits | 3 | 탭 하나의 최대 칸 수(상하 분할 한도), 1~5 ([../ui/panes.md](../ui/panes.md) §2) |
 | transferTempDir | `""` | 서버 ↔ 서버 복사 때 거쳐 가는 이 PC 임시 폴더. 빈 값 = OS 임시 폴더 아래 dariterm-transfer ([../behavior/file-panel.md](../behavior/file-panel.md) §4) |
 | insertPathQuote | true | 경로 삽입 시 따옴표 |
+| zmodemEnabled | true | 서버의 sz·rz 로 파일을 주고받는다 ([../behavior/zmodem.md](../behavior/zmodem.md), D114) |
+| zmodemDownloadDir | 빈 문자열 | ZMODEM 으로 받은 파일을 둘 이 PC 폴더. 비면 OS 의 다운로드 폴더 |
 | sessionLog | false | |
 | sessionLogKeepDays | 30 | 세션 로그 보관 일수. 0 이면 지우지 않음 ([../behavior/session.md](../behavior/session.md) §6) |
+| sessionLogTimestamp | false | 세션 로그의 줄마다 앞에 시각을 붙인다 ([../behavior/session.md](../behavior/session.md) §6, D112) |
+| sessionLogAnsi | false | 세션 로그에 ANSI 시퀀스와 CR 을 지우지 않고 받은 그대로 남긴다 ([../behavior/session.md](../behavior/session.md) §6, D120) |
+| sessionLogSyncSec | 2 | 기록 중인 세션 로그를 디스크까지 내려 쓰는 주기(초), 0~5. 0 이면 출력을 받는 즉시 쓰고 내려 쓴다 ([../behavior/session.md](../behavior/session.md) §6, 2026-11-18) |
 | bell | false | |
 | shiftEnterNewline | true | Shift+Enter 로 줄바꿈 입력 |
 | rememberWindow | true | 창 크기·위치 기억 |
