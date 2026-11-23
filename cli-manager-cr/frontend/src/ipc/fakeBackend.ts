@@ -267,6 +267,7 @@ export function createFakeBackend(): Backend {
     'import.apply': ([list]) => ({ hosts: Array.isArray(list) ? list.length : 0, keys: 0, skipped: [] }),
     'sync.run': () => ({ state: 'ok', lastSync: Date.now(), changed: false }),
     'update.check': () => ({ status: 'latest' }),
+    'update.install': () => ({ started: false }),
     'backup.export': () => false,
     'backup.import': () => false,
     // SFTP 채널(fakeSftp.ts). 세션 목록은 이 파일의 sessions 를 그대로 쓴다.

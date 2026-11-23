@@ -8,7 +8,7 @@ import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { useUi, type MenuItem } from '../state/ui';
 import { effectiveColor } from '../lib/hosts';
-import { openFolderGrid, openHost } from '../state/actions';
+import { openHost } from '../state/actions';
 import { HOST_MIME } from './Panes';
 import { focusActiveTerminal } from './TerminalView';
 import { rangeSelection, toggleSelection } from '../lib/multiSelect';
@@ -281,7 +281,6 @@ export function Sidebar() {
     { label: tr('loc.newTab'), shortcut: 'Enter', onSelect: () => void openHost(h.id) },
     { label: tr('sb.openRight'), onSelect: () => void openHost(h.id, { kind: 'rightGroup' }) },
     { label: tr('sb.openBelow'), onSelect: () => void openHost(h.id, { kind: 'split', dir: 'col' }) },
-    { label: tr('sb.chooseLocation'), onSelect: () => useUi.getState().openLocation(h.id) },
     { separator: true },
     { label: tr('common.edit'), shortcut: 'F2', onSelect: () => openEditor({ kind: 'host', hostId: h.id, groupId: null }) },
     { label: tr('sb.duplicate'), onSelect: () => void duplicateHost(h) },
@@ -292,8 +291,6 @@ export function Sidebar() {
   ];
 
   const folderMenu = (g: Group): MenuItem[] => [
-    { label: tr('sb.openFolderGrid'), onSelect: () => void openFolderGrid(g.id) },
-    { separator: true },
     { label: tr('sb.addServerHere'), onSelect: () => openEditor({ kind: 'host', hostId: null, groupId: g.id }) },
     { label: tr('sb.newSubfolder'), onSelect: () => openEditor({ kind: 'folder', folderId: null, parentId: g.id }) },
     { label: tr('folder.edit'), onSelect: () => openEditor({ kind: 'folder', folderId: g.id, parentId: g.parentId }) },

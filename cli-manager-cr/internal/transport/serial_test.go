@@ -16,6 +16,9 @@ type fakeSerialPort struct {
 	mtxData  sync.Mutex
 	slWrites []string
 	bClosed  bool
+	bCts     bool  // 장치의 CTS 선 (흐름 제어 시험용)
+	bRts     bool  // 이 PC 가 올린 RTS
+	errBits  error // 모뎀 상태를 읽지 못하는 장치 흉내
 }
 
 func (pFake *fakeSerialPort) SetMode(mode *serial.Mode) error { return nil }
@@ -43,9 +46,19 @@ func (pFake *fakeSerialPort) Drain() error             { return nil }
 func (pFake *fakeSerialPort) ResetInputBuffer() error  { return nil }
 func (pFake *fakeSerialPort) ResetOutputBuffer() error { return nil }
 func (pFake *fakeSerialPort) SetDTR(bDtr bool) error   { return nil }
-func (pFake *fakeSerialPort) SetRTS(bRts bool) error   { return nil }
+func (pFake *fakeSerialPort) SetRTS(bRts bool) error {
+	pFake.mtxData.Lock()
+	defer pFake.mtxData.Unlock()
+	pFake.bRts = bRts
+	return nil
+}
 func (pFake *fakeSerialPort) GetModemStatusBits() (*serial.ModemStatusBits, error) {
-	return &serial.ModemStatusBits{}, nil
+	pFake.mtxData.Lock()
+	defer pFake.mtxData.Unlock()
+	if pFake.errBits != nil {
+		return nil, pFake.errBits
+	}
+	return &serial.ModemStatusBits{CTS: pFake.bCts}, nil
 }
 func (pFake *fakeSerialPort) SetReadTimeout(durTimeout time.Duration) error { return nil }
 func (pFake *fakeSerialPort) Break(durBreak time.Duration) error            { return nil }

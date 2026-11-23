@@ -1,7 +1,7 @@
 // 서버 저장 파이프라인: 계정 저장 → 점프 호스트 베스천 저장 → 서버 객체 조립. 근거: spec/ui/host-editor.md §1.5 3~8번.
 import type { AuthType, CredMeta, Host, Protocol } from '../ipc/types';
 import { getBackend } from '../ipc/backend';
-import { JUMP_DIRECT, localOptions, type JumpDirect, type SerialOpts } from './hostForm';
+import { JUMP_DIRECT, localOptions, PROXY_DEFAULT_PORT, type JumpDirect, type ProxyConf, type ProxyType, type SerialOpts } from './hostForm';
 import { t } from '../i18n';
 
 export interface SaveInput {
@@ -38,6 +38,10 @@ export interface SaveInput {
   /** 점프 호스트: '' 사용 안 함, 'direct' 직접 입력, 그 밖은 서버 id. */
   jumpChoice: string;
   jump: { host: string; port: number; username: string; authType: JumpDirect['authType']; password: string; keyText: string; passphrase: string };
+  /** 프록시 경유: type 이 '' 이면 사용 안 함. password 는 새로 넣었을 때만 값이 있다. */
+  proxy?: { type: ProxyType | ''; host: string; port: number; username: string; password: string };
+  /** SSH 에이전트 전달. */
+  agentForward?: boolean;
 }
 
 /** 계정 저장(§1.5 5번). 기존 계정을 이 서버만 쓰면 갱신, 다른 서버와 공유 중이면 새 항목. */
@@ -113,6 +117,25 @@ export async function buildHostFromForm(i: SaveInput): Promise<Host> {
     jumpHostId = i.jumpChoice;
   }
 
+  // 2-1) 프록시 경유(SSH 만). 비밀번호를 새로 넣었으면 "{별칭} 프록시" 계정으로 저장한다.
+  //      사용자 이름을 비우면 인증 없는 프록시로 보고 계정 연결을 끊는다.
+  let proxy: ProxyConf | undefined;
+  if (i.protocol === 'ssh' && i.proxy && i.proxy.type && i.proxy.host.trim()) {
+    const prev = i.original?.proxy as ProxyConf | undefined;
+    const user = i.proxy.username.trim();
+    let proxyCred = user ? prev?.credentialId ?? null : null;
+    if (user && i.proxy.password) {
+      proxyCred = await saveAccount('password', t('host.proxyAccountName', { alias: i.alias }), user, { password: i.proxy.password }, proxyCred ?? undefined);
+    }
+    proxy = {
+      type: i.proxy.type,
+      host: i.proxy.host.trim(),
+      port: i.proxy.port || PROXY_DEFAULT_PORT[i.proxy.type],
+      username: user,
+      credentialId: proxyCred,
+    };
+  }
+
   const base: Host = i.original ?? {
     id: crypto.randomUUID(),
     groupId: null,
@@ -142,6 +165,8 @@ export async function buildHostFromForm(i: SaveInput): Promise<Host> {
     credentialId,
     jumpHostId,
     jumpDirect,
+    proxy,
+    agentForward: i.protocol === 'ssh' && i.agentForward ? true : undefined,
     groupId: i.folderId || null,
     env: i.env === 'none' ? undefined : i.env,
     color: i.color,

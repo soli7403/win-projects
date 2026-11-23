@@ -7,11 +7,16 @@ import (
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/encoding/korean"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/encoding/traditionalchinese"
 	"golang.org/x/text/transform"
 )
 
 // g_ciMaxBrokenBytes 는 잘린 글자로 볼 수 있는 최대 남은 바이트 수다. 이를 넘으면 잘못된 바이트다 (protocols.md §1.1).
 const g_ciMaxBrokenBytes = 4
+
+// G_cslEncodings 는 서버 설정 encoding 으로 받는 값 전부다 (protocols.md §1.1). utf-8 과 이 밖의 값은 UTF-8 로 다룬다.
+var G_cslEncodings = []string{"utf-8", "cp949", "euc-kr", "shift_jis", "euc-jp", "gbk", "big5", "latin1"}
 
 // encodingByName 은 설정값을 인코더로 바꾼다. utf-8 과 알 수 없는 값은 nil(UTF-8)이다.
 // cp949 와 euc-kr 은 같은 디코더를 쓴다: x/text 의 EUCKR 은 Code Page 949(UHC) 전체 표라 확장 한글("똠" 등)도 된다.
@@ -21,6 +26,13 @@ func encodingByName(szName string) encoding.Encoding {
 		return korean.EUCKR
 	case "shift_jis":
 		return japanese.ShiftJIS
+	case "euc-jp":
+		return japanese.EUCJP
+	case "gbk":
+		// GBK 는 GB2312 를 포함한다. GB2312 로 보내는 장비도 이 값으로 읽힌다 (D118).
+		return simplifiedchinese.GBK
+	case "big5":
+		return traditionalchinese.Big5
 	case "latin1":
 		return charmap.ISO8859_1
 	default:

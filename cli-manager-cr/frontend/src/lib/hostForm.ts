@@ -1,7 +1,7 @@
 // 서버 편집 대화상자의 순수 규칙(입력 나누기, 프로토콜 전환, 검사, 정규화). 근거: spec/ui/host-editor.md §1.1~§1.6.
 // 화면 없이 단위 테스트하기 위해 React 밖에 둔다.
 import type { EnvKind, Host, Protocol } from '../ipc/types';
-import { t, type MsgId } from '../i18n';
+import { t } from '../i18n';
 
 export type SerialParity = 'none' | 'even' | 'odd' | 'mark' | 'space';
 export type SerialFlow = 'none' | 'rtscts' | 'xonxoff';
@@ -40,6 +40,20 @@ export interface JumpDirect {
   authType: 'password' | 'key';
   credentialId?: string | null;
 }
+
+export type ProxyType = 'http' | 'socks5';
+
+/** 프록시 경유 설정(store.md §3 proxy). */
+export interface ProxyConf {
+  type: ProxyType;
+  host: string;
+  port: number;
+  username: string;
+  credentialId?: string | null;
+}
+
+/** 프록시 종류별 기본 포트. */
+export const PROXY_DEFAULT_PORT: Record<ProxyType, number> = { http: 8080, socks5: 1080 };
 
 /** 직접 입력 베스천을 가리키는 jumpHostId 값. */
 export const JUMP_DIRECT = 'direct';
@@ -104,6 +118,10 @@ export function validateHostForm(input: {
   jumpDirect: boolean;
   jumpAddress: string;
   jumpHasSecret: boolean;
+  /** 프록시 경유를 켰는지, 그 주소, 새로 넣은 비밀번호가 있는지 (없으면 검사하지 않는다). */
+  proxyOn?: boolean;
+  proxyHost?: string;
+  proxyHasSecret?: boolean;
 }): { tab: 'basic' | 'auth' | 'adv'; message: string } | null {
   const isNet = input.protocol === 'ssh' || input.protocol === 'telnet';
   if (isNet && !input.host.trim()) return { tab: 'basic', message: t('hostForm.needHost') };
@@ -117,14 +135,12 @@ export function validateHostForm(input: {
       return { tab: 'adv', message: t('hostForm.lockedJump') };
     }
   }
+  if (input.protocol === 'ssh' && input.proxyOn) {
+    if (!(input.proxyHost ?? '').trim()) return { tab: 'adv', message: t('hostForm.needProxy') };
+    if (input.proxyHasSecret && !input.vaultOpen) return { tab: 'adv', message: t('hostForm.lockedProxy') };
+  }
   return null;
 }
-
-/** PuTTY PPK v3 키인지(§1.2, H9). */
-export function isPpkV3(text: string): boolean {
-  return /^PuTTY-User-Key-File-3:/m.test(text.trimStart());
-}
-export const PPK_V3_MESSAGE: MsgId = 'hostForm.ppkV3';
 
 /** 셸 경로가 WSL 인지(세션 유지 카드 표시 조건, §1.3 3번). */
 export function isWslShell(path: string | undefined): boolean {

@@ -10,11 +10,11 @@ import { ColorPicker, Field, Segmented, Switch } from '../ui/Controls';
 import { groupPath, sortGroups } from '../lib/tree';
 import { ENV_INFO } from '../lib/defaults';
 import {
-  fallbackAlias, isPpkV3, isWslShell, JUMP_DIRECT, PPK_V3_MESSAGE, portAfterProtocolChange, serialDefaultsFor,
-  SERIAL_DEFAULTS, splitBastionInput, splitHostInput, tmuxPlaceholder, validateHostForm, type SerialOpts,
+  fallbackAlias, isWslShell, JUMP_DIRECT, portAfterProtocolChange, serialDefaultsFor,
+  SERIAL_DEFAULTS, splitBastionInput, splitHostInput, tmuxPlaceholder, validateHostForm, type ProxyConf, type ProxyType, type SerialOpts,
 } from '../lib/hostForm';
 import { applyHost, buildHostFromForm } from '../lib/hostSave';
-import { ForwardsTable, JumpDirectCard, SerialFields } from './HostEditorParts';
+import { ForwardsTable, JumpDirectCard, ProxyCard, SerialFields } from './HostEditorParts';
 import { t } from '../i18n';
 
 type Tab = 'basic' | 'auth' | 'adv' | 'fwd';
@@ -54,6 +54,9 @@ const ENCODINGS = (): { value: string; label: string }[] => [
   { value: 'utf-8', label: 'UTF-8' },
   { value: 'cp949', label: t('enc.cp949') },
   { value: 'shift_jis', label: 'Shift_JIS' },
+  { value: 'euc-jp', label: 'EUC-JP' },
+  { value: 'gbk', label: 'GBK' },
+  { value: 'big5', label: 'Big5' },
   { value: 'latin1', label: 'Latin-1' },
 ];
 
@@ -121,6 +124,19 @@ export function HostEditor({ hostId, groupId }: Props) {
     };
   });
   const jumpHasSaved = !!(original?.jumpDirect as { credentialId?: string | null } | undefined)?.credentialId;
+  // 프록시 경유(§1.3 2-1번)
+  const [proxy, setProxy] = useState(() => {
+    const p = original?.proxy as Partial<ProxyConf> | undefined;
+    return {
+      type: (p?.type === 'http' || p?.type === 'socks5' ? p.type : '') as ProxyType | '',
+      host: p?.host ?? '',
+      port: p?.port ? String(p.port) : '',
+      username: p?.username ?? '',
+      password: '',
+    };
+  });
+  const [agentForward, setAgentForward] = useState(!!original?.agentForward);
+  const proxyHasSaved = !!(original?.proxy as ProxyConf | undefined)?.credentialId;
 
   // 포워딩·시리얼·로컬
   const [forwards, setForwards] = useState(original?.forwards ?? []);
@@ -200,10 +216,6 @@ export function HostEditor({ hostId, groupId }: Props) {
     try {
       const r = await getBackend().invoke<{ path: string; text: string } | null>('dialog.readKeyFile');
       if (!r) return;
-      if (isPpkV3(r.text)) {
-        setError(t(PPK_V3_MESSAGE));
-        return;
-      }
       if (target === 'own') {
         setPrivateKey(r.text);
         setKeyStatus(r.path);
@@ -236,6 +248,9 @@ export function HostEditor({ hostId, groupId }: Props) {
       jumpDirect,
       jumpAddress: jump.address,
       jumpHasSecret: (jump.authType === 'password' && !!jump.password) || (jump.authType === 'key' && !!jump.keyText.trim()),
+      proxyOn: isSsh && !!proxy.type,
+      proxyHost: proxy.host,
+      proxyHasSecret: !!proxy.username.trim() && !!proxy.password,
     });
     if (bad) return fail(bad.message, bad.tab);
 
@@ -282,6 +297,8 @@ export function HostEditor({ hostId, groupId }: Props) {
           keyText: jump.keyText,
           passphrase: jump.passphrase,
         },
+        proxy: { type: proxy.type, host: proxy.host, port: Number(proxy.port) || 0, username: proxy.username, password: proxy.password },
+        agentForward,
       });
       await patchStore({ hosts: applyHost(hosts, next, !!hostId) });
       await refreshStore();
@@ -496,6 +513,39 @@ export function HostEditor({ hostId, groupId }: Props) {
                 hasSaved={jumpHasSaved}
                 keyStatus={jump.keyStatus}
               />
+            )}
+            {isSsh && (
+              <Field label={t('host.proxy')} help={t('host.proxyHelp')}>
+                <select className="input" value={proxy.type} onChange={(e) => setProxy((p) => ({ ...p, type: e.target.value as ProxyType | '' }))}>
+                  <option value="">{t('host.none')}</option>
+                  <option value="http">{t('proxy.http')}</option>
+                  <option value="socks5">{t('proxy.socks5')}</option>
+                </select>
+              </Field>
+            )}
+            {isSsh && !!proxy.type && (
+              <ProxyCard
+                type={proxy.type}
+                host={proxy.host}
+                onHost={(v) => setProxy((p) => ({ ...p, host: v }))}
+                port={proxy.port}
+                onPort={(v) => setProxy((p) => ({ ...p, port: v }))}
+                username={proxy.username}
+                onUsername={(v) => setProxy((p) => ({ ...p, username: v }))}
+                password={proxy.password}
+                onPassword={(v) => setProxy((p) => ({ ...p, password: v }))}
+                hasSaved={proxyHasSaved}
+                jumpInUse={!!jumpChoice}
+              />
+            )}
+            {isSsh && (
+              <div className="toggle-row">
+                <div>
+                  <div className="t-title">{t('host.agentFwd')}</div>
+                  <div className="t-desc">{t('host.agentFwdDesc')}</div>
+                </div>
+                <Switch checked={agentForward} onChange={setAgentForward} label={t('host.agentFwd')} />
+              </div>
             )}
             {tmuxCardShown && (
               <div className="toggle-row">

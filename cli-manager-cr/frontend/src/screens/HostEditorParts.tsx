@@ -1,7 +1,7 @@
 // 서버 편집의 큰 부분 조각: 포트 포워딩 표, 시리얼 옵션, 점프 호스트 카드. 근거: spec/ui/host-editor.md §1.1(3), §1.3(1), §1.4.
 import { Trash2 } from 'lucide-react';
 import type { Forward } from '../ipc/types';
-import { BAUD_RATES, type JumpDirect, type SerialEnter, type SerialFlow, type SerialOpts, type SerialParity } from '../lib/hostForm';
+import { BAUD_RATES, PROXY_DEFAULT_PORT, type JumpDirect, type ProxyType, type SerialEnter, type SerialFlow, type SerialOpts, type SerialParity } from '../lib/hostForm';
 import { Field, Segmented, Switch } from '../ui/Controls';
 import { t } from '../i18n';
 
@@ -35,15 +35,23 @@ export function ForwardsTable({ rows, onChange }: { rows: Forward[]; onChange: (
           {rows.map((r) => (
             <tr key={r.id}>
               <td>
-                <select className="input" aria-label={t('fwd.type')} value={r.type} onChange={(e) => patch(r.id, { type: e.target.value as 'L' | 'R' })}>
+                <select className="input" aria-label={t('fwd.type')} value={r.type} onChange={(e) => patch(r.id, { type: e.target.value as Forward['type'] })}>
                   <option value="L">L</option>
                   <option value="R">R</option>
+                  <option value="D">D</option>
                 </select>
               </td>
               <td><input className="input mono" aria-label={t('fwd.bindHost')} value={r.bindHost} onChange={(e) => patch(r.id, { bindHost: e.target.value })} /></td>
               <td><input className="input" aria-label={t('fwd.port')} inputMode="numeric" value={String(r.bindPort)} onChange={(e) => patch(r.id, { bindPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
-              <td><input className="input mono" aria-label={t('fwd.destHost')} value={r.destHost} onChange={(e) => patch(r.id, { destHost: e.target.value })} /></td>
-              <td><input className="input" aria-label={t('fwd.destPort')} inputMode="numeric" value={String(r.destPort)} onChange={(e) => patch(r.id, { destPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
+              {r.type === 'D' ? (
+                // 동적 포워딩은 대상이 없다(SOCKS 프록시를 쓰는 프로그램이 정한다). 적어 둔 대상 값은 지우지 않는다.
+                <td colSpan={2} className="faint small">{t('fwd.dynamicDest')}</td>
+              ) : (
+                <>
+                  <td><input className="input mono" aria-label={t('fwd.destHost')} value={r.destHost} onChange={(e) => patch(r.id, { destHost: e.target.value })} /></td>
+                  <td><input className="input" aria-label={t('fwd.destPort')} inputMode="numeric" value={String(r.destPort)} onChange={(e) => patch(r.id, { destPort: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></td>
+                </>
+              )}
               <td>
                 <button type="button" className="icon-btn" aria-label={t('common.delete')} title={t('common.delete')} onClick={() => onChange(rows.filter((x) => x.id !== r.id))}>
                   <Trash2 size={14} />
@@ -128,7 +136,7 @@ export function SerialFields({
         </Field>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <Field label={t('serial.flow')} help={t('serial.flowNotYet')}>
+        <Field label={t('serial.flow')} help={t('serial.flowHelp')}>
           <select className="input" value={value.flowControl} onChange={(e) => set('flowControl', e.target.value as SerialFlow)}>
             {FLOW.map((o) => <option key={o.value} value={o.value}>{o.value === 'none' ? t('serial.flowNone') : o.label}</option>)}
           </select>
@@ -226,6 +234,55 @@ export function JumpDirectCard({
           </Field>
         </>
       )}
+    </div>
+  );
+}
+
+/** 프록시 경유 카드(§1.3 2-1번): 주소·포트·사용자 이름·비밀번호. 사용자 이름을 비우면 인증 없이 연결한다. */
+export function ProxyCard({
+  type,
+  host,
+  onHost,
+  port,
+  onPort,
+  username,
+  onUsername,
+  password,
+  onPassword,
+  hasSaved,
+  jumpInUse,
+}: {
+  type: ProxyType;
+  host: string;
+  onHost: (v: string) => void;
+  port: string;
+  onPort: (v: string) => void;
+  username: string;
+  onUsername: (v: string) => void;
+  password: string;
+  onPassword: (v: string) => void;
+  hasSaved: boolean;
+  jumpInUse: boolean;
+}) {
+  return (
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, border: '1px solid var(--border)', borderRadius: 8 }}>
+      {jumpInUse && <div className="notice info">{t('proxy.jumpNote')}</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+        <Field label={t('proxy.address')}>
+          <input className="input mono" placeholder="proxy.example.com" value={host} onChange={(e) => onHost(e.target.value)} />
+        </Field>
+        <Field label={t('fwd.port')}>
+          <input className="input" inputMode="numeric" placeholder={String(PROXY_DEFAULT_PORT[type])} value={port} onChange={(e) => onPort(e.target.value.replace(/\D/g, ''))} />
+        </Field>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <Field label={t('proxy.user')} help={t('proxy.userHelp')}>
+          <input className="input" value={username} onChange={(e) => onUsername(e.target.value)} />
+        </Field>
+        <Field label={t('cred.password')} help={hasSaved ? t('host.savedChange') : t('proxy.saveHint')}>
+          <input className="input" type="password" disabled={!username.trim()} placeholder={hasSaved ? t('host.savedMask') : t('cred.password')} value={password} onChange={(e) => onPassword(e.target.value)} />
+        </Field>
+      </div>
     </div>
   );
 }

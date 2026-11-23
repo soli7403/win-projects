@@ -83,8 +83,15 @@ func puttyEncoding(szCodePage string) string {
 		return "latin1"
 	}
 	szLower := strings.ToLower(szCodePage)
-	if strings.Contains(szLower, "949") || strings.Contains(szLower, "euc-kr") {
+	switch {
+	case strings.Contains(szLower, "949"), strings.Contains(szLower, "euc-kr"):
 		return "cp949"
+	case strings.Contains(szLower, "euc-jp"):
+		return "euc-jp"
+	case strings.Contains(szLower, "gbk"), strings.Contains(szLower, "936"), strings.Contains(szLower, "gb2312"):
+		return "gbk"
+	case strings.Contains(szLower, "big5"), strings.Contains(szLower, "950"):
+		return "big5"
 	}
 	return "utf-8"
 }

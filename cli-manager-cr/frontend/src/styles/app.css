@@ -177,6 +177,7 @@ button { font: inherit; color: inherit; }
 .usage-item { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; }
 .usage-item .usage-title { font-weight: 600; }
 .usage-item .usage-desc { font-size: 12px; color: var(--fg-2); font-weight: 400; line-height: 1.5; }
+.caps-note { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; background: var(--warn-soft); color: var(--warn); font-size: 12px; font-weight: 600; }
 .lock-actions { display: flex; flex-direction: column; gap: 10px; }
 .lock-actions .btn { justify-content: center; }
 .center-row { display: flex; justify-content: center; }
@@ -327,7 +328,13 @@ button { font: inherit; color: inherit; }
 }
 .empty-pane { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; color: var(--fg-2); }
 .tab.drop { outline: 1px dashed var(--accent); }
-.tab-badge { font-size: 11px; color: var(--fg-3); background: var(--panel-2); border-radius: 8px; padding: 0 5px; }
+/* 탭의 창 수 배지 (D122): 기본 글자색 + 그 글자색을 18% 섞은 반투명 바탕.
+   바탕을 탭 배경 위에 겹치므로 선택·비선택, 세션 색 배경, 다크·라이트 어디서나 글자와 알약 모양이 보인다. */
+.tab-badge {
+  flex: none; min-width: 16px; height: 16px; line-height: 16px; box-sizing: border-box; padding: 0 5px;
+  border-radius: 8px; text-align: center; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: var(--fg); background: color-mix(in srgb, var(--fg) 18%, transparent);
+}
 .tab .dot { margin-right: 2px; }
 .dot.reconnecting { background: var(--warn); }
 .dot.error { background: var(--danger); }
@@ -356,8 +363,3 @@ button { font: inherit; color: inherit; }
   padding: 5px; border-radius: 8px; background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow);
 }
 .find-bar .input { width: 220px; height: 28px; }
-.loc-card { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: var(--panel); }
-.loc-mini { height: 170px; display: flex; border-radius: 6px; background: var(--panel-2); padding: 3px; }
-.loc-pane { flex: 1; min-width: 0; min-height: 0; border-radius: 6px; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; }
-.loc-arrows { display: flex; gap: 2px; }
-.loc-arrows .icon-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }

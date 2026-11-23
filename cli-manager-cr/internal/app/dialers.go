@@ -64,6 +64,7 @@ func openSerialTransport(record hostRecord) (session.Transport, error) {
 			opts.EnterSends = record.M_pSerial.M_szEnterSends
 		}
 		opts.LocalEcho = record.M_pSerial.M_bLocalEcho
+		opts.FlowControl = record.M_pSerial.M_szFlowControl // none · rtscts · xonxoff (protocols.md §5, D108)
 	}
 	if opts.Path == "" {
 		return nil, i18n.NewError("be.serial.noDevice")

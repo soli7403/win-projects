@@ -1,9 +1,8 @@
-// 수용 시나리오 H1·H2·H3·H5·H6·H7·H9·H10 의 규칙 부분. 근거: spec/acceptance/04-hosts-sftp-settings-sync.md.
+// 수용 시나리오 H1·H2·H3·H5·H6·H7·H10 의 규칙 부분. 근거: spec/acceptance/04-hosts-sftp-settings-sync.md.
 import { describe, expect, it } from 'vitest';
 import {
   canSaveFolder,
   fallbackAlias,
-  isPpkV3,
   portAfterProtocolChange,
   serialDefaultsFor,
   SERIAL_DEFAULTS,
@@ -41,6 +40,20 @@ describe('서버 편집 규칙', () => {
     expect(r?.message).toBe('앱이 잠겨 있어 비밀번호를 저장할 수 없습니다');
   });
 
+  it('H4a: 프록시 경유를 켜면 주소가 있어야 하고, 잠긴 채로는 프록시 비밀번호를 저장할 수 없다 (D110)', () => {
+    const base = {
+      protocol: 'ssh' as const, host: '10.0.0.1', serialPath: '', authType: 'ask', hasSecret: false,
+      vaultOpen: true, jumpDirect: false, jumpAddress: '', jumpHasSecret: false,
+    };
+    expect(validateHostForm({ ...base, proxyOn: true, proxyHost: ' ' })).toEqual({ tab: 'adv', message: '프록시 주소를 입력하세요' });
+    expect(validateHostForm({ ...base, vaultOpen: false, proxyOn: true, proxyHost: 'px', proxyHasSecret: true }))
+      .toEqual({ tab: 'adv', message: '앱이 잠겨 있어 프록시 비밀번호를 저장할 수 없습니다' });
+    expect(validateHostForm({ ...base, proxyOn: true, proxyHost: 'px', proxyHasSecret: true })).toBeNull();
+    expect(validateHostForm({ ...base, proxyOn: false, proxyHost: '' })).toBeNull();
+    // 텔넷은 프록시를 쓰지 않으므로 검사하지 않는다.
+    expect(validateHostForm({ ...base, protocol: 'telnet', proxyOn: true, proxyHost: '' })).toBeNull();
+  });
+
   it('H5: 표시 이름을 비우면 호스트 주소가 표시 이름이 된다', () => {
     expect(fallbackAlias('', 'ssh', { host: '10.0.0.5' })).toBe('10.0.0.5');
     expect(fallbackAlias('  ', 'serial', { host: '', serialPath: 'COM4' })).toBe('COM4');
@@ -60,11 +73,6 @@ describe('서버 편집 규칙', () => {
     expect(splitBastionInput('ec2-user@203.0.113.10:22')).toEqual({ host: '203.0.113.10', port: '22', username: 'ec2-user' });
     expect(splitBastionInput('[2001:db8::1]:2222')).toEqual({ host: '2001:db8::1', port: '2222', username: undefined });
     expect(splitBastionInput('bastion.local')).toEqual({ host: 'bastion.local' });
-  });
-
-  it('H9: PPK v3 키를 알아본다', () => {
-    expect(isPpkV3('PuTTY-User-Key-File-3: ssh-ed25519\nEncryption: none')).toBe(true);
-    expect(isPpkV3('PuTTY-User-Key-File-2: ssh-rsa')).toBe(false);
   });
 
   it('H10: 폴더 이름이 비면 저장할 수 없다', () => {

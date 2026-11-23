@@ -45,7 +45,7 @@ export type EditorState =
   | { kind: 'host'; hostId: string | null; groupId: string | null }
   | { kind: 'folder'; folderId: string | null; parentId: string | null };
 
-export type SettingsSection = 'appearance' | 'input' | 'files' | 'connection' | 'sync' | 'security' | 'backup' | 'about';
+export type SettingsSection = 'appearance' | 'input' | 'files' | 'connection' | 'log' | 'sync' | 'security' | 'backup' | 'about';
 
 interface UiState {
   /** 설정 화면(크게 보기 모달). section 은 열 때 보일 구역(기본 모양). */
@@ -74,12 +74,10 @@ interface UiState {
   openPreview: (sessionId: string, path: string) => void;
   closePreview: () => void;
   /** 위치 선택 대화상자: 서버 id. null 이면 닫힘. */
-  locationPicker: { hostId: string } | null;
-  openLocation: (hostId: string) => void;
-  closeLocation: () => void;
-  /** 빠른 접속 팔레트 상태. targetPane 이 있으면 그 빈 칸에서 연다. */
-  quick: { open: boolean; targetPane: string | null };
-  openQuick: (targetPane?: string | null) => void;
+  /** 빠른 접속 팔레트 상태. targetPane 이 있으면 그 빈 칸에서 연다.
+   *  group 이 있으면(탭 막대의 + 로 열었을 때) 그 탭 그룹에 연다. 없으면 포커스 그룹 (D119). */
+  quick: { open: boolean; targetPane: string | null; group: 0 | 1 | null };
+  openQuick: (targetPane?: string | null, group?: 0 | 1 | null) => void;
   closeQuick: () => void;
   /** 사이드바에서 선택된 서버 id. */
   selectedHostId: string | null;
@@ -156,11 +154,8 @@ export const useUi = create<UiState>((set, get) => ({
   preview: null,
   openPreview: (sessionId, path) => set({ preview: { sessionId, path } }),
   closePreview: () => set({ preview: null }),
-  locationPicker: null,
-  openLocation: (hostId) => set({ locationPicker: { hostId } }),
-  closeLocation: () => set({ locationPicker: null }),
-  quick: { open: false, targetPane: null },
-  openQuick: (targetPane = null) => set({ quick: { open: true, targetPane } }),
+  quick: { open: false, targetPane: null, group: null },
+  openQuick: (targetPane = null, group = null) => set({ quick: { open: true, targetPane, group } }),
   closeQuick: () => set((s) => ({ quick: { ...s.quick, open: false } })),
   selectedHostId: null,
   setSelectedHost: (id) => set({ selectedHostId: id }),

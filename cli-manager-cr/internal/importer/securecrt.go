@@ -50,8 +50,14 @@ func crtEncoding(szName string) string {
 	switch {
 	case strings.Contains(szLower, "949"), strings.Contains(szLower, "euc-kr"), strings.Contains(szLower, "korean"):
 		return "cp949"
+	case strings.Contains(szLower, "euc-jp"), strings.Contains(szLower, "eucjp"), strings.Contains(szLower, "japanese") && strings.Contains(szLower, "euc"):
+		return "euc-jp" // "japanese" 만 보는 아래 규칙보다 먼저 본다
 	case strings.Contains(szLower, "shift"), strings.Contains(szLower, "japanese"):
 		return "shift_jis"
+	case strings.Contains(szLower, "gbk"), strings.Contains(szLower, "936"), strings.Contains(szLower, "gb2312"):
+		return "gbk"
+	case strings.Contains(szLower, "big5"), strings.Contains(szLower, "950"):
+		return "big5"
 	case strings.Contains(szLower, "8859-1"), strings.Contains(szLower, "latin"):
 		return "latin1"
 	}

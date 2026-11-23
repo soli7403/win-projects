@@ -1,7 +1,8 @@
 // 잠금 화면: 잠금 해제 / 최초 설정 / 복구 코드 표시 / 복구 코드로 재설정.
 // 근거: spec/ui/lock.md 전체, spec/acceptance/01-lock-vault.md 의 L1~L10.
 import { useState, type FormEvent } from 'react';
-import { Check, Copy, KeyRound, Lock as LockIcon, ShieldCheck } from 'lucide-react';
+import { ArrowBigUpDash, Check, Copy, KeyRound, Lock as LockIcon, ShieldCheck } from 'lucide-react';
+import { useCapsLock } from '../lib/useCapsLock';
 import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { LogoMark } from '../ui/Logo';
@@ -143,6 +144,11 @@ export function Lock({ overlay = false }: LockProps) {
   };
 
   const score = passwordScore(pw);
+  // 비밀번호를 입력하는 화면(잠금 해제·처음 설정·복구)에서만 Caps Lock 을 살핀다 (D97).
+  const capsOn = useCapsLock(mode !== 'recovery');
+  const capsNote = capsOn && (
+    <div className="caps-note" role="status"><ArrowBigUpDash size={14} />{t('lock.capsLock')}</div>
+  );
 
   return (
     <div className={`lock-screen${overlay ? ' overlay-mode' : ''}`}>
@@ -167,6 +173,7 @@ export function Lock({ overlay = false }: LockProps) {
               onChange={(e) => setPw(e.target.value)}
               aria-label={t('lock.pw')}
             />
+            {capsNote}
             <div className="err-text" role="alert">{error}</div>
             <div className="lock-actions">
               <button className="btn primary" type="submit" disabled={!pw || busy}>
@@ -219,6 +226,7 @@ export function Lock({ overlay = false }: LockProps) {
               onChange={(e) => setPw2(e.target.value)}
               aria-label={t('setup.pw2')}
             />
+            {capsNote}
             <div className="err-text" role="alert">{error}</div>
             <button className="btn primary" type="submit" disabled={busy}>
               {busy ? t('setup.creating') : t('setup.create')}
@@ -278,6 +286,7 @@ export function Lock({ overlay = false }: LockProps) {
               onChange={(e) => setNewPw2(e.target.value)}
               aria-label={t('sec.newPwAgain')}
             />
+            {capsNote}
             <div className="err-text" role="alert">{error}</div>
             <button className="btn primary" type="submit" disabled={busy}>{t('recover.submit')}</button>
             <div className="center-row">

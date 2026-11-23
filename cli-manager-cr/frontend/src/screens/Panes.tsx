@@ -1,6 +1,6 @@
 // 칸·분할 화면. 근거: spec/ui/panes.md §2, §4(크기 조절), §7(끌어 놓기), spec/ui/tokens.md §3(칸·분할선).
 import { useRef, type DragEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
-import { Link, Rows2, Maximize2, Minimize2, RotateCw, X, Search, ZoomIn, Image as ImageIcon } from 'lucide-react';
+import { Link, Rows2, Square, RotateCw, X, Search, ZoomIn, Image as ImageIcon } from 'lucide-react';
 import type { LayoutNode, PaneNode, SplitNode, Dir } from '../lib/layout';
 import { edgeToSplit, edgeZone, findPane, paneIds, type Edge } from '../lib/layout';
 import { groupOf, useWorkspace, type Tab } from "../state/workspace";
@@ -8,9 +8,8 @@ import { openHost, splitSameAs, canSplitMore } from '../state/actions';
 import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
 import { ENV_INFO } from '../lib/defaults';
-import { TerminalView, termHandles, pasteFromClipboard, targetsFor, FIND_EVENT } from './TerminalView';
+import { TerminalView, termHandles, pasteFromClipboard, targetsFor, selectAllInPane, FIND_EVENT } from './TerminalView';
 import { forceImagePaste, uploadAndInsert } from '../state/paste';
-import { notYet } from '../lib/notYet';
 import { getBackend, errorMessage } from '../ipc/backend';
 import type { MenuItem } from '../state/ui';
 import { isFileDrag, hoverStart, hoverEnd, dropFiles } from './fileDrag';
@@ -86,6 +85,37 @@ function SplitView({ tab, split, total }: { tab: Tab; split: SplitNode; total: n
     <div ref={ref} style={{ display: 'flex', flexDirection: horizontal ? 'row' : 'column', flex: 1, minWidth: 0, minHeight: 0 }}>
       {items}
     </div>
+  );
+}
+
+/**
+ * "원래대로" 아이콘: 겹친 사각형 두 개(Windows 창의 복원 버튼과 같은 모양). 선 굵기·모서리는 다른 머리글 아이콘(lucide)과 맞춘다.
+ * 최대화의 빈 사각형 하나(Square)와 윤곽이 달라 12px 에서도 구분된다 (D121).
+ */
+function RestoreIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" data-icon="restore">
+      <rect x="3" y="8" width="13" height="13" rx="2" />
+      <path d="M8 8V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-3" />
+    </svg>
+  );
+}
+
+/**
+ * 창 머리글의 크게 보기/원래대로 버튼 (ui/panes.md §2.1 7번, D121).
+ * 평소: 빈 사각형 하나. 크게 보는 중: 겹친 사각형 두 개 + 켜진 버튼 표시(강조색 바탕) — 다른 창이 가려져 있음을 알린다.
+ */
+export function PaneZoomButton({ zoomed, onToggle }: { zoomed: boolean; onToggle: () => void }) {
+  return (
+    <button
+      className={`icon-btn small${zoomed ? ' on' : ''}`}
+      title={zoomed ? tr('pane.restoreTitle') : tr('pane.maximizeTitle')}
+      aria-label={tr('pane.maximize')}
+      aria-pressed={zoomed}
+      onClick={onToggle}
+    >
+      {zoomed ? <RestoreIcon size={12} /> : <Square size={12} data-icon="maximize" />}
+    </button>
   );
 }
 
@@ -191,7 +221,7 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
     { label: tr('paste.ok'), shortcut: 'Ctrl+V', disabled: !hasSession, onSelect: () => { const t = termHandles.get(pane.id); if (t && pane.sessionId) void pasteFromClipboard(pane.id, pane.sessionId, t); } },
     { label: info?.canSftp || info?.protocol === 'local' ? tr('pane.pasteImagePath') : tr('pane.pasteImageServer'), shortcut: 'Ctrl+Alt+V', disabled: !hasSession || (!info?.canSftp && info?.protocol !== 'local'), onSelect: () => { if (pane.sessionId) void forceImagePaste(pane.sessionId, targetsFor(pane.id, pane.sessionId)); } },
     { separator: true },
-    { label: tr('pane.selectAll'), disabled: !hasSession, onSelect: () => termHandles.get(pane.id)?.selectAll() },
+    { label: tr('pane.selectAll'), disabled: !hasSession, onSelect: () => selectAllInPane(pane.id) },
     { label: tr('pane.clear'), disabled: !hasSession, onSelect: () => termHandles.get(pane.id)?.clear() },
     { label: tr('pane.find'), shortcut: 'Ctrl+Shift+F', disabled: !hasSession, onSelect: () => window.dispatchEvent(new CustomEvent(FIND_EVENT, { detail: pane.id })) },
     { separator: true },
@@ -239,7 +269,7 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
           <button className="icon-btn small" title={info?.protocol === 'local' ? tr('pane.imageLocalTitle') : tr('pane.imageServerTitle')} aria-label={tr('pane.pasteImage')} onClick={() => { if (pane.sessionId) void forceImagePaste(pane.sessionId, targetsFor(pane.id, pane.sessionId)); }}><ImageIcon size={12} /></button>
         )}
         {hasSession && (
-          <button className="icon-btn small" title={tr('pane.findTitle')} aria-label={tr('pane.find')} onClick={() => notYet(tr('pane.find'))}><Search size={12} /></button>
+          <button className="icon-btn small" title={tr('pane.findTitle')} aria-label={tr('pane.find')} onClick={() => window.dispatchEvent(new CustomEvent(FIND_EVENT, { detail: pane.id }))}><Search size={12} /></button>
         )}
         {hasSession && (
           <>
@@ -248,9 +278,7 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
           </>
         )}
         {total >= 2 && (
-          <button className="icon-btn small" title={tab.zoomed ? tr('pane.restoreTitle') : tr('pane.maximizeTitle')} aria-label={tr('pane.maximize')} onClick={() => { focusPane(pane.id); toggleZoom(tab.id); }}>
-            {tab.zoomed ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-          </button>
+          <PaneZoomButton zoomed={!!tab.zoomed} onToggle={() => { focusPane(pane.id); toggleZoom(tab.id); }} />
         )}
         <button
           className="icon-btn small"

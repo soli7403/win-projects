@@ -6,7 +6,10 @@ import (
 	"errors"
 	"io"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	"dariterm/internal/zmodem"
 )
 
 // EmitFunc 은 이벤트 발행 함수다 (ipc.Router.Emit 과 같은 모양).
@@ -34,9 +37,21 @@ type Session struct {
 	batcher      *Batcher
 	credit       *Credit // 출력 흐름 제어 (session.md §8)
 	logger       *Logger
-	dialing      bool // Dialer 를 부르는 중 (같은 세션에 접속이 두 번 겹치지 않게)
-	waitUnlock   bool // 앱 잠금 해제를 기다리는 중 (ErrWaitUnlock, session.md §4)
+	dialing      bool        // Dialer 를 부르는 중 (같은 세션에 접속이 두 번 겹치지 않게)
+	waitUnlock   bool        // 앱 잠금 해제를 기다리는 중 (ErrWaitUnlock, session.md §4)
+	tConnected   time.Time   // 지금 연결이 맺어진 시각 (서버 종료가 사용자 종료인지 가릴 때 쓴다)
+	tLastInput   time.Time   // 지금 연결에 사용자 입력을 마지막으로 보낸 시각 (없으면 zero)
+	iLogSyncSec  int         // 세션 로그 내려 쓰기 주기(초). 설정을 바꾸면 SetLogSyncSec 으로 갱신된다
+	bLogStamp    bool        // 세션 로그 줄 앞에 시각을 붙일지. 설정을 바꾸면 SetLogTimestamp 로 갱신된다
+	bLogAnsi     bool        // 세션 로그에 ANSI 시퀀스를 그대로 쓸지. 설정을 바꾸면 SetLogAnsi 로 갱신된다
+	zActive      atomic.Bool // ZMODEM 전송 중 (터미널 입력을 서버로 보내지 않는다)
+	zCancel      atomic.Bool // 사용자가 ZMODEM 전송을 취소했다
 }
+
+// G_cdurUserExitWindow 는 서버가 셸을 끝냈을 때 "사용자가 끝낸 것"으로 보는 시간 창이다 (session.md §4).
+// 끝나기 전 이 시간 안에 사용자 입력이 있었거나, 연결된 지 이 시간이 안 됐으면 사용자가 끝낸 것으로 본다.
+// 그 밖(입력 없이 한참 있다가 끝남)은 서버의 유휴 로그아웃 같은 서버 쪽 종료로 보고 자동 재접속한다.
+const G_cdurUserExitWindow = 10 * time.Second
 
 // newSession 은 세션을 만든다. 접속은 start 에서 시작한다.
 func newSession(cfg OpenConfig, emit EmitFunc) *Session {
@@ -45,6 +60,10 @@ func newSession(cfg OpenConfig, emit EmitFunc) *Session {
 		info:    cfg.Info,
 		emit:    emit,
 		decoder: NewDecoder(cfg.Encoding),
+
+		iLogSyncSec: ClampLogSyncSec(cfg.LogSyncSec),
+		bLogStamp:   cfg.LogTimestamp,
+		bLogAnsi:    cfg.LogAnsi,
 	}
 	pSession.info.M_szState = G_cszStateConnecting
 	szId := cfg.Info.M_szId
@@ -59,13 +78,8 @@ func newSession(cfg OpenConfig, emit EmitFunc) *Session {
 
 // start 는 OpenDelay 뒤에 첫 접속을 시작한다. 로그가 켜져 있으면 연다.
 func (pSession *Session) start() {
-	if pSession.cfg.LogEnabled && pSession.cfg.DataDir != "" {
-		pLogger, errLog := OpenLog(pSession.cfg.DataDir, pSession.cfg.LogAlias, time.Now())
-		if errLog == nil {
-			pSession.mtxData.Lock()
-			pSession.logger = pLogger
-			pSession.mtxData.Unlock()
-		}
+	if pSession.cfg.LogEnabled {
+		pSession.SetLogging(true)
 	}
 	durDelay := pSession.cfg.OpenDelay
 	if durDelay <= 0 {
@@ -152,7 +166,10 @@ func (pSession *Session) connect() {
 	pSession.wasConnected = true
 	pSession.info.M_szState = G_cszStateConnected
 	pSession.info.M_szMessage = ""
-	pSession.info.M_i64ConnectedAt = time.Now().UnixMilli()
+	tNow := time.Now()
+	pSession.info.M_i64ConnectedAt = tNow.UnixMilli()
+	pSession.tConnected = tNow
+	pSession.tLastInput = time.Time{}
 	iCols, iRows := pSession.iCols, pSession.iRows
 	pSession.mtxData.Unlock()
 
@@ -269,7 +286,21 @@ func (pSession *Session) onDisconnected(szReason string, iGen int) {
 	pSession.publishState()
 }
 
-// onRemoteExited 는 서버가 셸을 정상적으로 끝낸 것을 처리한다: 자동 재접속하지 않고 닫힘 + 안내 두 줄 (session.md §4).
+// userEndedLocked 는 mtxData 를 잡은 상태에서, 방금 끝난 셸을 사용자가 끝낸 것으로 볼지 판단한다 (session.md §4).
+// 셸의 유휴 로그아웃과 사용자의 exit 는 종료 코드로는 구분되지 않는다(둘 다 종료 코드와 함께 끝난다).
+// 유휴 로그아웃은 입력이 한참 없을 때만 일어나므로, 끝나기 직전에 입력이 있었으면 사용자가 끝낸 것이다.
+// 연결하자마자 끝나는 서버(로그인 직후 셸이 끝나는 계정 등)를 계속 다시 접속하지 않도록 그 경우도 여기에 넣는다.
+func (pSession *Session) userEndedLocked(tNow time.Time) bool {
+	if tNow.Sub(pSession.tConnected) < G_cdurUserExitWindow {
+		return true
+	}
+	return !pSession.tLastInput.IsZero() && tNow.Sub(pSession.tLastInput) < G_cdurUserExitWindow
+}
+
+// onRemoteExited 는 서버가 셸을 종료 코드·신호와 함께 끝낸 것을 처리한다 (session.md §4).
+//   - 사용자가 끝낸 것(exit·logout, userEndedLocked)이면 자동 재접속하지 않고 닫힘 + 안내 두 줄.
+//   - 서버 쪽에서 끝낸 것(유휴 로그아웃, 관리자의 세션 종료, 서버 재시작)이면 끊김처럼 자동 재접속을 예약한다.
+//
 // Enter·[재연결] 로 다시 연결하는 동작은 그대로다. 남은 연결(SSH 접속·keepalive·포워딩)은 닫는다.
 func (pSession *Session) onRemoteExited(iGen int) {
 	pSession.mtxData.Lock()
@@ -279,11 +310,17 @@ func (pSession *Session) onRemoteExited(iGen int) {
 	}
 	conn := pSession.transport
 	pSession.transport = nil
-	pSession.attempts = 0
-	pSession.info.M_szState = G_cszStateClosed
-	pSession.info.M_szMessage = ""
 	pSession.writeOutputUnlockedNotice(MsgRemoteExited())
-	pSession.writeOutputUnlockedNotice(MsgGiveUp())
+	bRetry := !pSession.userEndedLocked(time.Now()) &&
+		CanAutoReconnect(pSession.cfg.AutoReconnect, pSession.cfg.IsSerial, true, pSession.attempts)
+	if bRetry {
+		pSession.scheduleRetryLocked()
+	} else {
+		pSession.attempts = 0
+		pSession.info.M_szState = G_cszStateClosed
+		pSession.info.M_szMessage = ""
+		pSession.writeOutputUnlockedNotice(MsgGiveUp())
+	}
 	pSession.mtxData.Unlock()
 	if conn != nil {
 		_ = conn.Close()
@@ -294,13 +331,29 @@ func (pSession *Session) onRemoteExited(iGen int) {
 // readLoop 는 연결의 출력을 읽어 화면과 로그로 보낸다. 끝나면 끊김 처리한다.
 func (pSession *Session) readLoop(conn Transport, iGen int) {
 	bBuf := make([]byte, 32*1024)
+	var zDetector zmodem.Detector // 이 연결의 출력에서 ZMODEM 시작 표시를 찾는다 (zmodem.md)
 	for {
 		// 프런트가 아직 처리하지 않은 출력이 상한을 넘으면 여기서 멈춘다 (session.md §8 출력 흐름 제어).
 		// 읽기를 멈추면 TCP 윈도우·PTY 파이프가 차서 상대 프로세스가 스스로 느려진다.
 		pSession.credit.Wait()
 		nRead, errRead := conn.Read(bBuf)
 		if nRead > 0 && pSession.isCurrent(iGen) { // 닫힌 뒤 읽힌 조각은 버린다
-			pSession.writeOutput(pSession.decoder.Decode(bBuf[:nRead]))
+			bScreen := bBuf[:nRead]
+			if pSession.zmodemOn() {
+				bBefore, kind, bEngine := zDetector.Feed(bScreen)
+				if kind != zmodem.KindNone {
+					// 서버에서 sz·rz 가 시작됐다: 표시 앞의 출력만 화면에 보내고, 전송이 끝날 때까지 연결을 엔진에 넘긴다.
+					pSession.writeOutput(pSession.decoder.Decode(bBefore))
+					bLeft, errStream := pSession.runZmodem(conn, kind, bEngine)
+					bScreen = bLeft
+					if errStream != nil {
+						errRead = errStream // 전송 중에 연결이 끊겼다: 아래에서 끊김으로 처리한다
+					}
+				}
+			}
+			if len(bScreen) > 0 {
+				pSession.writeOutput(pSession.decoder.Decode(bScreen))
+			}
 		}
 		if errRead != nil {
 			if errors.Is(errRead, transport.ErrRemoteExited) {

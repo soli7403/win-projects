@@ -108,6 +108,82 @@ func TestRemoteExitDoesNotAutoReconnect(t *testing.T) {
 	}
 }
 
+// 입력 없이 한참 있다가 서버가 셸을 끝내면(유휴 로그아웃 등) 끊김처럼 자동 재접속한다 (session.md §4, D98).
+func TestRemoteExitAfterIdleAutoReconnects(t *testing.T) {
+	rec := &eventRecorder{}
+	pManager := NewManager(rec.emit)
+	first := newExitingTransport()
+	pDial := &countingDialer{fnNext: func(iCall int) (Transport, error) {
+		if iCall == 1 {
+			return first, nil
+		}
+		return newFakeTransport(), nil
+	}}
+	info, _ := pManager.Open(sshConfig(pDial.dial, true))
+	defer pManager.Close(info.M_szId)
+	pSession, _ := pManager.Get(info.M_szId)
+	waitUntil(t, func() bool { return lastState(pSession) == G_cszStateConnected }, time.Second)
+	pSession.Input("ls\r")
+	pSession.backdateForTest(time.Minute) // 연결도 마지막 입력도 1분 전
+
+	close(first.chExit)
+	waitUntil(t, func() bool { return strings.Contains(rec.output(), "초 후 자동 재연결합니다") }, time.Second)
+	szOut := rec.output()
+	if !strings.Contains(szOut, "서버가 세션을 끝냈습니다.") {
+		t.Fatalf("서버 종료 안내가 없음: %q", szOut)
+	}
+	if first.iClosed.Load() == 0 {
+		t.Fatal("남은 연결을 닫아야 함")
+	}
+	waitUntil(t, func() bool { return pDial.calls() == 2 && lastState(pSession) == G_cszStateConnected }, 4*time.Second)
+}
+
+// 끝나기 직전에 사용자 입력이 있었으면(exit·logout) 오래 연결된 세션이어도 자동 재접속하지 않는다 (session.md §4, D98).
+func TestRemoteExitRightAfterInputStaysClosed(t *testing.T) {
+	rec := &eventRecorder{}
+	pManager := NewManager(rec.emit)
+	first := newExitingTransport()
+	pDial := &countingDialer{fnNext: func(iCall int) (Transport, error) {
+		if iCall == 1 {
+			return first, nil
+		}
+		return newFakeTransport(), nil
+	}}
+	info, _ := pManager.Open(sshConfig(pDial.dial, true))
+	defer pManager.Close(info.M_szId)
+	pSession, _ := pManager.Get(info.M_szId)
+	waitUntil(t, func() bool { return lastState(pSession) == G_cszStateConnected }, time.Second)
+	pSession.backdateForTest(time.Minute)
+	pSession.Input("exit\r") // 방금 입력
+
+	close(first.chExit)
+	waitUntil(t, func() bool { return lastState(pSession) == G_cszStateClosed }, time.Second)
+	time.Sleep(2500 * time.Millisecond)
+	if pDial.calls() != 1 {
+		t.Fatalf("사용자가 끝낸 세션은 자동 재접속하면 안 됨, 호출 %d회", pDial.calls())
+	}
+	if strings.Contains(rec.output(), "자동 재연결") {
+		t.Fatalf("재접속 안내가 없어야 함: %q", rec.output())
+	}
+}
+
+// 자동 재접속 설정이 꺼져 있으면 유휴 뒤 서버 종료도 닫힘으로 둔다.
+func TestRemoteExitAfterIdleWithAutoReconnectOff(t *testing.T) {
+	rec := &eventRecorder{}
+	pManager := NewManager(rec.emit)
+	first := newExitingTransport()
+	pDial := &countingDialer{fnNext: func(int) (Transport, error) { return first, nil }}
+	info, _ := pManager.Open(sshConfig(pDial.dial, false))
+	defer pManager.Close(info.M_szId)
+	pSession, _ := pManager.Get(info.M_szId)
+	waitUntil(t, func() bool { return lastState(pSession) == G_cszStateConnected }, time.Second)
+	pSession.backdateForTest(time.Minute)
+
+	close(first.chExit)
+	waitUntil(t, func() bool { return lastState(pSession) == G_cszStateClosed }, time.Second)
+	waitUntil(t, func() bool { return strings.Contains(rec.output(), "Enter 키를 누르면 다시 연결합니다") }, time.Second)
+}
+
 // 끊김(정상 종료가 아님)은 지금처럼 자동 재접속을 예약한다.
 func TestDropStillAutoReconnects(t *testing.T) {
 	rec := &eventRecorder{}
@@ -228,6 +304,16 @@ func TestWaitUnlockResumeAndEnterRace(t *testing.T) {
 			t.Fatalf("run %d: 접속은 한 번만 겹쳐야 함(대기 1 + 재개 1), 호출 %d회", iRun, pDial.calls())
 		}
 		pManager.Close(info.M_szId)
+	}
+}
+
+// backdateForTest 는 연결 시각과 마지막 입력 시각(있으면)을 durAgo 만큼 과거로 옮긴다.
+func (pSession *Session) backdateForTest(durAgo time.Duration) {
+	pSession.mtxData.Lock()
+	defer pSession.mtxData.Unlock()
+	pSession.tConnected = pSession.tConnected.Add(-durAgo)
+	if !pSession.tLastInput.IsZero() {
+		pSession.tLastInput = pSession.tLastInput.Add(-durAgo)
 	}
 }
 

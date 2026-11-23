@@ -90,6 +90,58 @@ func (pManager *Manager) ResumeUnlockWaiters() int {
 	return iCount
 }
 
+// SetLogging 은 열려 있는 모든 세션의 출력 기록을 켜거나 끈다 (설정 "터미널 출력 기록"을 바꿨을 때, session.md §6).
+func (pManager *Manager) SetLogging(bEnabled bool) {
+	pManager.mtxData.Lock()
+	slSessions := make([]*Session, 0, len(pManager.mapSessions))
+	for _, pSession := range pManager.mapSessions {
+		slSessions = append(slSessions, pSession)
+	}
+	pManager.mtxData.Unlock()
+	for _, pSession := range slSessions {
+		pSession.SetLogging(bEnabled)
+	}
+}
+
+// SetLogSyncSec 은 열려 있는 모든 세션의 로그 내려 쓰기 주기를 바꾼다 (설정 sessionLogSyncSec 을 바꿨을 때).
+func (pManager *Manager) SetLogSyncSec(iSec int) {
+	pManager.mtxData.Lock()
+	slSessions := make([]*Session, 0, len(pManager.mapSessions))
+	for _, pSession := range pManager.mapSessions {
+		slSessions = append(slSessions, pSession)
+	}
+	pManager.mtxData.Unlock()
+	for _, pSession := range slSessions {
+		pSession.SetLogSyncSec(iSec)
+	}
+}
+
+// SetLogTimestamp 는 열려 있는 모든 세션의 로그 줄 앞 시각 표시를 바꾼다 (설정 sessionLogTimestamp 를 바꿨을 때).
+func (pManager *Manager) SetLogTimestamp(bEnabled bool) {
+	pManager.mtxData.Lock()
+	slSessions := make([]*Session, 0, len(pManager.mapSessions))
+	for _, pSession := range pManager.mapSessions {
+		slSessions = append(slSessions, pSession)
+	}
+	pManager.mtxData.Unlock()
+	for _, pSession := range slSessions {
+		pSession.SetLogTimestamp(bEnabled)
+	}
+}
+
+// SetLogAnsi 는 열려 있는 모든 세션의 로그에 ANSI 시퀀스를 그대로 쓸지 바꾼다 (설정 sessionLogAnsi 를 바꿨을 때).
+func (pManager *Manager) SetLogAnsi(bEnabled bool) {
+	pManager.mtxData.Lock()
+	slSessions := make([]*Session, 0, len(pManager.mapSessions))
+	for _, pSession := range pManager.mapSessions {
+		slSessions = append(slSessions, pSession)
+	}
+	pManager.mtxData.Unlock()
+	for _, pSession := range slSessions {
+		pSession.SetLogAnsi(bEnabled)
+	}
+}
+
 // Count 는 열린 세션 수를 돌려준다 (종료 확인 문구에 쓴다).
 func (pManager *Manager) Count() int {
 	pManager.mtxData.Lock()

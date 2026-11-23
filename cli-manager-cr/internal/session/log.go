@@ -19,8 +19,16 @@ const (
 	G_ciLogNameMaxTries = 1000
 	// G_ciLogBufferBytes 는 로그 쓰기 버퍼 크기다. G_cdurLogFlush 마다, 그리고 닫을 때 비운다.
 	G_ciLogBufferBytes = 64 * 1024
-	// G_cdurLogFlush 는 버퍼에 쌓인 로그를 디스크에 쓰는 주기다.
+	// G_cdurLogFlush 는 버퍼에 쌓인 로그를 파일에 쓰는 주기다 (내려 쓰기 주기가 0 이 아닐 때).
 	G_cdurLogFlush = time.Second
+	// 내려 쓰기(파일을 연 채로 디스크까지 쓰기, fsync) 주기의 범위와 기본값(초)이다 (설정 sessionLogSyncSec, session.md §6).
+	// 0 이면 출력을 받는 즉시 파일에 쓰고 내려 쓴다. Windows 탐색기는 내려 쓰거나 닫아야 크기·수정 시각을 갱신한다.
+	G_ciLogSyncSecMin     = 0
+	G_ciLogSyncSecMax     = 5
+	G_ciLogSyncSecDefault = 2
+	// G_cszLogStampLayout 은 줄 앞에 붙이는 시각의 형식이다 (설정 sessionLogTimestamp, session.md §6, D112).
+	// 이 PC 의 현지 시각, 밀리초까지. 뒤에 공백 하나가 붙는다.
+	G_cszLogStampLayout = "[2006-01-02 15:04:05.000] "
 	// g_ciLogCarryMax 는 미완성 ANSI 시퀀스로 보관하는 최대 길이다. 넘으면 시퀀스가 아니라고 보고 그대로 기록한다.
 	g_ciLogCarryMax = 256
 	// g_ciLogAliasMaxRunes 는 로그 파일 이름에 쓰는 별칭의 최대 길이다 (경로 260자 한도 대비).
@@ -51,7 +59,19 @@ func IsLogOpen(szPath string) bool {
 	return bOpen
 }
 
+// ClampLogSyncSec 는 내려 쓰기 주기를 허용 범위(0~5초)로 맞춘다.
+func ClampLogSyncSec(iSec int) int {
+	if iSec < G_ciLogSyncSecMin {
+		return G_ciLogSyncSecMin
+	}
+	if iSec > G_ciLogSyncSecMax {
+		return G_ciLogSyncSecMax
+	}
+	return iSec
+}
+
 // StripForLog 는 로그에 남길 텍스트를 만든다: ANSI 시퀀스와 CR 을 제거한다.
+// "ANSI 그대로 저장"(sessionLogAnsi)이 켜져 있으면 쓰지 않는다 (Logger.cleanLocked).
 func StripForLog(szText string) string {
 	szOut := g_reAnsi.ReplaceAllString(szText, "")
 	return strings.ReplaceAll(szOut, "\r", "")
@@ -81,14 +101,22 @@ func LogFileName(szAlias string, tNow time.Time, iSeq int) string {
 }
 
 // Logger 는 세션 로그 파일에 쓴다. ANSI 시퀀스가 묶음 경계에서 잘려도 지울 수 있도록 꼬리를 보관하고,
-// 디스크 쓰기는 버퍼에 모아 G_cdurLogFlush 마다 한 번 한다 (읽기 고루틴이 디스크를 기다리지 않게).
+// 파일 쓰기는 버퍼에 모아 G_cdurLogFlush 마다 한 번 하고, 내려 쓰기는 iSyncSec 초마다 한 번 한다
+// (읽기 고루틴이 디스크를 기다리지 않게). iSyncSec 이 0 이면 받는 즉시 쓰고 내려 쓴다.
 type Logger struct {
 	mtxData    sync.Mutex
 	szPath     string // 열린 파일의 절대 경로 (열린 로그 집합의 키)
 	pFile      *os.File
 	pWriter    *bufio.Writer
-	szCarry    string      // 아직 끝나지 않은 ANSI 시퀀스의 앞부분
-	timerFlush *time.Timer // 버퍼에 내용이 있을 때만 걸린다
+	szCarry    string           // 아직 끝나지 않은 ANSI 시퀀스의 앞부분
+	timerFlush *time.Timer      // 버퍼에 내용이 있거나 아직 내려 쓰지 않은 내용이 있을 때만 걸린다
+	iSyncSec   int              // 내려 쓰기 주기(초). 0 = 즉시
+	bUnsynced  bool             // 파일에는 썼지만 아직 내려 쓰지 않은 내용이 있다
+	tLastSync  time.Time        // 마지막으로 내려 쓴 시각 (처음에는 연 시각)
+	bTimestamp bool             // 줄마다 앞에 시각을 붙인다 (설정 sessionLogTimestamp)
+	bLineStart bool             // 다음에 쓸 글자가 줄의 첫 글자다 (시각을 붙일 자리)
+	bAnsi      bool             // ANSI 시퀀스와 CR 을 지우지 않고 받은 그대로 쓴다 (설정 sessionLogAnsi)
+	fnNow      func() time.Time // 시각을 얻는 함수 (시험에서 바꾼다)
 }
 
 // OpenLog 는 데이터 폴더의 logs 아래 이 세션만의 로그 파일을 새로 만든다 (소유자 전용 권한, session.md §6).
@@ -110,7 +138,8 @@ func OpenLog(szDataDir string, szAlias string, tNow time.Time) (*Logger, error) 
 			g_mtxOpenLogs.Lock()
 			g_mOpenLogs[szPath] = struct{}{}
 			g_mtxOpenLogs.Unlock()
-			return &Logger{szPath: szPath, pFile: pFile, pWriter: bufio.NewWriterSize(pFile, G_ciLogBufferBytes)}, nil
+			return &Logger{szPath: szPath, pFile: pFile, pWriter: bufio.NewWriterSize(pFile, G_ciLogBufferBytes),
+				iSyncSec: G_ciLogSyncSecDefault, tLastSync: time.Now(), bLineStart: true, fnNow: time.Now}, nil
 		}
 		if !errors.Is(errOpen, fs.ErrExist) {
 			return nil, errOpen
@@ -164,19 +193,122 @@ func (pLogger *Logger) Write(szText string) {
 	if szBody == "" {
 		return
 	}
-	_, _ = pLogger.pWriter.WriteString(StripForLog(szBody))
+	_, _ = pLogger.pWriter.WriteString(pLogger.stampLinesLocked(pLogger.cleanLocked(szBody)))
+	if pLogger.iSyncSec == 0 {
+		// 즉시 모드: 부하가 걸리더라도 받는 대로 파일에 쓰고 내려 쓴다 (사용자가 고른 동작).
+		pLogger.syncNowLocked()
+		return
+	}
 	if pLogger.timerFlush == nil {
 		pLogger.timerFlush = time.AfterFunc(G_cdurLogFlush, pLogger.flushTimer)
 	}
 }
 
-// flushTimer 는 주기 flush 다. 닫힌 뒤에는 아무 일도 하지 않는다.
-func (pLogger *Logger) flushTimer() {
+// cleanLocked 는 mtxData 를 잡은 상태에서 로그에 쓸 글을 만든다.
+// 평소에는 ANSI 시퀀스와 CR 을 지우고, "ANSI 그대로 저장"이 켜져 있으면 받은 그대로 돌려준다.
+// 어느 쪽이든 szText 는 완성된 시퀀스만 담고 있다(미완성 꼬리는 Write 가 떼어 보관한다).
+func (pLogger *Logger) cleanLocked(szText string) string {
+	if pLogger.bAnsi {
+		return szText
+	}
+	return StripForLog(szText)
+}
+
+// SetAnsi 는 ANSI 시퀀스(색·커서 이동 등)와 CR 을 지우지 않고 그대로 쓸지 바꾼다 (설정 sessionLogAnsi, D120).
+// 다음에 쓰는 조각부터 적용한다. 시퀀스 하나가 반은 지워지고 반은 남는 일은 없다(조각은 시퀀스 단위로 끊는다).
+func (pLogger *Logger) SetAnsi(bEnabled bool) {
 	pLogger.mtxData.Lock()
 	defer pLogger.mtxData.Unlock()
+	pLogger.bAnsi = bEnabled
+}
+
+// stampLinesLocked 는 mtxData 를 잡은 상태에서, 정리된 로그 글에 줄 시작 위치를 따라가며
+// (켜져 있으면) 줄마다 앞에 시각을 붙인다. 시각은 그 줄의 첫 글자를 받은 때다.
+// 꺼져 있어도 줄 시작 위치는 따라가므로, 중간에 켜면 다음 줄부터 시각이 붙는다.
+func (pLogger *Logger) stampLinesLocked(szText string) string {
+	if szText == "" {
+		return ""
+	}
+	if !pLogger.bTimestamp {
+		pLogger.bLineStart = strings.HasSuffix(szText, "\n")
+		return szText
+	}
+	szStamp := pLogger.fnNow().Format(G_cszLogStampLayout)
+	var sbOut strings.Builder
+	sbOut.Grow(len(szText) + len(szStamp))
+	for len(szText) > 0 {
+		if pLogger.bLineStart {
+			sbOut.WriteString(szStamp)
+			pLogger.bLineStart = false
+		}
+		iNewline := strings.IndexByte(szText, '\n')
+		if iNewline < 0 {
+			sbOut.WriteString(szText)
+			break
+		}
+		sbOut.WriteString(szText[:iNewline+1])
+		szText = szText[iNewline+1:]
+		pLogger.bLineStart = true
+	}
+	return sbOut.String()
+}
+
+// SetTimestamp 는 줄마다 시각을 붙일지 바꾼다. 쓰던 줄 중간에는 붙이지 않고 다음 줄부터 적용한다.
+func (pLogger *Logger) SetTimestamp(bEnabled bool) {
+	pLogger.mtxData.Lock()
+	defer pLogger.mtxData.Unlock()
+	pLogger.bTimestamp = bEnabled
+}
+
+// syncNowLocked 는 mtxData 를 잡은 상태에서 버퍼를 파일에 쓰고 곧바로 내려 쓴다.
+func (pLogger *Logger) syncNowLocked() {
+	if pLogger.pWriter == nil {
+		return
+	}
+	_ = pLogger.pWriter.Flush()
+	_ = pLogger.pFile.Sync()
+	pLogger.bUnsynced = false
+	pLogger.tLastSync = time.Now()
+}
+
+// SetSyncSec 은 내려 쓰기 주기(초, 0~5)를 바꾼다. 0 으로 바꾸면 쌓인 것을 곧바로 쓰고 내려 쓴다.
+func (pLogger *Logger) SetSyncSec(iSec int) {
+	pLogger.mtxData.Lock()
+	defer pLogger.mtxData.Unlock()
+	pLogger.iSyncSec = ClampLogSyncSec(iSec)
+	if pLogger.iSyncSec == 0 {
+		pLogger.syncNowLocked()
+	}
+}
+
+// flushTimer 는 주기 처리다: 버퍼를 파일에 쓰고, 내려 쓰기 주기가 됐으면 내려 쓴다.
+// 아직 내려 쓰지 않은 내용이 남아 있으면 다음 주기에 다시 돈다. 닫힌 뒤에는 아무 일도 하지 않는다.
+func (pLogger *Logger) flushTimer() {
+	pLogger.mtxData.Lock()
 	pLogger.timerFlush = nil
-	if pLogger.pWriter != nil {
+	if pLogger.pWriter == nil {
+		pLogger.mtxData.Unlock()
+		return
+	}
+	if pLogger.pWriter.Buffered() > 0 {
 		_ = pLogger.pWriter.Flush()
+		pLogger.bUnsynced = true
+	}
+	var pSync *os.File
+	if pLogger.bUnsynced {
+		if time.Since(pLogger.tLastSync) >= time.Duration(pLogger.iSyncSec)*time.Second {
+			pSync = pLogger.pFile
+			pLogger.bUnsynced = false
+			pLogger.tLastSync = time.Now()
+		} else {
+			pLogger.timerFlush = time.AfterFunc(G_cdurLogFlush, pLogger.flushTimer)
+		}
+	}
+	pLogger.mtxData.Unlock()
+	if pSync != nil {
+		// 내려 쓰기는 잠금 밖에서 한다: 디스크를 기다리는 동안 출력 기록(Write)이 막히지 않는다.
+		// 그사이 닫혔으면 오류가 날 뿐이다(닫기가 이미 다 썼다).
+		_ = pSync.Sync()
 	}
 }
 
@@ -192,7 +324,7 @@ func (pLogger *Logger) Close() error {
 		pLogger.timerFlush = nil
 	}
 	if pLogger.szCarry != "" {
-		_, _ = pLogger.pWriter.WriteString(StripForLog(pLogger.szCarry))
+		_, _ = pLogger.pWriter.WriteString(pLogger.stampLinesLocked(pLogger.cleanLocked(pLogger.szCarry)))
 		pLogger.szCarry = ""
 	}
 	errFlush := pLogger.pWriter.Flush()

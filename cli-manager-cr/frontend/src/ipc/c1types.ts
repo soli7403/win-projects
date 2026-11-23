@@ -49,10 +49,13 @@ export interface UpdateInfo {
   version: string;
   url: string;
   announce?: boolean;
+  /** Microsoft Store 에서 찾은 새 버전(lifecycle.md §6.1). 누르면 update.install 로 Windows 의 업데이트 확인 창을 띄운다. */
+  store?: boolean;
 }
 
 export interface UpdateCheckResult {
   status: 'newer' | 'latest' | 'error' | 'unconfigured';
   version?: string;
   url?: string;
+  store?: boolean;
 }

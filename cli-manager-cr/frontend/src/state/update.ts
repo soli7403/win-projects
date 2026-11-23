@@ -19,8 +19,8 @@ export const useUpdate = create<UpdateState>((set) => ({
   setAvailable: (u) => set({ available: u }),
   async loadStatus() {
     try {
-      const r = await getBackend().invoke<{ status?: string; version: string; url: string } | null>('update.status');
-      if (r && r.version) set({ available: { version: r.version, url: r.url } });
+      const r = await getBackend().invoke<{ status?: string; version: string; url: string; store?: boolean } | null>('update.status');
+      if (r && r.version) set({ available: { version: r.version, url: r.url, store: !!r.store } });
     } catch {
       /* 조회 실패는 조용히 넘어간다 */
     }
@@ -30,7 +30,7 @@ export const useUpdate = create<UpdateState>((set) => ({
     try {
       const r = await getBackend().invoke<UpdateCheckResult>('update.check');
       if (r.status === 'newer') {
-        set({ available: { version: r.version ?? '', url: r.url ?? '' } });
+        set({ available: { version: r.version ?? '', url: r.url ?? '', store: !!r.store } });
         push({ kind: 'info', text: t('update.newer', { version: r.version ?? '' }) });
       } else if (r.status === 'latest') push({ kind: 'ok', text: t('update.latest') });
       else if (r.status === 'unconfigured') push({ kind: 'ok', text: t('update.unconfigured') });
@@ -44,7 +44,7 @@ export const useUpdate = create<UpdateState>((set) => ({
 /** update.available 이벤트를 받아 상태와 안내 토스트를 갱신한다. 구독 해제 함수를 돌려준다. */
 export function subscribeUpdateEvents(): () => void {
   const off = getBackend().on('update.available', (u: UpdateInfo) => {
-    useUpdate.getState().setAvailable({ version: u.version, url: u.url });
+    useUpdate.getState().setAvailable({ version: u.version, url: u.url, store: !!u.store });
     if (u.announce) {
       useApp.getState().pushToast({ kind: 'info', text: t('update.announce', { version: u.version }) });
     }

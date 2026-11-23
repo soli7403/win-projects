@@ -21,7 +21,7 @@ import { t } from '../i18n';
 export function SettingsAbout() {
   const [updateCheck, setUpdateCheck] = useSetting('updateCheck');
   const checkNow = useUpdate((s) => s.checkNow);
-  const [info, setInfo] = useState<{ version?: string; dataDir?: string; updateEnabled?: boolean }>({});
+  const [info, setInfo] = useState<{ version?: string; dataDir?: string; updateEnabled?: boolean; updateSource?: string }>({});
   const pushToast = useApp((s) => s.pushToast);
   const links = aboutLinks();
   const openLink = (url: string) => {
@@ -38,7 +38,7 @@ export function SettingsAbout() {
 
   useEffect(() => {
     getBackend()
-      .invoke<{ version?: string; dataDir?: string; updateEnabled?: boolean }>('app.info')
+      .invoke<{ version?: string; dataDir?: string; updateEnabled?: boolean; updateSource?: string }>('app.info')
       .then((i) => setInfo(i ?? {}))
       .catch((e) => pushToast({ kind: 'error', text: String(e?.message ?? e) }));
     // pushToast 는 안정적인 참조다.
@@ -112,7 +112,7 @@ export function SettingsAbout() {
         <Group>
           <ToggleRow
             title={t('about.updateCheck')}
-            desc={t('about.updateCheckDesc')}
+            desc={t(info.updateSource === 'store' ? 'about.updateCheckStoreDesc' : 'about.updateCheckDesc')}
             checked={updateCheck}
             onChange={setUpdateCheck}
           />

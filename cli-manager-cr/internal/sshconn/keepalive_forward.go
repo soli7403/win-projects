@@ -77,6 +77,18 @@ func (pConn *Conn) StartForwards(slForwards []Forward, notice func(string)) []io
 		}
 		szBindAddr := net.JoinHostPort(szBind, strconv.Itoa(fw.BindPort))
 		szDest := net.JoinHostPort(fw.DestHost, strconv.Itoa(fw.DestPort))
+		if fw.Type == "D" {
+			// 동적 포워딩: 이 PC 의 포트가 SOCKS 프록시가 되고, 요청마다 대상을 SSH 연결로 잇는다 (D109).
+			ln, errListen := net.Listen("tcp", szBindAddr)
+			if errListen != nil {
+				notice(i18n.T("be.fwd.dynamicFailed", "port", fw.BindPort, "error", errListen))
+				continue
+			}
+			notice(i18n.T("be.fwd.dynamicActive", "from", szBindAddr))
+			slClosers = append(slClosers, ln)
+			go serveSocks(ln, pConn.Client.Dial)
+			continue
+		}
 		if fw.Type == "R" {
 			ln, errListen := pConn.Client.Listen("tcp", szBindAddr)
 			if errListen != nil {

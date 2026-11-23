@@ -30,6 +30,10 @@ class FakeTerm {
   onData() { return { dispose() {} }; }
   onSelectionChange() { return { dispose() {} }; }
   onBell() { return { dispose() {} }; }
+  // 키워드 강조(termHighlight)가 듣는 이벤트. 규칙이 없으면 그리지 않으므로 버퍼는 필요 없다.
+  onWriteParsed() { return { dispose() {} }; }
+  onScroll() { return { dispose() {} }; }
+  onResize() { return { dispose() {} }; }
   attachCustomKeyEventHandler() {}
   refresh() {}
   focus() {}

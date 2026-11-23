@@ -164,20 +164,6 @@ export function movePaneToEdge(root: LayoutNode, movingId: string, targetId: str
   return splitPane(without, targetId, dir, moving, before);
 }
 
-/** 그리드 배치: 열 수 = ceil(sqrt(n)). 행마다 가로 분할, 행들을 세로 분할(모두 균등). */
-export function gridLayout(panes: PaneNode[]): LayoutNode {
-  if (panes.length === 0) return newPane(null);
-  if (panes.length === 1) return panes[0];
-  const cols = Math.ceil(Math.sqrt(panes.length));
-  const rows: LayoutNode[] = [];
-  for (let i = 0; i < panes.length; i += cols) {
-    const chunk = panes.slice(i, i + cols);
-    rows.push(chunk.length === 1 ? chunk[0] : { type: 'split', id: newId('s'), dir: 'row', sizes: equalSizes(chunk.length), children: chunk });
-  }
-  if (rows.length === 1) return rows[0];
-  return { type: 'split', id: newId('s'), dir: 'col', sizes: equalSizes(rows.length), children: rows };
-}
-
 export type Edge = 'left' | 'right' | 'top' | 'bottom' | 'center';
 
 /**

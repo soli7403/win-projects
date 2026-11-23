@@ -1,6 +1,6 @@
 // 터미널 칸 본문(xterm.js). 근거: spec/behavior/terminal.md §1~§5, §6, §8, spec/behavior/shortcuts.md §2~§3, spec/ui/panes.md §2.3~§2.4.
 import { useEffect, useRef, useState } from 'react';
-import { Terminal } from '@xterm/xterm';
+import { Terminal, type IDisposable } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -15,6 +15,10 @@ import { matchesDangerous, LineTracker, pasteLineCount } from '../lib/termGuard'
 import { decodeOsc52 } from '../lib/osc52';
 import { shortcutFor } from '../lib/keys';
 import { resolveTermTheme } from '../lib/termThemes';
+import { attachHighlighter, type Highlighter } from '../lib/termHighlight';
+import { attachFindMarks, type FindMarks } from '../lib/termFind';
+import { attachCopyOnMouseSelect } from '../lib/copyOnSelect';
+import { mixHex, rowRanges, FIND_ACTIVE_BG, FIND_ACTIVE_FG, FIND_MATCH_COLOR, FIND_MATCH_RATIO, FIND_RULER_MATCH, FIND_RULER_ACTIVE, FIND_RULER_WIDTH } from '../lib/findHighlight';
 import { DANGEROUS_PATTERNS } from '../lib/defaults';
 import { clipboardKind, forceImagePaste, insertPaths, uploadAndInsert } from '../state/paste';
 // 이 파일은 t 를 터미널 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
@@ -28,6 +32,15 @@ interface Props {
 
 /** 칸 id → xterm 인스턴스. 칸 우클릭 메뉴가 복사·모두 선택·화면 지우기에 쓴다. */
 export const termHandles = new Map<string, Terminal>();
+
+/** 메뉴의 "모두 선택". 사용자가 고른 선택이므로 "선택하면 자동 복사"가 켜져 있으면 복사한다
+ *  (자동 복사는 마우스 선택에만 반응하므로 여기서 따로 한다, KI-011). */
+export function selectAllInPane(paneId: string): void {
+  const term = termHandles.get(paneId);
+  if (!term) return;
+  term.selectAll();
+  if (useApp.getState().store?.settings.copyOnSelect && term.getSelection()) void copySelection(term);
+}
 
 /**
  * 활성 탭의 포커스 칸 터미널에 키보드 포커스를 준다. 탭 클릭·서버 열기 뒤 바로 입력할 수 있게 한다.
@@ -156,21 +169,76 @@ export async function pasteFromClipboard(paneId: string, sessionId: string, term
 function FindBar({ term, paneId, onClose }: { term: Terminal; paneId: string; onClose: () => void }) {
   const [q, setQ] = useState('');
   const addon = useRef<SearchAddon | null>(null);
+  // 현재 항목 위에 얹는 강조(줄마다 하나). 검색 애드온은 현재 항목을 "선택"으로 표시하는데,
+  // 애드온의 현재 항목 색은 선택 색 아래에 깔려 보이지 않는다. 선택 위(top)에 직접 그린다 (D96).
+  const active = useRef<IDisposable[]>([]);
   void paneId;
+  const clearActive = () => {
+    for (const d of active.current) d.dispose();
+    active.current = [];
+  };
+  const markActive = () => {
+    clearActive();
+    const sel = term.getSelectionPosition();
+    if (!sel) return;
+    const buf = term.buffer.active;
+    const border = term.options.theme?.foreground ?? FIND_ACTIVE_FG;
+    for (const r of rowRanges(sel.start, sel.end, term.cols)) {
+      const marker = term.registerMarker(r.row - buf.baseY - buf.cursorY);
+      const deco = term.registerDecoration({ marker, x: r.x, width: r.width, backgroundColor: FIND_ACTIVE_BG, foregroundColor: FIND_ACTIVE_FG, layer: 'top', overviewRulerOptions: { color: FIND_RULER_ACTIVE, position: 'full' } });
+      deco?.onRender((el) => {
+        el.style.outline = `1px solid ${border}`;
+      });
+      // 반드시 강조를 먼저, 표식을 나중에 지운다. 표식을 먼저 지우면 xterm 이 그 강조를 목록에서
+      // 찾지 못해 남기고(줄 번호가 -1 로 바뀐 뒤라서), 다른 강조의 삭제까지 실패하게 만든다.
+      active.current.push({
+        dispose() {
+          deco?.dispose();
+          marker.dispose();
+        },
+      });
+    }
+  };
+  // 찾은 항목(현재 항목 제외)의 바탕·스크롤 막대 표시. 애드온에 강조를 맡기지 않는다(KI-011):
+  // 애드온은 강조를 맡으면 출력마다 다시 찾으며 터미널 선택을 바꿔, 자동 복사·사용자 선택을 덮었다.
+  const marks = useRef<FindMarks | null>(null);
   useEffect(() => {
     const a = new SearchAddon();
     term.loadAddon(a);
     addon.current = a;
-    return () => a.clearDecorations();
+    // 찾은 항목: 터미널 배경에 주황을 옅게 섞은 바탕(테마가 밝든 어둡든 글자가 읽힌다). 색은 #RRGGBB 만 받는다.
+    const matchBackground = mixHex(term.options.theme?.background ?? '#000000', FIND_MATCH_COLOR, FIND_MATCH_RATIO);
+    const m = attachFindMarks(term, { matchBackground, ruler: FIND_RULER_MATCH });
+    marks.current = m;
+    // 터미널을 눌러 선택이 풀리면 현재 항목 강조도 지운다.
+    const sub = term.onSelectionChange(() => {
+      if (!term.hasSelection()) clearActive();
+    });
+    return () => {
+      sub.dispose();
+      clearActive();
+      m.dispose();
+      marks.current = null;
+      a.dispose();
+      addon.current = null;
+    };
+    // clearActive 는 ref 만 다뤄 렌더마다 새로 만들어져도 같다.
   }, [term]);
-  const opts = { caseSensitive: false, decorations: { matchOverviewRuler: '#f59e0b', activeMatchColorOverviewRuler: '#ef4444', matchBackground: '#f59e0b55', activeMatchBackground: '#ef444488' } };
+  // 애드온은 현재 항목으로 옮겨 선택하는 일만 한다(decorations 없음 → 출력마다 다시 찾지 않는다).
+  const opts = { caseSensitive: false };
+  const find = (text: string, dir: 1 | -1) => {
+    marks.current?.setQuery(text);
+    const found = dir === 1 ? addon.current?.findNext(text, opts) : addon.current?.findPrevious(text, opts);
+    if (found) markActive();
+    else clearActive();
+  };
   const next = (dir: 1 | -1) => {
     if (!q) return;
-    if (dir === 1) addon.current?.findNext(q, opts);
-    else addon.current?.findPrevious(q, opts);
+    find(q, dir);
   };
   const close = () => {
-    addon.current?.clearDecorations();
+    clearActive();
+    marks.current?.setQuery('');
     onClose();
     term.focus();
   };
@@ -183,8 +251,11 @@ function FindBar({ term, paneId, onClose }: { term: Terminal; paneId: string; on
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
-          if (e.target.value) addon.current?.findNext(e.target.value, opts);
-          else addon.current?.clearDecorations();
+          if (e.target.value) find(e.target.value, 1);
+          else {
+            clearActive();
+            marks.current?.setQuery('');
+          }
         }}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
@@ -215,6 +286,10 @@ interface KeptTerm {
   el: HTMLDivElement;
   /** 지금 이 터미널을 보여 주는 칸(입력 대상 계산용). 칸이 바뀌면 붙일 때 갱신한다. */
   paneId: string;
+  /** 키워드 강조(behavior/terminal.md §9). 설정의 규칙이 바뀌면 setRules 로 알린다. */
+  highlighter: Highlighter;
+  /** 마우스 선택 자동 복사 리스너. */
+  copySub: IDisposable;
 }
 const keptTerms = new Map<string, KeptTerm>();
 
@@ -251,7 +326,10 @@ function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): K
     minimumContrastRatio: 1,
     smoothScrollDuration: 0,
     allowProposedApi: true,
+    // 찾기 결과를 스크롤 막대 자리에 표시한다(ui/panes.md §2.4). 폭은 xterm 스크롤 막대 기본 폭과 같아 칸 수가 바뀌지 않는다.
+    overviewRuler: { width: FIND_RULER_WIDTH },
     theme: {
+      overviewRulerBorder: theme.background,
       background: theme.background,
       foreground: theme.foreground,
       cursor: theme.cursor,
@@ -303,11 +381,8 @@ function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): K
     for (const sid of targetsFor(k.paneId, sessionId)) getBackend().termInput(sid, data);
   });
 
-  // 선택하면 자동 복사
-  t.onSelectionChange(() => {
-    const st2 = useApp.getState().store?.settings;
-    if (st2?.copyOnSelect && t.getSelection()) void copySelection(t);
-  });
+  // 선택하면 자동 복사: 마우스로 선택을 끝냈을 때만(찾기가 바꾼 선택은 복사하지 않는다, KI-011).
+  const copySub = attachCopyOnMouseSelect(el, t, () => !!useApp.getState().store?.settings.copyOnSelect, () => void copySelection(t));
 
   // 벨: 설정이 켜져 있을 때만 짧은 소리
   t.onBell(() => {
@@ -380,7 +455,7 @@ function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): K
   };
   el.addEventListener('wheel', onWheel, { passive: false });
 
-  const k: KeptTerm = { term: t, fit, el, paneId };
+  const k: KeptTerm = { term: t, fit, el, paneId, highlighter: attachHighlighter(t, st?.highlightRules), copySub };
   keptTerms.set(sessionId, k);
   return k;
 }
@@ -389,10 +464,18 @@ function disposeKeptTerm(sessionId: string): void {
   const k = keptTerms.get(sessionId);
   if (!k) return;
   keptTerms.delete(sessionId);
+  k.highlighter.dispose();
+  k.copySub.dispose();
   k.el.remove();
   k.term.dispose();
   if (useWorkspace.getState().writers[sessionId]) useWorkspace.getState().registerWriter(sessionId, null);
 }
+
+// 키워드 강조 규칙이 바뀌면 살려 둔 모든 터미널(안 보이는 탭 포함)에 알린다.
+useApp.subscribe((s) => {
+  const rules = s.store?.settings.highlightRules;
+  for (const k of keptTerms.values()) k.highlighter.setRules(rules);
+});
 
 // 세션이 닫혀 작업 공간에서 빠지면 살려 둔 터미널도 버린다.
 useWorkspace.subscribe((s) => {
@@ -464,7 +547,7 @@ export function TerminalView({ paneId, sessionId, focused }: Props) {
     t.options.cursorStyle = settings.cursorStyle;
     t.options.cursorBlink = settings.cursorBlink;
     t.options.scrollback = settings.scrollback;
-    t.options.theme = { ...t.options.theme, background: theme.background, foreground: theme.foreground, cursor: theme.cursor, selectionBackground: theme.selectionBackground };
+    t.options.theme = { ...t.options.theme, background: theme.background, foreground: theme.foreground, cursor: theme.cursor, selectionBackground: theme.selectionBackground, overviewRulerBorder: theme.background };
     fitRef.current?.fit();
   }, [settings]);
 

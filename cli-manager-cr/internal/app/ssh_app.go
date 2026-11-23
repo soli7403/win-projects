@@ -66,7 +66,8 @@ func (pService *Service) sshDialer(record hostRecord) (session.Dialer, func()) {
 			return nil, errConnect
 		}
 		creds.remember(tgt)
-		shell, errShell := sshconn.OpenShell(conn, record.M_szTermType, 120, 32)
+		shell, errShell := sshconn.OpenShellWith(conn, record.M_szTermType, 120, 32,
+			sshconn.ShellOptions{AgentForward: record.M_bAgentForward, Notice: notify})
 		if errShell != nil {
 			_ = conn.Close()
 			return nil, errShell
@@ -113,6 +114,7 @@ func (pService *Service) buildSSHTarget(record hostRecord, depth int, creds *ses
 		tgt.AuthType = "ask"
 	}
 	pService.fillCredential(tgt, record.M_szCredentialId, creds, pbNeedUnlock)
+	tgt.Proxy = pService.buildProxy(record.M_pProxy, tgt, creds, pbNeedUnlock)
 	switch {
 	case record.M_szJumpHostId == "direct" && record.M_pJumpDirect != nil:
 		jd := record.M_pJumpDirect
@@ -190,6 +192,48 @@ func (pService *Service) fillCredential(tgt *sshconn.Target, szCredentialId stri
 	if result == credLocked && !bHadCopy && pbNeedUnlock != nil {
 		*pbNeedUnlock = true
 	}
+}
+
+// g_mProxyDefaultPort 는 프록시 종류별 기본 포트다 (포트를 0 으로 저장했을 때).
+var g_mProxyDefaultPort = map[string]int{sshconn.G_cszProxyHttp: 8080, sshconn.G_cszProxySocks5: 1080}
+
+// buildProxy 는 서버의 프록시 설정을 연결 쪽 형식으로 바꾼다. 설정이 없거나 종류·주소가 비면 nil 이다.
+// 비밀번호는 볼트의 연결된 계정에서 읽고, 볼트가 잠겨 있으면 세션 사본으로 채운다.
+// 사본도 없으면 *pbNeedUnlock 을 true 로 둔다 (protocols.md §2.7, D110).
+func (pService *Service) buildProxy(pRecord *proxyRecord, tgt *sshconn.Target, creds *sessionCreds, pbNeedUnlock *bool) *sshconn.Proxy {
+	if pRecord == nil || pRecord.M_szHost == "" {
+		return nil
+	}
+	iDefault, bKnown := g_mProxyDefaultPort[pRecord.M_szType]
+	if !bKnown {
+		return nil
+	}
+	pProxy := &sshconn.Proxy{Type: pRecord.M_szType, Host: pRecord.M_szHost, Port: pRecord.M_iPort, Username: pRecord.M_szUsername}
+	if pProxy.Port == 0 {
+		pProxy.Port = iDefault
+	}
+	if pRecord.M_szCredentialId == "" {
+		return pProxy
+	}
+	body, errGet := pService.pVault.Get(pRecord.M_szCredentialId)
+	switch {
+	case errGet == nil && body != nil:
+		pProxy.Password = body.M_szPassword
+		if pProxy.Username == "" {
+			pProxy.Username = body.M_szUsername
+		}
+	case errors.Is(errGet, vault.ErrLocked) && pService.vaultLocked():
+		szPassword, bHadCopy := "", false
+		if creds != nil {
+			szPassword, bHadCopy = creds.proxyPassword(tgt)
+		}
+		if bHadCopy {
+			pProxy.Password = szPassword
+		} else if pbNeedUnlock != nil {
+			*pbNeedUnlock = true
+		}
+	}
+	return pProxy
 }
 
 // forwardsOf 는 서버의 포워딩 설정을 연결 쪽 형식으로 바꾼다.

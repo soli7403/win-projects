@@ -150,13 +150,38 @@ func (pService *Service) registerStore() {
 			return nil, errArg
 		}
 		iKeepBefore := pService.logKeepDays()
+		bLogBefore := pService.settingBool("sessionLog", false)
+		iSyncBefore := pService.logSyncSec()
+		bStampBefore := pService.settingBool("sessionLogTimestamp", false)
+		bAnsiBefore := pService.settingBool("sessionLogAnsi", false)
 		errPatch := pService.pStore.Patch(mapPatch)
 		pService.applyLanguage()
+		if bLogNow := pService.settingBool("sessionLog", false); bLogNow != bLogBefore {
+			// "터미널 출력 기록"을 바꾸면 열려 있는 세션에도 곧바로 적용한다 (session.md §6, D99).
+			pService.pSessions.SetLogging(bLogNow)
+		}
+		if iSyncNow := pService.logSyncSec(); iSyncNow != iSyncBefore {
+			// 내려 쓰기 주기도 열려 있는 세션에 곧바로 적용한다 (session.md §6, D100).
+			pService.pSessions.SetLogSyncSec(iSyncNow)
+		}
+		if bStampNow := pService.settingBool("sessionLogTimestamp", false); bStampNow != bStampBefore {
+			// 줄 앞 시각 표시도 열려 있는 세션에 곧바로(다음 줄부터) 적용한다 (session.md §6, D112).
+			pService.pSessions.SetLogTimestamp(bStampNow)
+		}
+		if bAnsiNow := pService.settingBool("sessionLogAnsi", false); bAnsiNow != bAnsiBefore {
+			// ANSI 그대로 저장도 열려 있는 세션에 곧바로(다음 출력부터) 적용한다 (session.md §6, D120).
+			pService.pSessions.SetLogAnsi(bAnsiNow)
+		}
 		if pService.logKeepDays() != iKeepBefore {
 			pService.pLogClean.Kick() // 보관 기간을 바꾸면 곧바로 한 번 정리한다 (session.md §6)
 		}
 		return nil, errPatch
 	})
+}
+
+// logSyncSec 은 세션 로그의 내려 쓰기 주기 설정이다 (초, 0~5, 0 = 받는 즉시 쓰고 내려 쓴다).
+func (pService *Service) logSyncSec() int {
+	return session.ClampLogSyncSec(pService.settingInt("sessionLogSyncSec", session.G_ciLogSyncSecDefault))
 }
 
 // logKeepDays 는 세션 로그 보관 일수 설정이다 (0 = 지우지 않음).
@@ -194,6 +219,8 @@ func (pService *Service) registerApp() {
 			"domainJoined": license.DomainJoined(),
 			// 업데이트 확인 기능을 쓰는 빌드인지(D80). false 면 화면에서 업데이트 항목을 감춘다.
 			"updateEnabled": UpdateEnabled(),
+			// 새 버전을 묻는 곳: "store"(Microsoft Store 설치본, D115) · "release"(배포 저장소) · ""(확인하지 않음).
+			"updateSource": updateSource(),
 		}, nil
 	})
 }

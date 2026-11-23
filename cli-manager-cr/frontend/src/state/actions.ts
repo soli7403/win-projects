@@ -3,7 +3,7 @@ import { getBackend, errorMessage } from '../ipc/backend';
 import type { SessionInfo } from '../ipc/types';
 import { useApp } from './app';
 import { useUi } from './ui';
-import { addGridTab, groupOf, openSessionFor, useWorkspace, type Tab } from './workspace';
+import { groupOf, openSessionFor, useWorkspace, type Tab } from './workspace';
 import { findPane, paneIds, type Dir, type LayoutNode } from '../lib/layout';
 import { sameTargetRequest } from '../lib/sameTarget';
 import type { ShortcutAction } from '../lib/keys';
@@ -38,11 +38,11 @@ export async function openHost(
   focusActiveTerminal();
 }
 
-/** where: 새 탭, 오른쪽 그룹의 새 탭, 또는 포커스 칸 기준 분할/빈 칸 채우기. */
+/** where: 새 탭(group 을 주면 그 그룹, 아니면 포커스 그룹), 오른쪽 그룹의 새 탭, 또는 포커스 칸 기준 분할/빈 칸 채우기. */
 async function openHostAt(
   hostId: string | null,
   where:
-    | { kind: 'tab' }
+    | { kind: 'tab'; group?: 0 | 1 }
     | { kind: 'rightGroup' }
     | { kind: 'split'; dir: Dir; before?: boolean; paneId?: string | null } = { kind: 'tab' },
   adhoc?: unknown,
@@ -51,7 +51,7 @@ async function openHostAt(
   if (!info) return;
   const ws = useWorkspace.getState();
   if (where.kind === 'tab') {
-    ws.openInNewTab(info);
+    ws.openInNewTab(info, where.group);
     return;
   }
   if (where.kind === 'rightGroup') {
@@ -75,10 +75,10 @@ async function openHostAt(
     ws.fillPane(targetId, info);
     return;
   }
-  // 분할 한도에 이르면 쪼개지 않고 새 탭에서 연다 (ui/panes.md §2).
+  // 분할 한도에 이르면 쪼개지 않고 새 탭에서 연다 (ui/panes.md §2). 새 탭은 나누려던 탭과 같은 그룹에 둔다.
   if (!canSplitMore(active.root)) {
     useApp.getState().pushToast({ kind: 'info', text: t('split.limitNewTab', { max: maxVerticalSplits() }) });
-    ws.openInNewTab(info);
+    ws.openInNewTab(info, groupOf(active));
     return;
   }
   ws.openInPane(targetId, where.dir, info, where.before);
@@ -223,34 +223,6 @@ export function subscribeSessionEvents(): () => void {
 
 export function reportError(e: unknown): void {
   useApp.getState().pushToast({ kind: 'error', text: errorMessage(e) });
-}
-
-/** 폴더 전체를 그리드로 연다(panes §6). 하위 폴더 포함, sort 오름차순, 16개 초과는 확인. */
-export async function openFolderGrid(groupId: string): Promise<void> {
-  const st = useApp.getState().store;
-  if (!st) return;
-  const group = st.groups.find((g) => g.id === groupId);
-  const ids = new Set<string>([groupId]);
-  let grew = true;
-  while (grew) {
-    grew = false;
-    for (const g of st.groups) if (g.parentId && ids.has(g.parentId) && !ids.has(g.id)) { ids.add(g.id); grew = true; }
-  }
-  const hosts = st.hosts.filter((h) => h.groupId && ids.has(h.groupId)).sort((a, b) => a.sort - b.sort);
-  if (hosts.length === 0) {
-    useApp.getState().pushToast({ kind: 'info', text: t('folder.noServers') });
-    return;
-  }
-  if (hosts.length > 16) {
-    const ok = await useUi.getState().confirm({ title: t('folder.openManyTitle'), body: t('folder.openManyBody', { count: hosts.length }), okText: t('common.ok') });
-    if (!ok) return;
-  }
-  const infos: SessionInfo[] = [];
-  for (const h of hosts) {
-    const info = await openSessionFor(h.id);
-    if (info) infos.push(info);
-  }
-  addGridTab(group?.name ?? t('folder.fallbackName'), infos);
 }
 
 /** 칸을 다른 탭으로 옮기지 않는다(panes §7 은 같은 탭 안만). 탭 분리는 detachPanes 를 쓴다. */

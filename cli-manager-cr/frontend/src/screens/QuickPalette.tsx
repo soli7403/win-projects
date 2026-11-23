@@ -4,8 +4,8 @@ import { Zap } from 'lucide-react';
 import { PROTOCOL_ICON as PROTO_ICON, protocolIconColor } from '../ui/protocolIcon';
 import { useApp } from '../state/app';
 import { useUi } from '../state/ui';
+import { openHost } from '../state/actions';
 import { useWorkspace } from '../state/workspace';
-import { openHost, runShortcut } from '../state/actions';
 import { rankHosts, isLocalPrefix, parseDirect } from '../lib/quick';
 import { effectiveColor, recentHosts } from '../lib/hosts';
 import { sidebarSubtitle } from '../lib/tree';
@@ -35,13 +35,12 @@ export function QuickPalette() {
     if (cmdMode) {
       const word = input.trimStart().slice(1).trim().toLowerCase();
       const cmds: Row[] = [
-        { kind: 'cmd', key: 'c-local', label: t('sc.newLocal'), sub: t('quick.newTab'), run: () => runShortcut('newLocal') },
+        { kind: 'cmd', key: 'c-local', label: t('sc.newLocal'), sub: t('quick.newTab'), run: () => void openHost(null, { kind: 'tab', group: quick.group ?? undefined }, { host: '', protocol: 'local' }) },
         { kind: 'cmd', key: 'c-new-host', label: t('welcome.newServer'), run: () => openEditor({ kind: 'host', hostId: null, groupId: null }) },
         { kind: 'cmd', key: 'c-new-folder', label: t('quick.newFolder'), run: () => openEditor({ kind: 'folder', folderId: null, parentId: null }) },
         { kind: 'cmd', key: 'c-import', label: t('quick.import'), run: () => useUi.getState().openImportDialog() },
         { kind: 'cmd', key: 'c-settings', label: t('quick.openSettings'), run: () => useUi.getState().openSettings() },
         { kind: 'cmd', key: 'c-theme', label: t('quick.toggleTheme', { theme: store?.settings.theme === 'dark' ? t('appearance.light') : t('appearance.dark') }), run: () => toggleTheme() },
-        { kind: 'cmd', key: 'c-grid', label: t('quick.grid'), run: () => useWorkspace.getState().gridTabs() },
         { kind: 'cmd', key: 'c-lock', label: t('quick.lock'), run: () => void getBackend().invoke('vault.lock').catch((e) => useApp.getState().pushToast({ kind: 'error', text: errorMessage(e) })) },
       ];
       return cmds.filter((c) => c.kind === 'cmd' && c.label.toLowerCase().includes(word));
@@ -75,7 +74,7 @@ export function QuickPalette() {
     return out;
     // toggleTheme 은 안정적인 함수 참조가 필요 없다(렌더마다 새로 만들어도 무방).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [input, hosts, groups, cmdMode, store?.settings.theme]);
+  }, [input, hosts, groups, cmdMode, store?.settings.theme, quick.group]);
 
   useEffect(() => {
     setSel(0);
@@ -94,10 +93,14 @@ export function QuickPalette() {
   const runRow = (r: Row, mod: 'tab' | 'right' | 'down') => {
     // 빈 칸의 [빠른 접속…]으로 열었으면(대상 칸 있음) 보조키 없는 Enter·클릭은 그 칸을 채운다 (panes.md §3).
     // openHost 는 대상 칸이 빈 칸이면 분할하지 않고 채운다.
+    // 탭 막대의 + 로 열었으면(그룹 있음) 그 그룹에 연다: 새 탭은 그 그룹에, 나누기는 그 그룹에서 선택된 탭의 포커스 칸에 (D119).
+    const ws = useWorkspace.getState();
+    const groupTabId = quick.group === null ? null : ws.activeByGroup[quick.group];
+    const groupPane = groupTabId ? ws.tabs.find((x) => x.id === groupTabId)?.focusedPane ?? null : null;
     const where =
       mod === 'tab' && !quick.targetPane
-        ? { kind: 'tab' as const }
-        : { kind: 'split' as const, dir: mod === 'right' ? ('row' as const) : ('col' as const), paneId: quick.targetPane };
+        ? { kind: 'tab' as const, group: quick.group ?? undefined }
+        : { kind: 'split' as const, dir: mod === 'right' ? ('row' as const) : ('col' as const), paneId: quick.targetPane ?? groupPane };
     close();
     if (r.kind === 'cmd') {
       r.run();

@@ -54,6 +54,7 @@ type Target struct {
 	KeepaliveSec int
 	TermType     string
 	Jump         *Target // 경유 서버 (없으면 nil)
+	Proxy        *Proxy  // 이 대상에 바로 연결할 때 거칠 프록시 (없으면 nil). 경유 서버가 있으면 쓰지 않는다 (D110)
 	Depth        int     // 점프 깊이 (내부용)
 }
 

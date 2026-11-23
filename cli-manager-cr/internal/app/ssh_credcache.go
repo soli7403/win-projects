@@ -23,10 +23,19 @@ type credCopy struct {
 type sessionCreds struct {
 	mtxData  sync.Mutex
 	mapItems map[string]credCopy // 키: 깊이|host:port (점프 체인의 자리마다 하나)
+	mapProxy map[string]string   // 같은 키 → 그 자리에서 쓴 프록시 비밀번호 (D110)
 }
 
 func newSessionCreds() *sessionCreds {
-	return &sessionCreds{mapItems: map[string]credCopy{}}
+	return &sessionCreds{mapItems: map[string]credCopy{}, mapProxy: map[string]string{}}
+}
+
+// proxyPassword 는 tgt 자리에서 접속에 성공했던 프록시 비밀번호 사본을 돌려준다. 없으면 bOk=false.
+func (pCreds *sessionCreds) proxyPassword(tgt *sshconn.Target) (string, bool) {
+	pCreds.mtxData.Lock()
+	defer pCreds.mtxData.Unlock()
+	szPassword, bOk := pCreds.mapProxy[credKey(tgt)]
+	return szPassword, bOk
 }
 
 // credKey 는 점프 체인에서 대상의 자리를 나타내는 키다.
@@ -74,6 +83,9 @@ func (pCreds *sessionCreds) remember(tgt *sshconn.Target) {
 			bPrivateKey:  append([]byte(nil), pCur.PrivateKey...),
 			szPassphrase: pCur.Passphrase,
 		}
+		if pCur.Proxy != nil {
+			pCreds.mapProxy[szKey] = pCur.Proxy.Password
+		}
 	}
 }
 
@@ -86,6 +98,7 @@ func (pCreds *sessionCreds) clear() {
 		zeroBytes(item.bPrivateKey)
 	}
 	pCreds.mapItems = map[string]credCopy{}
+	pCreds.mapProxy = map[string]string{}
 }
 
 func zeroBytes(bData []byte) {

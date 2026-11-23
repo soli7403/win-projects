@@ -31,6 +31,8 @@ type Result struct {
 	M_szStatus  string `json:"status"`
 	M_szVersion string `json:"version,omitempty"`
 	M_szUrl     string `json:"url,omitempty"`
+	// M_bStore 는 Microsoft Store 에서 찾은 새 버전이라는 뜻이다 (설치는 update.install 로 요청한다, D115).
+	M_bStore bool `json:"store,omitempty"`
 }
 
 // ParseVersion 은 태그 문자열을 숫자 세 개(major, minor, patch)로 바꾼다.

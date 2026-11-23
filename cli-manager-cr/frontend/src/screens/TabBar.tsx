@@ -62,7 +62,6 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
   const renameTab = useWorkspace((s) => s.renameTab);
   const moveTab = useWorkspace((s) => s.moveTab);
   const toggleBroadcast = useWorkspace((s) => s.toggleBroadcast);
-  const gridTabs = useWorkspace((s) => s.gridTabs);
   const openMenu = useUi((s) => s.openMenu);
   const prompt = useUi((s) => s.prompt);
   // 파일 패널 항목을 끌고 탭 위에 있을 때: 0.5초 머물면 그 탭으로 전환, 놓으면 그 탭 세션의 마지막 폴더로 복사 (file-panel.md §2.2).
@@ -108,7 +107,6 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
       ...(split ? [{ label: tr('tab.merge'), onSelect: () => mergeGroups() } as MenuItem] : []),
       { label: t.broadcast ? tr('tab.broadcastOff') : tr('tab.broadcastOn'), shortcut: 'Ctrl+Shift+B', disabled: panes < 2, onSelect: () => toggleBroadcast(t.id) },
       { label: tr('tab.detach'), disabled: panes < 2, onSelect: () => detachPanes(t.id) },
-      { label: tr('tab.grid'), onSelect: () => gridTabs() },
       { separator: true },
       { label: tr('tab.closeOthers'), onSelect: () => void closeOthers(t) },
       { label: tr('tab.close'), shortcut: 'Ctrl+Shift+W', danger: true, onSelect: () => void confirmClose(t) },
@@ -238,7 +236,8 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
           </div>
         );
       })}
-      <button className="icon-btn" title={tr('tab.newTitle')} aria-label={tr('tab.new')} onClick={() => openQuick(null)} style={{ marginLeft: 4, marginTop: 5 }}>
+      {/* + 는 이 탭 막대가 속한 그룹에 연다(포커스가 다른 그룹에 있어도, D119). */}
+      <button className="icon-btn" title={tr('tab.newTitle')} aria-label={tr('tab.new')} onClick={() => openQuick(null, g)} style={{ marginLeft: 4, marginTop: 5 }}>
         <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
       </button>
       <button

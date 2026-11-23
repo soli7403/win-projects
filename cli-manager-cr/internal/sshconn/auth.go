@@ -77,7 +77,7 @@ func keyboardHandler(tgt *Target, username string, prompt Prompter, asked *asked
 // keyLoader 는 개인 키를 읽는다. 암호가 걸려 있으면 저장된 암호 → 요청(최대 3번) 순으로 푼다 (protocols.md §2.2 1번).
 func keyLoader(tgt *Target, prompt Prompter, notice func(string)) func() ([]ssh.Signer, error) {
 	return func() ([]ssh.Signer, error) {
-		signer, errParse := ssh.ParsePrivateKey(tgt.PrivateKey)
+		signer, errParse := ParseKey(tgt.PrivateKey) // OpenSSH·PEM·PuTTY PPK 2·3 (D106)
 		if errParse == nil {
 			return []ssh.Signer{signer}, nil
 		}
@@ -96,7 +96,7 @@ func keyLoader(tgt *Target, prompt Prompter, notice func(string)) func() ([]ssh.
 				}
 				szPass = szAsk
 			}
-			signer, errWith := ssh.ParsePrivateKeyWithPassphrase(tgt.PrivateKey, []byte(szPass))
+			signer, errWith := ParseKeyWithPassphrase(tgt.PrivateKey, []byte(szPass))
 			if errWith == nil {
 				tgt.Passphrase = szPass // 세션 사본용 (rememberWorking 참고)
 				return []ssh.Signer{signer}, nil

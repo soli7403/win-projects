@@ -2,6 +2,7 @@ package sshconn
 
 import (
 	"dariterm/internal/i18n"
+	"errors"
 	"sync"
 
 	"github.com/pkg/sftp"
@@ -28,6 +29,8 @@ type Conn struct {
 	sftpClient *sftp.Client
 	chClosed   chan struct{} // Close 때 닫힌다 (keepalive 루프 종료용)
 	onceClose  sync.Once
+	onceAgent  sync.Once // 에이전트 전달 채널 처리기는 연결마다 한 번만 등록한다 (D111)
+	errAgent   error     // onceAgent 의 결과
 }
 
 // Close 는 대상과 모든 점프 연결을 닫는다 (protocols.md §2.4). 두 번 불러도 안전하다.
@@ -80,10 +83,13 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 			return nil, errJump
 		}
 	} else {
+		if tgt.Proxy != nil {
+			notice(i18n.T("be.proxy.via", "addr", net.JoinHostPort(tgt.Proxy.Host, strconv.Itoa(tgt.Proxy.Port))))
+		}
 		var errDial error
-		conn, errDial = net.DialTimeout("tcp", addr, G_cdurConnectTimeout)
+		conn, errDial = dialDirect(tgt, addr) // 프록시가 있으면 거쳐서 (D110)
 		if errDial != nil {
-			return nil, errDial
+			return nil, proxyError(errDial)
 		}
 	}
 
@@ -184,7 +190,16 @@ func dialNext(tgt *Target, addr string, jump *ssh.Client) (net.Conn, error) {
 	if jump != nil {
 		return jump.Dial("tcp", addr)
 	}
-	return net.DialTimeout("tcp", addr, G_cdurConnectTimeout)
+	conn, errDial := dialDirect(tgt, addr)
+	return conn, proxyError(errDial)
+}
+
+// proxyError 는 프록시 인증 실패를 안내 문구가 있는 오류로 바꾼다. 그 밖의 오류는 그대로 둔다.
+func proxyError(errDial error) error {
+	if errors.Is(errDial, ErrProxyAuth) {
+		return i18n.NewError("be.proxy.auth")
+	}
+	return errDial
 }
 
 func closeHops(hops []*ssh.Client) {

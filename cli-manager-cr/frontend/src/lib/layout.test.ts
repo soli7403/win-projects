@@ -1,7 +1,7 @@
 // 칸·분할 규칙 테스트. 근거: spec/ui/panes.md §3~§7.
 import { describe, expect, it } from 'vitest';
 import {
-  edgeToSplit, edgeZone, findPaneBySession, gridLayout, MIN_PCT, movePaneToEdge, newPane, paneIds,
+  edgeToSplit, edgeZone, findPaneBySession, MIN_PCT, movePaneToEdge, newPane, paneIds,
   removePane, resizeSplit, splitPane, swapSessions, type LayoutNode, type SplitNode,
 } from './layout';
 
@@ -97,18 +97,5 @@ describe('세션 맞바꿈·창 이동 (panes.md §7)', () => {
     expect(edgeZone(0.5, 0.95)).toBe('bottom');
     expect(edgeToSplit('left')).toEqual({ dir: 'row', before: true });
     expect(edgeToSplit('center')).toBeNull();
-  });
-});
-
-describe('바둑판 모으기 (panes.md §6)', () => {
-  it('열 수는 ceil(sqrt(n)), 창 n개가 모두 남는다', () => {
-    for (const n of [2, 3, 4, 5, 9]) {
-      const panes = Array.from({ length: n }, (_, i) => newPane(`s${i}`));
-      const root = gridLayout(panes);
-      expect(paneIds(root)).toHaveLength(n);
-    }
-    const four = gridLayout(Array.from({ length: 4 }, (_, i) => newPane(`s${i}`))) as SplitNode;
-    expect(four.dir).toBe('col');
-    expect((four.children[0] as SplitNode).children).toHaveLength(2);
   });
 });

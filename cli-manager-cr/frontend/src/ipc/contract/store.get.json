@@ -28,6 +28,7 @@
     "fontFamily": "'Cascadia Mono', 'D2Coding', Consolas, 'Malgun Gothic', monospace",
     "fontSize": 14,
     "guardDangerousOnProd": true,
+    "highlightRules": [],
     "insertPathQuote": true,
     "language": "",
     "licenseKey": "",
@@ -40,7 +41,10 @@
     "rightPanelWidth": 340,
     "scrollback": 10000,
     "sessionLog": false,
+    "sessionLogAnsi": false,
     "sessionLogKeepDays": 30,
+    "sessionLogSyncSec": 2,
+    "sessionLogTimestamp": false,
     "shiftEnterNewline": true,
     "sidebarWidth": 260,
     "syncAuto": true,
@@ -52,7 +56,9 @@
     "uploadCleanupDays": 7,
     "uploadDir": "~/.dariterm/uploads",
     "usage": "",
-    "usageSince": 0
+    "usageSince": 0,
+    "zmodemDownloadDir": "",
+    "zmodemEnabled": true
   },
   "snippets": [],
   "version": 1

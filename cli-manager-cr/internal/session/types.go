@@ -52,6 +52,14 @@ type OpenConfig struct {
 	DataDir       string
 	LogEnabled    bool
 	LogAlias      string
+	// LogSyncSec 은 세션 로그의 내려 쓰기 주기(초, 0~5)다. 0 이면 받는 즉시 쓰고 내려 쓴다 (session.md §6).
+	LogSyncSec int
+	// LogTimestamp 가 true 면 세션 로그의 줄마다 앞에 시각을 붙인다 (session.md §6, D112).
+	LogTimestamp bool
+	// LogAnsi 가 true 면 세션 로그에 ANSI 시퀀스와 CR 을 지우지 않고 받은 그대로 쓴다 (session.md §6, D120).
+	LogAnsi bool
+	// Zmodem 은 ZMODEM 파일 전송에 쓰는 앱 쪽 기능이다. nil 이면 이 세션은 ZMODEM 을 쓰지 않는다 (zmodem.md, D114).
+	Zmodem *ZmodemHooks
 	// StartupInput 은 접속 직후 셸에 보낼 입력이다 (tmux 한 줄 또는 자동 실행 명령). 비면 보내지 않는다.
 	StartupInput string
 	// StartupDelay 는 접속 후 StartupInput 을 보내기까지의 대기다 (tmux 500ms, 자동 실행 명령 400ms).

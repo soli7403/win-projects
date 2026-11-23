@@ -17,7 +17,8 @@ export interface Group {
 
 export interface Forward {
   id: string;
-  type: 'L' | 'R';
+  /** L 로컬 · R 원격 · D 동적(SOCKS 프록시, 대상 없음) (protocols.md §2.5). */
+  type: 'L' | 'R' | 'D';
   bindHost: string;
   bindPort: number;
   destHost: string;
@@ -36,10 +37,14 @@ export interface Host {
   credentialId?: string | null;
   jumpHostId?: string | null;
   jumpDirect?: unknown;
+  /** 프록시 경유 설정(store.md §3 proxy). 없으면 바로 연결. */
+  proxy?: unknown;
+  /** SSH 에이전트 전달(protocols.md §2.8). 켜면 이 PC 에이전트의 키를 서버에서 쓸 수 있다. */
+  agentForward?: boolean;
   color?: string;
   env?: EnvKind;
   tags: string[];
-  encoding: 'utf-8' | 'euc-kr' | 'cp949' | 'shift_jis' | 'latin1';
+  encoding: 'utf-8' | 'euc-kr' | 'cp949' | 'shift_jis' | 'euc-jp' | 'gbk' | 'big5' | 'latin1';
   termType: string;
   startupCommand?: string;
   keepSession?: boolean;
@@ -59,6 +64,20 @@ export interface Snippet {
   name: string;
   body: string;
   sendEnter: boolean;
+}
+
+/** 키워드 강조 규칙 하나(behavior/terminal.md §9). */
+export interface HighlightRule {
+  id: string;
+  /** 찾을 글자(regex 가 true 면 정규식). */
+  pattern: string;
+  /** 강조 색 `#RRGGBB`. */
+  color: string;
+  regex: boolean;
+  caseSensitive: boolean;
+  /** true 면 글자색 대신 바탕을 칠한다(글자는 흰색). */
+  background: boolean;
+  enabled: boolean;
 }
 
 export interface KnownHost {
@@ -85,6 +104,8 @@ export interface Settings {
   confirmMultilinePaste: boolean;
   guardDangerousOnProd: boolean;
   dangerousPatterns: string[];
+  /** 터미널 출력의 키워드 강조 규칙. 앞에 있는 규칙이 우선이다 (behavior/terminal.md §9). */
+  highlightRules: HighlightRule[];
   autoReconnect: boolean;
   autoLockMinutes: number;
   uploadDir: string;
@@ -94,9 +115,19 @@ export interface Settings {
   /** 탭 하나의 최대 칸 수(상하 분할 한도), 1~5 (ui/panes.md §2). */
   maxVerticalSplits: number;
   insertPathQuote: boolean;
+  /** 서버에서 sz·rz 를 실행하면 ZMODEM 으로 파일을 주고받는다 (behavior/zmodem.md). */
+  zmodemEnabled: boolean;
+  /** ZMODEM 으로 받은 파일을 둘 이 PC 폴더. 비면 OS 의 다운로드 폴더. */
+  zmodemDownloadDir: string;
   sessionLog: boolean;
   /** 세션 로그 보관 일수. 0 이면 지우지 않음 (behavior/session.md §6). */
   sessionLogKeepDays: number;
+  /** 세션 로그를 디스크까지 내려 쓰는 주기(초), 0~5. 0 이면 받는 즉시 쓰고 내려 쓴다 (behavior/session.md §6). */
+  sessionLogSyncSec: number;
+  /** 세션 로그의 줄마다 앞에 시각([YYYY-MM-DD HH:mm:ss.SSS])을 붙인다 (behavior/session.md §6). */
+  sessionLogTimestamp: boolean;
+  /** 세션 로그에 ANSI 시퀀스(색·커서 이동)와 CR 을 지우지 않고 받은 그대로 남긴다 (behavior/session.md §6, D120). */
+  sessionLogAnsi: boolean;
   bell: boolean;
   shiftEnterNewline: boolean;
   rememberWindow: boolean;

@@ -17,7 +17,6 @@ import { HostEditor } from './screens/HostEditor';
 import { FolderEditor } from './screens/FolderEditor';
 import { QuickPalette } from './screens/QuickPalette';
 import { RequestDialogs } from './screens/RequestDialogs';
-import { LocationPicker } from './screens/LocationPicker';
 import { startLayoutPersistence } from "./state/layoutSave";
 import { startImportSuggestion } from "./state/importSuggest";
 import { subscribeUpdateEvents, useUpdate } from './state/update';
@@ -117,7 +116,6 @@ export function App() {
       {!locked && editor?.kind === 'host' && <HostEditor key={`h-${editor.hostId ?? 'new'}`} hostId={editor.hostId} groupId={editor.groupId} />}
       {!locked && editor?.kind === 'folder' && <FolderEditor key={`f-${editor.folderId ?? 'new'}`} folderId={editor.folderId} parentId={editor.parentId} />}
       {!locked && <QuickPalette />}
-      {!locked && <LocationPicker />}
       {!locked && <RequestDialogs />}
       {!locked && <ErrorBoundary variant="dialog" label={t('settings.title')} onDismiss={() => useUi.getState().closeSettings()}><Settings /></ErrorBoundary>}
       {!locked && <ErrorBoundary variant="dialog" label={t('import.title')} onDismiss={() => useUi.getState().closeImportDialog()}><ImportDialog /></ErrorBoundary>}

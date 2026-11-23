@@ -26,6 +26,19 @@ export function SettingsFiles() {
     setTempPrev(tempDir);
     setTempDraft(tempDir ?? '');
   }
+  // ZMODEM (behavior/zmodem.md). 받는 폴더는 빈 값 허용(= OS 의 다운로드 폴더).
+  const [zmodemOn, setZmodemOn] = useSetting('zmodemEnabled');
+  const [zmodemDir, setZmodemDir] = useSetting('zmodemDownloadDir');
+  const [zmodemDraft, setZmodemDraft] = useState(zmodemDir ?? '');
+  const [zmodemPrev, setZmodemPrev] = useState(zmodemDir);
+  if (zmodemPrev !== zmodemDir) {
+    setZmodemPrev(zmodemDir);
+    setZmodemDraft(zmodemDir ?? '');
+  }
+  const pickZmodemDir = async () => {
+    const d = await getBackend().invoke<string | null>('dialog.chooseDir').catch(() => null);
+    if (d) setZmodemDir(d);
+  };
   const pickTemp = async () => {
     const d = await getBackend().invoke<string | null>('dialog.chooseDir').catch(() => null);
     if (d) setTempDir(d);
@@ -81,7 +94,26 @@ export function SettingsFiles() {
 
       <Group>
         <ToggleRow title={t('files.quotePaths')} checked={quote} onChange={setQuote} />
+        <ToggleRow title={t('files.zmodem')} desc={t('files.zmodemDesc')} checked={zmodemOn !== false} onChange={setZmodemOn} />
       </Group>
+
+      <Field label={t('files.zmodemDir')} help={t('files.zmodemDirHelp')}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            className="input mono"
+            style={{ flex: 1 }}
+            aria-label={t('files.zmodemDir')}
+            placeholder={t('files.zmodemDirPlaceholder')}
+            value={zmodemDraft}
+            onChange={(e) => setZmodemDraft(e.target.value)}
+            onBlur={() => {
+              const v = zmodemDraft.trim();
+              if (v !== (zmodemDir ?? '')) setZmodemDir(v);
+            }}
+          />
+          <button className="btn small-btn" onClick={() => void pickZmodemDir()}>{t('common.browseEllipsis')}</button>
+        </div>
+      </Field>
     </>
   );
 }

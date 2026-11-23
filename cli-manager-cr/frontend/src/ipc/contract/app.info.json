@@ -4,5 +4,6 @@
   "osLanguage": "\u003clang\u003e",
   "platform": "\u003cos\u003e",
   "updateEnabled": false,
+  "updateSource": "",
   "version": "0.1.0"
 }

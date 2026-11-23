@@ -89,3 +89,35 @@ describe('잠금 해제 (L7)', () => {
     await waitFor(() => expect(input.value).toBe(''));
   });
 });
+
+describe('Caps Lock 안내 (D97)', () => {
+  beforeEach(() => setBackend(null));
+
+  it('Caps Lock 이 켜진 채 키를 누르면 안내가 보이고, 끄면 사라진다', async () => {
+    await setup(true);
+    expect(screen.queryByText('Caps Lock이 켜져 있습니다')).toBeNull();
+    fireEvent.keyDown(window, { key: 'A', modifierCapsLock: true });
+    expect(screen.getByText('Caps Lock이 켜져 있습니다')).toBeTruthy();
+    fireEvent.keyUp(window, { key: 'CapsLock', modifierCapsLock: false });
+    expect(screen.queryByText('Caps Lock이 켜져 있습니다')).toBeNull();
+  });
+
+  it('키를 누르기 전이라도 마우스를 움직이면 상태를 안다', async () => {
+    await setup(true);
+    fireEvent.mouseMove(window, { modifierCapsLock: true });
+    expect(screen.getByText('Caps Lock이 켜져 있습니다')).toBeTruthy();
+  });
+
+  it('창이 포커스를 잃으면 안내를 지운다', async () => {
+    await setup(true);
+    fireEvent.keyDown(window, { key: 'A', modifierCapsLock: true });
+    fireEvent.blur(window);
+    expect(screen.queryByText('Caps Lock이 켜져 있습니다')).toBeNull();
+  });
+
+  it('처음 설정 화면에서도 보인다', async () => {
+    await setup(false);
+    fireEvent.keyDown(window, { key: 'A', modifierCapsLock: true });
+    expect(screen.getByText('Caps Lock이 켜져 있습니다')).toBeTruthy();
+  });
+});

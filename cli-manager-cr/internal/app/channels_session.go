@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"dariterm/internal/dialog"
 	"dariterm/internal/session"
 	"dariterm/internal/transport"
 )
@@ -37,6 +38,17 @@ type hostRecord struct {
 	M_szAuthType       string            `json:"authType"`
 	M_iKeepaliveSec    int               `json:"keepaliveSec"`
 	M_slForwards       []forwardRecord   `json:"forwards"`
+	M_pProxy           *proxyRecord      `json:"proxy"`
+	M_bAgentForward    bool              `json:"agentForward"` // SSH 에이전트 전달 (D111)
+}
+
+// proxyRecord 는 서버의 프록시 경유 설정이다 (data/store.md §3 proxy, D110).
+type proxyRecord struct {
+	M_szType         string `json:"type"` // http | socks5 (그 밖·빈 값은 사용 안 함)
+	M_szHost         string `json:"host"`
+	M_iPort          int    `json:"port"`
+	M_szUsername     string `json:"username"`
+	M_szCredentialId string `json:"credentialId"`
 }
 
 // jumpDirectRecord 는 직접 입력한 점프 호스트 정보다 (data/store.md §3 jumpDirect).
@@ -185,7 +197,11 @@ func (pService *Service) openSession(args sessionOpenArgs) (session.Info, error)
 		DataDir:       pService.szDataDir,
 		LogEnabled:    pService.settingBool("sessionLog", false),
 		LogAlias:      record.M_szAlias,
+		LogSyncSec:    pService.logSyncSec(),
+		LogTimestamp:  pService.settingBool("sessionLogTimestamp", false),
+		LogAnsi:       pService.settingBool("sessionLogAnsi", false),
 		OpenDelay:     0,
+		Zmodem:        pService.zmodemHooksFor(record),
 	}
 	if bHasSaved {
 		szId := record.M_szId
@@ -205,6 +221,24 @@ func (pService *Service) openSession(args sessionOpenArgs) (session.Info, error)
 		}
 	}
 	return info, errOpen
+}
+
+// zmodemHooksFor 는 이 서버의 세션이 ZMODEM 전송에 쓸 기능을 만든다 (zmodem.md, D114).
+// SSH 와 시리얼만 쓴다. 로컬 터미널(가상 터미널이 이진 데이터를 바꾼다)과 텔넷(이진 전송을 협상하지 않는다)은 nil 이다.
+func (pService *Service) zmodemHooksFor(record hostRecord) *session.ZmodemHooks {
+	if record.M_szProtocol != "ssh" && record.M_szProtocol != "serial" {
+		return nil
+	}
+	return &session.ZmodemHooks{
+		Enabled: func() bool { return pService.settingBool("zmodemEnabled", true) },
+		DownloadDir: func() string {
+			if szDir := expandHome(pService.settingString("zmodemDownloadDir", "")); szDir != "" {
+				return szDir
+			}
+			return downloadsDir()
+		},
+		PickFiles: func() ([]string, error) { return dialog.OpenFiles(i18n.T("be.dlg.pickZmodem")) },
+	}
 }
 
 // findHost 는 저장 데이터에서 서버 id 를 찾는다.

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { getBackend, errorMessage } from '../ipc/backend';
 import type { SessionInfo } from '../ipc/types';
 import {
-  findPane, findPaneBySession, gridLayout, movePaneToEdge, newId, newPane, paneIds, removePane, resizeSplit,
+  findPane, findPaneBySession, movePaneToEdge, newId, newPane, paneIds, removePane, resizeSplit,
   sessionsIn, splitPane, swapSessions, type Dir, type LayoutNode, type PaneNode,
 } from '../lib/layout';
 import { useApp } from './app';
@@ -63,8 +63,8 @@ interface WorkspaceState {
   mergeGroups: () => void;
   closeTab: (tabId: string, force?: boolean) => Promise<void>;
   focusPane: (paneId: string) => void;
-  /** 세션을 새 탭으로 연다. */
-  openInNewTab: (info: SessionInfo) => void;
+  /** 세션을 새 탭으로 연다. group 을 주면 그 그룹에, 아니면 포커스 그룹에. */
+  openInNewTab: (info: SessionInfo, group?: GroupIdx) => void;
   /** 포커스된 칸(또는 지정 칸)에 분할로 새 세션을 붙인다. before 면 앞. */
   openInPane: (targetPaneId: string | null, dir: Dir, info: SessionInfo, before?: boolean) => void;
   /** 빈 칸 채우기 등 칸에 세션을 넣는다(구조 불변). */
@@ -75,7 +75,6 @@ interface WorkspaceState {
   movePane: (tabId: string, moving: string, target: string, dir: Dir, before: boolean) => void;
   toggleBroadcast: (tabId: string) => void;
   toggleZoom: (tabId: string) => void;
-  gridTabs: () => void;
   /** 빈 칸 생성(분할 시 빈 칸을 먼저 놓을 때). */
   splitEmpty: (paneId: string, dir: Dir, before?: boolean) => void;
 }
@@ -176,10 +175,14 @@ export function settle(tabs: Tab[], by: [string | null, string | null], focus: s
   return { tabs: ts, activeByGroup: ab, activeTabId: f ?? null };
 }
 
-/** 새 탭을 포커스 그룹에 붙이고 선택한다. */
-function withNewTab(s: WorkspaceState, tab: Tab): Placement {
+/**
+ * 새 탭을 붙이고 선택한다. group 을 주면 그 그룹에, 아니면 포커스 그룹에 (D119).
+ * 오른쪽 그룹을 줬는데 그 사이 나뉨이 풀렸으면(오른쪽 탭 없음) 왼쪽에 붙인다 — 새 탭 하나로 화면이 다시 나뉘지 않게.
+ */
+function withNewTab(s: WorkspaceState, tab: Tab, group?: GroupIdx): Placement {
   const cur = s.tabs.find((t) => t.id === s.activeTabId);
-  const nt: Tab = { ...tab, group: cur && groupOf(cur) === 1 ? 1 : undefined };
+  const g: GroupIdx = group === undefined ? (cur ? groupOf(cur) : 0) : group === 1 && !isSplit(s.tabs) ? 0 : group;
+  const nt: Tab = { ...tab, group: g === 1 ? 1 : undefined };
   return settle([...s.tabs, nt], s.activeByGroup, nt.id);
 }
 
@@ -361,11 +364,11 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     });
   },
 
-  openInNewTab(info) {
+  openInNewTab(info, group) {
     get().upsertSession(info);
     const pane: PaneNode = newPane(info.id);
     const tab: Tab = { id: newId('t'), broadcast: false, root: pane, focusedPane: pane.id, zoomed: null };
-    set((s) => withNewTab(s, tab));
+    set((s) => withNewTab(s, tab, group));
   },
 
   openInPane(targetPaneId, dir, info, before = false) {
@@ -475,15 +478,6 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
       tabs: patchTab(s.tabs, tabId, (x) => ({ ...x, zoomed: x.zoomed ? null : x.focusedPane })),
     }));
   },
-
-  gridTabs() {
-    const s = get();
-    const panes: PaneNode[] = [];
-    for (const t of s.tabs) collectPanes(t.root, panes);
-    if (panes.length < 2) return;
-    const tab: Tab = { id: newId('t'), title: t('host.localTerminal'), broadcast: false, root: gridLayout(panes), focusedPane: panes[0].id, zoomed: null };
-    set({ tabs: [tab], activeTabId: tab.id, activeByGroup: [tab.id, null] });
-  },
 }));
 
 /** 칸의 세션 id 를 바꾼다(null 이면 빈 칸). */
@@ -525,17 +519,6 @@ export function detachPanes(tabId: string): void {
   const created: Tab[] = panes.map((p) => ({ id: newId('t'), broadcast: false, group: tab.group, root: p, focusedPane: p.id, zoomed: null }));
   const tabs = [...s.tabs.slice(0, idx), ...created, ...s.tabs.slice(idx + 1)];
   useWorkspace.setState(settle(tabs, s.activeByGroup, created[0].id));
-}
-
-/** 세션들을 그리드 한 탭으로 연다(panes §6 폴더 전체 그리드). infos 는 이미 연 세션들. */
-export function addGridTab(title: string, infos: SessionInfo[]): void {
-  if (infos.length === 0) return;
-  const s = useWorkspace.getState();
-  for (const info of infos) s.upsertSession(info);
-  const panes = infos.map((i) => newPane(i.id));
-  const root = gridLayout(panes);
-  const tab: Tab = { id: newId('t'), title, broadcast: false, root, focusedPane: panes[0].id, zoomed: null };
-  useWorkspace.setState((st) => withNewTab(st, tab));
 }
 
 /** 복원: 저장된 탭 목록으로 교체한다(layout 복원, lifecycle §3.2). */
