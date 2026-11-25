@@ -64,6 +64,7 @@
 go build ./...
 go test -race ./...
 (cd frontend && npx tsc --noEmit)
+(cd frontend && npm test)   # vitest 5. npx vitest 직접 실행은 소문자 드라이브(e:\)에서 실패 — run-vitest.mjs 가 맞춘다 (D124)
 wails build    # 프런트(npm run build)까지 함께 빌드 → build/bin/dariterm.exe (wails.json frontend:build)
 make installer VERSION=x.y.z  # Windows 설치 파일 → build/dist/DariTerm-<버전>-amd64-installer.exe (NSIS 필요, D76, docs/host-settings/01). VERSION 생략 시 지금 버전
 make msix VERSION=x.y.z  # 버전 올리고 Microsoft Store 패키지 → build/dist/DariTerm-<버전>.0.msix → Partner Center 에 수동 업로드 (D81·D82, docs/store/README.md §3)

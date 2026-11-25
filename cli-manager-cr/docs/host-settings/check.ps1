@@ -5,8 +5,11 @@ function Check($name, $found, $detail) {
 }
 $nsis = Join-Path ${env:ProgramFiles(x86)} 'NSIS\makensis.exe'
 Check 'NSIS makensis' (Test-Path $nsis) $nsis
-Check 'wails' ([bool](Get-Command wails -ErrorAction SilentlyContinue)) ''
-Check 'go' ([bool](Get-Command go -ErrorAction SilentlyContinue)) ''
+# Build toolchain (05_build-toolchain.md)
+$goVer = if (Get-Command go -ErrorAction SilentlyContinue) { (go env GOVERSION) } else { '' }
+Check 'go 1.27.4' ($goVer -eq 'go1.27.4') $goVer
+$wailsVer = if (Get-Command wails -ErrorAction SilentlyContinue) { (wails version 2>$null | Select-Object -First 1) } else { '' }
+Check 'wails v2.17.1' ($wailsVer -eq 'v2.17.1') $wailsVer
 Check 'node' ([bool](Get-Command node -ErrorAction SilentlyContinue)) ''
 # MSIX (03_msix.md)
 $sdk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'x64\makeappx.exe') } | Sort-Object Name -Descending | Select-Object -First 1
