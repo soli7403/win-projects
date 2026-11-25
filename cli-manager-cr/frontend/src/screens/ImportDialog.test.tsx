@@ -30,13 +30,17 @@ const SAMPLE = [
   { source: 'putty', name: 'broken-entry' },
 ];
 
-function mockBackend(scan: unknown, crt: unknown = null) {
+function mockBackend(scan: unknown, crt: unknown = null, xsh: unknown = null) {
   const calls: [string, unknown[]][] = [];
   const b: Backend = {
     async invoke(channel: string, args: unknown[] = []): Promise<any> {
       calls.push([channel, args]);
       if (channel === 'import.scan') return scan;
       if (channel === 'import.scanSecureCrt') return crt;
+      if (channel === 'import.scanXshell') {
+        if (xsh instanceof Error) throw xsh;
+        return xsh;
+      }
       if (channel === 'import.apply') return { hosts: (args[0] as unknown[]).length, keys: 0, skipped: [] };
       if (channel === 'store.get') return structuredClone(useApp.getState().store);
       if (channel === 'vault.status') return { initialized: true, unlocked: true, osUnlockAvailable: false, osUnlockEnabled: false };
@@ -185,5 +189,77 @@ describe('후보 방어 읽기 헬퍼', () => {
     const c = SAMPLE[0] as never;
     expect(sameHostExists(c, [{ host: '10.1.1.2', port: 22, username: 'ubuntu' }])).toBe(true);
     expect(sameHostExists(c, [{ host: '10.1.1.2', port: 2222, username: 'ubuntu' }])).toBe(false);
+  });
+});
+
+// Xshell 내보내기 파일(.xts) 가져오기 (D128, spec/ui/dialogs.md §5, spec/import.md §1.6).
+describe('가져오기 — Xshell 내보내기 파일', () => {
+  const XSH = [
+    { source: 'xshell', name: 'db01', folderPath: ['LAB', 'DB'], host: { alias: 'db01', protocol: 'ssh', host: '10.0.0.21', port: 22, username: 'ops', authType: 'password', keepaliveSec: 60 } },
+    { source: 'xshell', name: 'gw', host: { alias: 'gw', protocol: 'ssh', host: '10.0.0.1', port: 2222, username: 'root', authType: 'key' }, note: 'Xshell 사용자 키 "id_lab" 은 옮기지 않음 (키를 내보내 서버 편집에서 지정)' },
+  ];
+
+  it('[Xshell 내보내기 파일 선택]의 결과가 목록에 더해지고 폴더 이름이 "Xshell" 이 된다', async () => {
+    seed();
+    const calls = mockBackend(SAMPLE, null, XSH);
+    render(<ImportDialog />);
+    await screen.findByText('prod-web02');
+    fireEvent.click(screen.getByRole('button', { name: /Xshell 내보내기 파일 선택/ }));
+    expect(await screen.findByText('db01')).toBeTruthy();
+    expect(screen.getByText('LAB/DB/')).toBeTruthy(); // 폴더 구조
+    expect(screen.getAllByText('Xshell').length).toBeGreaterThan(0); // 출처
+    expect(screen.getByText('prod-web02')).toBeTruthy(); // 다른 출처 후보는 그대로
+    expect((screen.getByLabelText('넣을 폴더 이름') as HTMLInputElement).value).toBe('Xshell');
+    expect(calls.filter(([c]) => c === 'import.scanXshell')).toEqual([['import.scanXshell', []]]);
+  });
+
+  it('고른 Xshell 후보를 그대로 import.apply 로 보낸다', async () => {
+    seed();
+    const calls = mockBackend([], null, XSH);
+    render(<ImportDialog />);
+    await screen.findByText('가져올 세션을 찾지 못했습니다.');
+    fireEvent.click(screen.getByRole('button', { name: /Xshell 내보내기 파일 선택/ }));
+    await screen.findByText('db01');
+    fireEvent.click(screen.getByRole('button', { name: '2개 가져오기' }));
+    await waitFor(() => expect(calls.some(([c]) => c === 'import.apply')).toBe(true));
+    const [sent, folder] = calls.find(([c]) => c === 'import.apply')![1] as [typeof XSH, string];
+    expect(sent.map((c) => c.name)).toEqual(['db01', 'gw']);
+    expect(sent[0].folderPath).toEqual(['LAB', 'DB']);
+    expect(folder).toBe('Xshell');
+  });
+
+  it('파일 선택을 취소(null)하면 아무 일도 없다', async () => {
+    seed();
+    const calls = mockBackend(SAMPLE, null, null);
+    render(<ImportDialog />);
+    await screen.findByText('prod-web02');
+    fireEvent.click(screen.getByRole('button', { name: /Xshell 내보내기 파일 선택/ }));
+    await waitFor(() => expect(calls.some(([c]) => c === 'import.scanXshell')).toBe(true));
+    expect(useApp.getState().toasts.length).toBe(0);
+  });
+
+  it('세션이 없으면 정보 토스트, 읽지 못하면 오류 토스트', async () => {
+    seed();
+    mockBackend(SAMPLE, null, []);
+    const first = render(<ImportDialog />);
+    await screen.findByText('prod-web02');
+    fireEvent.click(screen.getByRole('button', { name: /Xshell 내보내기 파일 선택/ }));
+    await waitFor(() => expect(useApp.getState().toasts.map((x) => x.text)).toContain('선택한 파일에서 Xshell 세션을 찾지 못했습니다'));
+    first.unmount();
+
+    seed();
+    mockBackend(SAMPLE, null, new Error('zip: not a valid zip file'));
+    render(<ImportDialog />);
+    await screen.findByText('prod-web02');
+    fireEvent.click(screen.getByRole('button', { name: /Xshell 내보내기 파일 선택/ }));
+    await waitFor(() => expect(useApp.getState().toasts.map((x) => x.text)).toContain('Xshell 파일을 읽지 못했습니다: zip: not a valid zip file'));
+  });
+
+  it('자동 검색에 Xshell 후보만 있으면 기본 폴더 이름이 "Xshell" 이다', async () => {
+    seed();
+    mockBackend(XSH);
+    render(<ImportDialog />);
+    await screen.findByText('db01');
+    expect((screen.getByLabelText('넣을 폴더 이름') as HTMLInputElement).value).toBe('Xshell');
   });
 });

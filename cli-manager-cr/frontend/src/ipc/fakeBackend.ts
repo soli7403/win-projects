@@ -258,6 +258,9 @@ export function createFakeBackend(): Backend {
       { source: 'putty', name: 'serial-lab', host: { alias: 'serial-lab', protocol: 'serial', host: '', port: 0, authType: 'password', serial: { path: '/dev/ttyUSB0', baudRate: 115200 } } },
       { source: 'securecrt', name: 'gw_tunneling', folderPath: ['lab', 'tunnel'], host: { alias: 'gw_tunneling', protocol: 'ssh', host: '203.0.113.5', port: 22, username: 'ops', authType: 'password', keepaliveSec: 30 } },
     ],
+    'import.scanXshell': () => [
+      { source: 'xshell', name: 'db01', folderPath: ['LAB', 'DB'], host: { alias: 'db01', protocol: 'ssh', host: '10.0.0.21', port: 22, username: 'ops', authType: 'password', keepaliveSec: 60, notes: 'lab db' } },
+    ],
     'import.scanSecureCrt': () => [
       { source: 'securecrt', name: 'web01', folderPath: ['MDS'], host: { alias: 'web01', protocol: 'ssh', host: '10.0.0.13', port: 22, username: 'ops', authType: 'password', keepaliveSec: 30 } },
     ],

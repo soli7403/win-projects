@@ -1,4 +1,4 @@
-// Package importer 는 PuTTY·ssh config·AWS EC2 에서 서버 후보를 읽고 저장소 항목으로 적용한다 (spec/import.md).
+// Package importer 는 PuTTY·SecureCRT·Xshell·ssh config·AWS EC2 에서 서버 후보를 읽고 저장소 항목으로 적용한다 (spec/import.md).
 package importer
 
 // Forward 는 포트 포워딩 한 건이다 (data/store.md §3 forwards). id 는 적용 때 만든다.
@@ -47,14 +47,15 @@ type Candidate struct {
 	M_szKeyFile string    `json:"keyFile,omitempty"`
 	M_szJumpVia string    `json:"jumpVia,omitempty"`
 	M_szNote    string    `json:"note,omitempty"`
-	// M_slFolderPath 는 넣을 폴더 아래에 만들 하위 폴더 이름들이다 (SecureCRT, import.md §1.5).
+	// M_slFolderPath 는 넣을 폴더 아래에 만들 하위 폴더 이름들이다 (SecureCRT·Xshell, import.md §1.5·§1.6).
 	M_slFolderPath []string `json:"folderPath,omitempty"`
 }
 
-// G_cszSourcePutty, G_cszSourceSecureCrt, G_cszSourceSshConfig, G_cszSourceAws 는 후보 출처 이름이다.
+// G_cszSourcePutty, G_cszSourceSecureCrt, G_cszSourceXshell, G_cszSourceSshConfig, G_cszSourceAws 는 후보 출처 이름이다.
 const (
 	G_cszSourcePutty     = "putty"
 	G_cszSourceSecureCrt = "securecrt"
+	G_cszSourceXshell    = "xshell"
 	G_cszSourceSshConfig = "ssh-config"
 	G_cszSourceAws       = "aws"
 )

@@ -40,6 +40,9 @@ func (pService *Service) registerImport() {
 		szHome, _ := os.UserHomeDir()
 		slCands := importer.ScanPutty(importer.ReadPuttySessions)
 		slCands = append(slCands, importer.ScanSecureCrt("")...)
+		// 이 PC 에 설치된 Xshell 의 세션 폴더(없으면 빈 목록, import.md §1.6). 기본 폴더 읽기는 오류를 내지 않는다.
+		slXshell, _ := importer.ScanXshell("")
+		slCands = append(slCands, slXshell...)
 		slCands = append(slCands, importer.ScanSshConfig(szHome)...)
 		return slCands, nil
 	})
@@ -59,6 +62,30 @@ func (pService *Service) registerImport() {
 			szDir = szPicked
 		}
 		return importer.ScanSecureCrt(szDir), nil
+	})
+	pRouter.Handle("import.scanXshell", func(slArgs []json.RawMessage) (any, error) {
+		// 경로(내보내기 파일 .xts 또는 세션 폴더)를 안 주면 내보내기 파일을 고르게 한다. 취소하면 null (spec/ipc.md).
+		szPath := ""
+		if len(slArgs) > 0 {
+			szPath, _ = argString(slArgs, 0)
+		}
+		if szPath == "" {
+			szHome, _ := os.UserHomeDir()
+			szFilter := i18n.T("be.dlg.xshellFilter") + " (*.xts)|*.xts|*.*|*.*"
+			szPicked, errPick := dialog.OpenFileOf(i18n.T("be.dlg.pickXshell"), szHome, szFilter)
+			if errPick != nil {
+				return nil, errPick
+			}
+			if szPicked == "" {
+				return nil, nil
+			}
+			szPath = szPicked
+		}
+		slCands, errScan := importer.ScanXshell(szPath)
+		if errScan != nil {
+			return nil, errScan
+		}
+		return slCands, nil
 	})
 	pRouter.Handle("import.scanAws", func(slArgs []json.RawMessage) (any, error) {
 		szProfile := ""

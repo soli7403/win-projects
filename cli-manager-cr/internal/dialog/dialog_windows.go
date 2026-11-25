@@ -54,6 +54,15 @@ func OpenKeyFile(szTitle string, szInitial string) (string, error) {
 	return slOut[0], nil
 }
 
+// OpenFileOf 는 정한 종류의 파일 하나를 고르는 대화상자다. szFilter 는 "설명|*.확장자" 꼴(여러 개는 | 로 잇는다). 취소하면 빈 문자열.
+func OpenFileOf(szTitle string, szInitial string, szFilter string) (string, error) {
+	slOut, errRun := runSTA(`Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.OpenFileDialog; $d.Title = ` + psQuote(szTitle) + `; $d.InitialDirectory = ` + psQuote(szInitial) + `; $d.Filter = ` + psQuote(szFilter) + `; if ($d.ShowDialog() -eq 'OK') { Write-Output $d.FileName }`)
+	if errRun != nil || len(slOut) == 0 {
+		return "", errRun
+	}
+	return slOut[0], nil
+}
+
 func boolPs(bValue bool) string {
 	if bValue {
 		return "$true"

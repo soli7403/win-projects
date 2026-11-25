@@ -1,6 +1,6 @@
 // 서버 가져오기 대화상자. 근거: spec/ui/dialogs.md §5, spec/import.md §1.5·§4, spec/acceptance I1·I6·I9.
 import { useEffect, useMemo, useState } from 'react';
-import { Download, KeyRound, Cloud, FolderOpen } from 'lucide-react';
+import { Download, KeyRound, Cloud, FolderOpen, FileArchive } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Field } from '../ui/Controls';
 import { getBackend, errorMessage } from '../ipc/backend';
@@ -12,7 +12,7 @@ import { Rich } from '../i18n/Rich';
 
 type Cand = ImportCandidate & { key: string };
 
-const SOURCE_LABEL: Record<string, string> = { putty: 'PuTTY', securecrt: 'SecureCRT', 'ssh-config': 'ssh config', aws: 'AWS' };
+const SOURCE_LABEL: Record<string, string> = { putty: 'PuTTY', securecrt: 'SecureCRT', xshell: 'Xshell', 'ssh-config': 'ssh config', aws: 'AWS' };
 
 /** 후보의 서버 정보. host 가 빠져 있어도 예외 없이 빈 객체로 본다(spec/ipc.md "가져오기 후보 객체"). */
 export function hostOf(c: Partial<ImportCandidate> | null | undefined): ImportHost {
@@ -57,6 +57,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
   const [scanning, setScanning] = useState(true);
   const [awsBusy, setAwsBusy] = useState(false);
   const [crtBusy, setCrtBusy] = useState(false);
+  const [xshBusy, setXshBusy] = useState(false);
   const [applying, setApplying] = useState(false);
 
   // 후보 자동 검색. 초기 선택: 이미 있는 서버를 뺀 나머지 전부.
@@ -70,6 +71,8 @@ function ImportBody({ onClose }: { onClose: () => void }) {
         setCands(withKey);
         // PuTTY 후보 없이 SecureCRT 후보만 있으면 기본 폴더 이름을 SecureCRT 로 (dialogs.md §5).
         if (!withKey.some((c) => c.source === 'putty') && withKey.some((c) => c.source === 'securecrt')) setFolder('SecureCRT');
+        // PuTTY·SecureCRT 후보가 없고 Xshell 후보만 있으면 "Xshell" (dialogs.md §5).
+        else if (!withKey.some((c) => c.source === 'putty' || c.source === 'securecrt') && withKey.some((c) => c.source === 'xshell')) setFolder('Xshell');
         setSel(new Set(withKey.filter((c) => !sameHostExists(c, useApp.getState().store?.hosts ?? [])).map((c) => c.key)));
       })
       .catch((e) => pushToast({ kind: 'error', text: errorMessage(e) }))
@@ -142,6 +145,24 @@ function ImportBody({ onClose }: { onClose: () => void }) {
     }
   };
 
+  // Xshell 내보내기 파일(.xts) 선택: 취소(null)면 아무것도 안 함. 결과는 Xshell 후보를 대체, 폴더 이름은 "Xshell".
+  const scanXshell = async () => {
+    setXshBusy(true);
+    try {
+      const found = await getBackend().invoke<ImportCandidate[] | null>('import.scanXshell', []);
+      if (found === null || found === undefined) return;
+      if (!Array.isArray(found) || found.length === 0) {
+        pushToast({ kind: 'info', text: t('import.xshNone') });
+        return;
+      }
+      replaceSource('xshell', found, 'Xshell');
+    } catch (e) {
+      pushToast({ kind: 'error', text: t('import.xshFailed', { error: errorMessage(e) }) });
+    } finally {
+      setXshBusy(false);
+    }
+  };
+
   const chosen = useMemo(() => cands.filter((c) => sel.has(c.key)), [cands, sel]);
 
   const apply = async () => {
@@ -199,6 +220,13 @@ function ImportBody({ onClose }: { onClose: () => void }) {
           <FolderOpen size={14} /> {crtBusy ? t('import.crtBusy') : t('import.crt')}
         </button>
         <span className="set-note">{t('import.crtNote')}</span>
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <button className="btn" type="button" disabled={xshBusy} onClick={() => void scanXshell()} style={{ flex: 'none' }}>
+          <FileArchive size={14} /> {xshBusy ? t('import.xshBusy') : t('import.xsh')}
+        </button>
+        <span className="set-note">{t('import.xshNote')}</span>
       </div>
 
       {scanning && <div className="faint">{t('import.scanning')}</div>}

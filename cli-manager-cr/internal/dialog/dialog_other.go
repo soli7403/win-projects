@@ -19,3 +19,8 @@ func ChooseDir(szTitle string, szInitial string, bAllowNew bool) (string, error)
 
 // OpenKeyFile 는 비 Windows 에서 지원하지 않는다.
 func OpenKeyFile(szTitle string, szInitial string) (string, error) { return "", errUnsupported }
+
+// OpenFileOf 는 비 Windows 에서 지원하지 않는다.
+func OpenFileOf(szTitle string, szInitial string, szFilter string) (string, error) {
+	return "", errUnsupported
+}
