@@ -1,8 +1,8 @@
-# 서버 가져오기 — PuTTY · ssh config · AWS · 적용 규칙
+# 서버 가져오기 — PuTTY · SecureCRT · Xshell · ssh config · AWS · 적용 규칙
 
 > 작성 방식: 기존 앱 동작 열람. 작성일 2026-11-10. 상태: **draft**. 화면은 ui/dialogs.md §5.
 
-후보(candidate) 한 건: `source`(`putty`/`securecrt`/`ssh-config`/`aws`), `name`, 서버 부분 정보(`host`), `keyFile`(선택), `jumpVia`(경유 서버 주소, 선택), `note`(선택), `folderPath`(넣을 폴더 아래의 하위 폴더 이름 배열, 선택 — SecureCRT 만 씀).
+후보(candidate) 한 건: `source`(`putty`/`securecrt`/`xshell`/`ssh-config`/`aws`), `name`, 서버 부분 정보(`host`), `keyFile`(선택), `jumpVia`(경유 서버 주소, 선택), `note`(선택), `folderPath`(넣을 폴더 아래의 하위 폴더 이름 배열, 선택 — SecureCRT·Xshell 이 씀).
 
 ## 1. PuTTY (Windows 레지스트리)
 - 읽는 곳: `HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions` 아래 하위 키 각각이 세션. 값은 문자열(REG_SZ/REG_EXPAND_SZ) 또는 정수(DWORD/QWORD)만 읽는다. 키가 없으면 빈 목록. 비 Windows 는 지원하지 않는다(빈 목록).
@@ -43,6 +43,40 @@
 - **시리얼 세션**(표본 미확인): `Com Port`(없으면 COM1)를 장치와 호스트로, `Baud Rate`(기본 9600), `Data Bits`(기본 8), `Parity`(0=none,1=odd,2=even,3=mark,4=space; 범위 밖 none), `Stop Bits`(0→1, 1→1.5, 2→2), 흐름 제어 none, Enter 전송값 CR, 로컬 에코 끔.
 - 후보 이름·서버 별칭 = 세션 이름.
 
+## 1.6 Xshell (내보내기 파일 · 세션 폴더)
+
+> 작성 방식: **원본 앱에 없는 신규 기능**(사용자 요청, 2026-11-25, D128). 형식은 사용자가 준 Xshell 내보내기 파일(`.xts`, 세션 파일 164개 — 판 8.1 이 110개·7.1 이 54개, 모두 SSH·비밀번호 인증·UTF-8) 관찰로 정했다. "(표본 미확인)" 표시는 그 파일에 해당하는 값이 없어 실제로 확인하지 못한 최선 추정이다.
+
+- **읽는 곳**(넷 중 하나):
+  - **내보내기 파일**(`.xts`, Xshell 의 [파일 > 내보내기]로 만든 것): zip 이다. 그 안에서 **최상위 폴더 이름이 `Xshell`**(대소문자 무시)인 항목 아래만 읽는다(`Xftp`·`xsl`·`com` 등 다른 폴더는 보지 않는다). 디스크에 풀지 않고 읽는다. zip 으로 열 수 없으면 오류 "Xshell 내보내기 파일을 열지 못했습니다: {원인}".
+    - 항목 이름은 UTF-8 표시가 없는 경우가 있다(내보낸 PC 의 코드 페이지 바이트): **유효한 UTF-8 이 아니면 EUC-KR(CP949)로 해석**한다. 구분자 `\` 는 `/` 로 본다.
+    - 한도: 세션 파일 하나 1MB(넘으면 그 파일은 건너뜀), 세션 20000개, 읽은 내용 합계 64MB(넘으면 거기서 멈춤).
+  - **세션 파일 하나**(`.xsh`, 2026-11-25 D129): 그 세션 하나만 읽는다. `folderPath` 는 빈 배열. 1MB 를 넘으면 빈 목록.
+  - **세션 폴더**: 고른 폴더 안에 `Sessions` 폴더가 있으면 그것을, 없으면 고른 폴더 자체를 세션 폴더로 본다.
+  - **이 PC 의 기본 세션 폴더**(자동 검색용, 표본 미확인): "문서" 폴더 아래 `NetSarang Computer\8\Xshell\Sessions`, 없으면 `…\7\…`, `…\6\…`, 그다음 옛 판의 `NetSarang\Xshell\Sessions` 순으로 처음 있는 것. "문서" 폴더는 Windows 에서 `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders` 의 `Personal`(환경 변수를 펼침), 그다음 `%USERPROFILE%\Documents`. 비 Windows 는 기본 폴더가 없다(빈 목록). 없으면 빈 목록.
+- **폴더 구조**: 세션 폴더(내보내기 파일에서는 `Xshell/`) 아래 하위 폴더를 모두 따라 내려간다. 확장자 `.xsh`(대소문자 무시) 파일 하나가 세션 하나. 세션 이름 = 파일 이름에서 `.xsh` 를 뗀 것. `folderPath` = 그 파일까지의 폴더 이름들(최상위 세션은 빈 배열). 폴더 이름이 빈 것·`.`·`..` 인 항목은 버린다. 다른 확장자(`default.xshf.xfs` 등)는 읽지 않는다. 순서는 폴더 경로·이름의 사전순.
+- **파일 형식**: 맨 앞이 UTF-16 BOM(`FF FE` 또는 `FE FF`)이면 UTF-16 으로 읽는다(표본은 모두 `FF FE`). UTF-8 BOM 은 버리고, 그 밖에는 유효한 UTF-8 이면 그대로 아니면 EUC-KR. 줄 끝 CR 무시. INI 형식: `[구역]` 줄과 `키=값` 줄(첫 `=` 에서 나눔, 키·값의 앞뒤 공백을 뗌). 구역·키 이름은 대소문자를 가리지 않는다. 같은 구역의 같은 키가 두 번 나오면 처음 것. 그 밖의 줄은 무시.
+- **프로토콜**: `[CONNECTION] Protocol` 이 `SSH`(또는 없음)이면 ssh, `TELNET` 이면 telnet(표본 미확인). 그 밖(`SERIAL`·`RLOGIN`·`SFTP`·`FTP`·`LOCAL`·`RDP` 등)은 **건너뜀**. 시리얼을 건너뛰는 까닭: 시리얼 값(`[CONNECTION:SERIAL]` 의 `BaudRate=12`·`DataBits=3`·`ComPort=0` 등)이 목록의 번호로 적혀 있는데 번호의 뜻을 확인할 표본이 없다.
+- 건너뛰는 세션: `[CONNECTION] Host` 가 빈 것.
+- **호스트·포트·사용자**: `[CONNECTION] Host`, `[CONNECTION] Port`(없거나 1~65535 밖이면 22, 텔넷 23), `[CONNECTION:AUTHENTICATION] UserName`.
+- **메모**: `[CONNECTION] Description` 이 비어 있지 않으면 `notes`.
+- **인코딩**: `[TERMINAL] CodePage`(Windows 코드 페이지 번호) — 65001→utf-8, 949→cp949, 51949→euc-kr, 932→shift_jis, 51932·20932→euc-jp, 936·54936→gbk, 950→big5, 1252·28591→latin1, 그 밖·없음→utf-8. (표본은 65001 뿐)
+- **터미널 종류**: `[TERMINAL] Type` 이 비어 있거나 `xterm` 이면 옮기지 않는다(적용 기본값 xterm-256color). 다른 값은 그대로(표본 미확인).
+- **연결 유지**: `[CONNECTION:KEEPALIVE] KeepAlive` 가 0 이 아니고 `KeepAliveInterval` 이 양수면 그 초, 아니면 30.
+- **인증**: 기본 `password`. ssh 세션에서 `[CONNECTION:AUTHENTICATION] UserKey` 가 비어 있지 않으면 `key`(keyFile 은 없음 — 적용 규칙 §4 에 따라 서버는 `agent` 인증이 된다)이고 후보 `note` 에 `Xshell 사용자 키 "{이름}" 은 옮기지 않음 (키를 내보내 서버 편집에서 지정)`. 사용자 키가 없고 `[CONNECTION:SSH] UseAuthAgent` 가 0 이 아니면 `key`(안내 없음). (둘 다 표본 미확인) **저장된 비밀번호(`Password`)·암호문(`Passphrase`)은 읽지 않는다.**
+  - 사용자 키를 옮기지 않는 까닭: Xshell 은 키를 세션 파일이 아니라 자기 키 보관소에 두고 세션에는 이름만 적는다.
+- **자동 실행 명령**: ssh 세션의 `[CONNECTION:SSH] RemoteCommand` 가 비어 있지 않으면 `startupCommand`(표본 미확인).
+- **포트 포워딩**(2026-11-25, D129 — 사용자가 준 세션 파일 하나(포워딩 43개, 모두 나가는 것)로 형식을 확인했다. 전에는 옮기지 않고 개수만 알렸다): ssh 세션의 `[CONNECTION:SSH] FwdReqCount` 가 항목 수 N 이고(1000 을 넘으면 1000), 항목 i(0 ~ N-1)는 같은 구역의 키 `FwdReq_{i}_{항목}` 들이다. 키들은 파일 안에서 순서 없이 흩어져 있다.
+  - `Incoming`: `0`(또는 없음) = 나가는 것 → 로컬 `L`. `1` = 들어오는 것 → 원격 `R`(표본 미확인). 그 밖의 값(동적 등, 표본 미확인)은 옮기지 않는다.
+  - `Port` = 듣는 포트(bindPort), `Host`·`HostPort` = 대상 주소·포트(destHost·destPort). 포트가 1~65535 밖이거나 대상 주소가 비면 그 항목은 옮기지 않는다.
+  - `Source` = 듣는 주소(bindHost). 비었거나 `localhost`(대소문자 무시)면 `127.0.0.1`, 다른 값은 그대로.
+  - `LocalOnly`("로컬 연결만 허용", 0·1)는 **쓰지 않는다**: 0 이어도 듣는 주소를 넓히지 않는다(가져오기만으로 이 PC 의 포트가 네트워크에 열리지 않게 한다. 필요하면 가져온 뒤 서버 편집에서 듣는 주소를 바꾼다).
+  - `Description`(항목의 설명): 포워딩에는 이름을 둘 자리가 없으므로, 설명이 있는 항목마다 `{L|R} {듣는 포트} → {대상 주소}:{대상 포트}  {설명}` 한 줄을 만들어 서버 `notes` 끝에 붙인다 — 머리 줄 `포트 포워딩 이름 (Xshell):` 뒤에 줄바꿈으로 잇고, 앞에 메모(`[CONNECTION] Description`)가 있으면 빈 줄 하나를 사이에 둔다.
+  - 옮기지 못한 항목이 있으면 후보 `note` 에 `포트 포워딩 {개수}개는 옮기지 않음`.
+- **옮기지 않고 알리는 것**(후보 `note`, 여러 개면 ` · ` 로 잇는다): 위의 사용자 키, 위의 옮기지 못한 포워딩 수, `[CONNECTION:PROXY] Proxy` 가 비어 있지 않으면 `프록시 설정 "{이름}" 은 옮기지 않음`.
+- 그 밖의 값(글꼴·색 구성·탭 색·로그·X11 전달·암호화 알고리즘 목록 등)은 읽지 않는다.
+- 후보 이름·서버 별칭 = 세션 이름.
+
 ## 2. ssh config (`~/.ssh/config`, 없으면 빈 목록)
 - 줄 단위로 읽는다. `#` 뒤는 주석. 빈 줄 무시. `키 값` 또는 `키=값` 형식, 키는 대소문자 무시, 값의 양끝 큰따옴표 제거.
 - `Host` 줄이 새 블록을 시작한다(여러 이름은 공백으로 구분 → 이름마다 후보 하나). **`*` `?` `!` 가 들어간 이름(와일드카드·부정)은 건너뜀.** `Match` 줄은 블록을 끝내고 그 뒤 값은 어느 블록에도 속하지 않는다.
@@ -69,8 +103,8 @@
    - **키 파일**: `keyFile` 이 있으면 파일을 읽어 — 읽지 못하면 건너뛰기 목록에 `{이름}: 키 파일을 읽지 못함 ({경로})` 추가. 읽었고 **볼트가 열려 있으면** 볼트에 항목(이름 `{후보 이름} 키`, 종류 key, 사용자 이름=서버 사용자)으로 저장하고 서버에 연결(키 개수 +1). 볼트가 잠겨 있으면 복사하지 않는다.
    - **환경**: 후보 이름(소문자)이 `prod`/`prd`/`live`/`운영` 으로 **시작**하면 prod, `stg`/`stage`/`staging`/`func`/`기능` 이면 stage(기능테스트), `perf`/`성능` 이면 perf(성능테스트), `dev`/`test`/`개발` 이면 dev, 그 외 프로토콜이 시리얼이면 device, 아니면 none.
    - **기본값**: 프로토콜 없으면 ssh, 포트 없으면 22, **인증**: 키 파일을 볼트에 저장했으면 `key`, 아니고 후보의 인증이 `key` 였으면 `agent`, 그 외 `password`. 별칭 없으면 후보 이름. 인코딩 없으면 utf-8, 터미널 종류 없으면 xterm-256color, 연결 유지 값이 없거나 0 이면 30, 포워딩 없으면 빈 목록.
-   - **태그**: 출처 한 개(`putty`/`securecrt`/`ssh-config`/`aws`). **자동 실행 명령·시리얼·메모는 비어 있지 않을 때만** 복사.
+   - **태그**: 출처 한 개(`putty`/`securecrt`/`xshell`/`ssh-config`/`aws`). **자동 실행 명령·시리얼·메모는 비어 있지 않을 때만** 복사.
 3. **점프 호스트 연결**: 점프 주소(`jumpVia`)가 있는 후보마다, 이번에 새로 만든 서버 중 **호스트가 같은 것**을 먼저 찾고 없으면 기존 서버 전체에서 찾는다. 찾았고 자기 자신이 아니면 `jumpHostId` 로 연결. 못 찾으면 건너뛰기 목록에 `{이름}: 점프 호스트 {주소} 를 찾지 못해 직접 접속으로 등록` 추가.
 4. 폴더·서버 목록을 저장한다. 결과: `{hosts: 후보 수, keys: 볼트에 저장한 키 수, skipped: 건너뛰기 메시지 배열}`.
 - **중복 판정은 화면에서만** 한다(초기 선택 해제용, ui/dialogs.md §5). 적용 단계는 중복을 검사하지 않고 선택된 것을 모두 추가한다.
-- `후보 검색`(import.scan)은 PuTTY 후보, 기본 위치의 SecureCRT 후보, ssh config 후보 순으로 이어 붙인 목록을 돌려준다.
+- `후보 검색`(import.scan)은 PuTTY 후보, 기본 위치의 SecureCRT 후보, 기본 위치의 Xshell 후보(§1.6), ssh config 후보 순으로 이어 붙인 목록을 돌려준다.

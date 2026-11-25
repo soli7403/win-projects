@@ -183,6 +183,8 @@ No. Server lists, passwords, keys and license checks are all handled on your PC.
 
 ## Keyboard shortcuts
 
+These are the **default keys**. In Settings > Shortcuts you can change or clear the key of each action, and turning "Use shortcuts" off disables all app shortcuts so those keys go to the terminal (server) — useful when vi or tmux use the same keys. If you pick keys another action was using, that action is left without a key. The paste and copy keys cannot be changed and keep working when shortcuts are off.
+
 | Keys | Action |
 |---|---|
 | Ctrl+K | Quick connect |

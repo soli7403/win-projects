@@ -58,7 +58,7 @@
 | 3-5 | Folders | [Add folder], right-click a folder (New subfolder · Edit folder · Delete) | Servers inherit the folder's environment color. Delete: empty folders go immediately; with servers you choose [Delete servers too] / [No (delete folder only — servers move up)] / [Cancel]. |
 | 3-6 | Environment | Environment = Production/Staging/Load test/Development/Network device | Shown as a color bar and pill. **Production** gets a red border and a dangerous-command check (6-6). A server with no color or environment of its own inherits them from its folder (and parent folders) — color order: server color → server environment → folder color → folder environment. A server inside a Production folder is protected as Production. The color bar on top of a tab appears on the selected tab only (blue if it has no color); other tabs keep a light tint of their server color. |
 | 3-7 | Search | Sidebar "Search servers" | Filters by name, address and tags. Otherwise "No servers match …". |
-| 3-8 | Favorites and recent | Right-click a server "Add to favorites" | "Favorites" and "Recent" sections at the top of the list. |
+| 3-8 | Favorites and recent | Right-click a server "Add to favorites" | "Favorites" and "Recent" sections at the top of the list. Click a section title to collapse it like a folder; the collapsed state is saved and kept the next time you open the app. |
 | 3-9 | Move | Drag servers/folders onto another folder | Reorders/moves and saves right away. |
 | 3-10 | Select several | Ctrl+click / Shift+click | "N servers selected" bar. Drag them into a folder, or right-click "Delete (N)". |
 | 3-11 | Server context menu | — | Open in new tab · Open in right view · Open in pane below · Choose where to open… · Edit (F2) · Duplicate · Favorites · Copy address · Delete. |
@@ -151,6 +151,7 @@
 | 10-1 | Open Import | Sidebar [Import], Quick connect `> Import`, start screen | Finds PuTTY saved sessions (registry), SecureCRT session folders and `~/.ssh/config` and lists them. |
 | 10-2 | Choose | Tick items, select all | Name, address, type, source, key file. "Target folder name" (default "PuTTY import"; names starting with prod-/stg-/dev- get that environment). |
 | 10-3 | SecureCRT elsewhere | [Choose SecureCRT folder] | Reads a Config folder copied from another PC too, keeping folder structure and port forwarding. |
+| 10-3a | Xshell | [Choose Xshell export file] | Reads sessions (name, folder structure, host, port, user, notes, encoding, port forwarding) from an `.xts` file made with [File > Export] in Xshell, or from a single session file (`.xsh`). Names given to forwarding rules go into the server notes. If Xshell is installed on this PC its sessions are listed automatically. Passwords, user keys, proxies and serial sessions are not imported. |
 | 10-4 | AWS | [Load AWS EC2] | All regions via your aws CLI credentials. Private IPs go through a bastion in the same VPC as the jump server; keys from `~/.ssh/<key name>.pem`. |
 | 10-5 | Import | [Import N] | "Imported N servers (M keys saved encrypted)". Passwords are not imported (enter once on first connection). |
 
@@ -175,19 +176,20 @@
 | 12-4 | Keep session with tmux | Server Advanced "Keep session (tmux)": programs on the server keep running after you close the pane or app, and reopening reattaches to the same screen. Without tmux it says so and works normally. On local Windows, WSL shells only. |
 | 12-5 | Local shell exits | "Shell exited" → Enter starts a new shell. |
 
-## 13. Settings (gear icon, 9 sections)
+## 13. Settings (gear icon, 10 sections)
 
 | Section | Main items |
 |---|---|
 | Appearance | Language · app theme (Dark/Light) · 6 terminal color themes (DariTerm Dark·Light, PuTTY Classic, Solarized Dark, Monokai, Nord) · font, size, line spacing · remember window size and position · [Reset to default size] · cursor style · scrollback lines · maximum vertical panes · blinking cursor · bell sound |
 | Input | Copy on select · paste with right click · paste with Ctrl+V · new line with Shift+Enter · OSC 52 · ask before pasting multiple lines · production dangerous-command warning and pattern list |
+| Shortcuts | Use shortcuts (turn all on/off, on by default) · change, clear or reset the key of each of the 34 app shortcuts · reset all to defaults · keys inside the terminal (cannot be changed) |
 | File transfer | Server upload folder · auto-delete days · temp folder for server-to-server copies · quote paths |
 | Connection | Reconnect when disconnected · restore last layout |
 | Logs | Log terminal output · timestamp each log line · keep ANSI codes · keep session logs (days; default 30, 0 = keep) · log file update interval · log folder |
 | git sync | Repository address · Sync now · automatic sync |
 | Security | Auto-lock (minutes) · unlock with Windows sign-in · change password · saved accounts |
 | Backup | Export · Import |
-| About | Version · developer · license · **Usage (license key)** · terms of use · business license inquiries · referenced project · open source licenses · data folder path (display only) · shortcut table (update checking is currently turned off and hidden) |
+| About | Version · developer · license · **Usage (license key)** · terms of use · business license inquiries · referenced project · open source licenses · data folder path (display only) (update checking is currently turned off and hidden) |
 
 Every setting is saved as soon as you change it (no Save button).
 
@@ -223,6 +225,8 @@ Every setting is saved as soon as you change it (no Save button).
 ---
 
 ### Appendix: Keyboard shortcuts
+
+These are the **default keys**. In Settings > Shortcuts you can change or clear the key of each action, and turning "Use shortcuts" off disables all app shortcuts so those keys go to the terminal (server) — useful when vi or tmux use the same keys. If you pick keys another action was using, that action is left without a key. The paste and copy keys cannot be changed and keep working when shortcuts are off.
 
 | Keys | Action |
 |---|---|

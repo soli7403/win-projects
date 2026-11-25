@@ -32,7 +32,7 @@
 - frontend/package.json, package-lock.json, frontend/run-vitest.mjs (created)
 - THIRD_PARTY_NOTICES.md, frontend/src/generated/third-party-notices.md (make notices)
 - docs/host-settings/{05_build-toolchain.md (created), README.md, setup.ps1, check.ps1}
-- docs/decisions.md (D124), CHANGELOG.md, CLAUDE.md (빠른 명령)
+- docs/decisions.md (D124-1), CHANGELOG.md, CLAUDE.md (빠른 명령)
 
 ---
 

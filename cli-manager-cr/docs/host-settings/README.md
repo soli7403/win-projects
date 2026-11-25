@@ -34,4 +34,4 @@
 | 2026-11-14 | 라이선스 서명 키 쌍 생성(비밀키는 `%USERPROFILE%\.dariterm-signing\`, D78) |
 | 2026-11-14 | Microsoft Store Developer CLI 0.4.4 설치(winget msstore 원본, D82). .NET 9 는 필요 없어 설치 안 함 |
 | 2026-11-14 | MSIX 시험 서명 인증서 생성(`Cert:\CurrentUser\My`, "DariTerm MSIX test", D81) |
-| 2026-11-25 | Go 1.26.2 → 1.27.4 (winget), Wails CLI v2.10.2 → v2.17.1 (go install), 빌드 도구 문서 05 추가 (D124) |
+| 2026-11-25 | Go 1.26.2 → 1.27.4 (winget), Wails CLI v2.10.2 → v2.17.1 (go install), 빌드 도구 문서 05 추가 (D124-1) |

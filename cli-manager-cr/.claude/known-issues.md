@@ -10,17 +10,21 @@
 
 ## ⏸️ DISMISSED
 
-### KI-009: 텔넷·시리얼 끊김 이유가 원래 오류 대신 고정 문구
-- **Status**: dismissed
-- **Severity**: low
-- **Module**: internal/transport (telnet.go, serial.go)
-- **Trigger areas**: 텔넷·시리얼 끊김 안내 문구
-- **증상**: 끊긴 원인(소켓 오류 등)이 아니라 "연결이 종료되었습니다" / "포트가 닫혔습니다" 만 보인다.
-- **원인**: spec/protocols.md §4·§5 가 고정 문구를 요구한다.
-- **History**:
-  - 2026-11-16: 세션·전송 계층 점검(docs/import-plans/2026-11-16-session-transport-issues.md §8)에서 발견. 명세대로의 동작이라 dismissed (사유: 명세의 고정 문구).
+(없음)
 
 ## ✔️ RESOLVED
+
+### KI-012: ZMODEM 이 실제 lrzsz 와 맞대어 보지 않았고, 응답 없는 서버·tmux 에서 전송 상태로 남음
+- **Status**: resolved
+- **Severity**: medium
+- **Module**: internal/zmodem, internal/session (zmodem.go, session.go)
+- **Trigger areas**: ZMODEM 전송(sz·rz), 전송 중 취소, tmux·screen 안의 전송
+- **증상**: (1) 자동 테스트는 이 구현끼리만 맞물려 실제 `sz`·`rz` 와 형식이 어긋날 수 있다 (2) 서버 쪽 프로그램이 응답 없이 멈추면 세션이 전송 상태로 남는다 (3) tmux 안에서는 대개 동작하지 않는다
+- **원인**: ZMODEM 구현(D114) 때 lrzsz 가 있는 서버가 없었고, 엔진의 읽기에 시한이 없었다. tmux 는 시작 표시의 제어 문자(ZDLE)를 빼고 전달한다
+- **History**:
+  - 2026-11-23: ZMODEM 구현(D114) 때 검증의 한계로 기록 (docs/import-plans/2026-11-23-zmodem.md §2.3)
+  - 2026-11-25: 시험 서버에 lrzsz 0.12.20 을 설치해 맞대어 봄 — 형식은 맞음(15B~40MB SHA256 일치). 받는 중 취소 시 데이터가 화면에 쏟아지는 결함을 찾아 고침(D123-2), 응답 시한 60초·즉시 취소·tmux 안내(D125). resolved. docs/import-plans/2026-11-25-1-zmodem-lrzsz-abort-stall-tmux.md
+  - 2026-11-25: 앱에서 수동 검증(계획서 §H) 완료 — 사용자 확인
 
 ### KI-011: 찾기 막대가 열린 동안 찾은 글자가 클립보드에 계속 복사되고, 출력 중에는 강조가 늦게 갱신됨
 - **Status**: resolved
@@ -47,6 +51,17 @@
 - **History**:
   - 2026-11-16: 사용자 보고("마우스 오른쪽 버튼으로 복사하는 것이 느린데")
   - 2026-11-16: CF_HDROP 을 Win32(IsClipboardFormatAvailable → GetClipboardData → DragQueryFileW)로 바로 읽도록 수정, 없으면 즉시 반환 (D91)
+
+### KI-009: 텔넷·시리얼 끊김 이유가 원래 오류 대신 고정 문구
+- **Status**: resolved
+- **Severity**: low
+- **Module**: internal/transport (telnet.go, serial.go)
+- **Trigger areas**: 텔넷·시리얼 끊김 안내 문구
+- **증상**: 끊긴 원인(소켓 오류 등)이 아니라 "연결이 종료되었습니다" / "포트가 닫혔습니다" 만 보인다.
+- **원인**: spec/protocols.md §4·§5 가 고정 문구를 요구한다.
+- **History**:
+  - 2026-11-16: 세션·전송 계층 점검(docs/import-plans/2026-11-16-session-transport-issues.md §8)에서 발견. 명세대로의 동작이라 dismissed (사유: 명세의 고정 문구).
+  - 2026-11-25: 사용자 요청("KI-009 도 직접적인 원인을 끊김 안내 문구에 적어줘. 사용자가 확인할 수 있게")으로 수정 (D127). 텔넷·시리얼이 읽기·쓰기 오류를 버리지 않고 이유에 붙인다(`internal/transport/closecause.go` `telnetClosed`·`serialClosed`): 텔넷은 "서버가 연결을 닫았습니다" 또는 "네트워크 오류 ({까닭})", 시리얼은 "포트가 닫혔습니다 ({까닭})". `errors.Is(…, ErrRemoteClosed/ErrPortClosed)` 는 그대로 참. 명세 spec/protocols.md §4·§5 도 고쳤다. 테스트 `closecause_test.go` 6개. 실제 장비(텔넷 서버·시리얼 장치)에서의 문구 확인은 계획서 docs/import-plans/2026-11-25-4-ki009-close-reason.md §H
 
 ### KI-001: 같은 별칭 세션을 같은 분에 열면 세션 로그가 한 파일에 섞임
 - **Status**: resolved

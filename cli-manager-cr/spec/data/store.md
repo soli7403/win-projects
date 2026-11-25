@@ -103,6 +103,8 @@
 | sessionLogTimestamp | false | 세션 로그의 줄마다 앞에 시각을 붙인다 ([../behavior/session.md](../behavior/session.md) §6, D112) |
 | sessionLogAnsi | false | 세션 로그에 ANSI 시퀀스와 CR 을 지우지 않고 받은 그대로 남긴다 ([../behavior/session.md](../behavior/session.md) §6, D120) |
 | sessionLogSyncSec | 2 | 기록 중인 세션 로그를 디스크까지 내려 쓰는 주기(초), 0~5. 0 이면 출력을 받는 즉시 쓰고 내려 쓴다 ([../behavior/session.md](../behavior/session.md) §6, 2026-11-18) |
+| shortcutsEnabled | true | 앱 단축키 전체 사용. false 면 그 키들은 터미널(서버)로 간다 ([../behavior/shortcuts.md](../behavior/shortcuts.md) §5, D126) |
+| shortcuts | 빈 표(`{}`) | 기본값에서 바꾼 단축키만: 명령 id → 조합 글자(예: `"find": "Ctrl+Alt+KeyF"`). 빈 글자는 키 없음 ([../behavior/shortcuts.md](../behavior/shortcuts.md) §5.2·§5.3, D126) |
 | bell | false | |
 | shiftEnterNewline | true | Shift+Enter 로 줄바꿈 입력 |
 | rememberWindow | true | 창 크기·위치 기억 |
@@ -112,6 +114,8 @@
 | syncAuto | true | 자동 동기화 |
 | osc52Copy | true | 원격의 OSC 52 클립보드 쓰기 허용 |
 | sidebarWidth | 260 | px |
+| favoritesCollapsed | false | 사이드바 "즐겨찾기" 구역을 접어 두었는지 ([../ui/sidebar.md](../ui/sidebar.md) §3, D131) |
+| recentCollapsed | false | 사이드바 "최근 사용" 구역을 접어 두었는지 (같은 곳) |
 | rightPanelWidth | 340 | px |
 
 dangerousPatterns 기본 목록(정규식 원문, 순서 유지):
