@@ -128,6 +128,10 @@ export interface Settings {
   sessionLogTimestamp: boolean;
   /** 세션 로그에 ANSI 시퀀스(색·커서 이동)와 CR 을 지우지 않고 받은 그대로 남긴다 (behavior/session.md §6, D120). */
   sessionLogAnsi: boolean;
+  /** 앱 단축키 전체를 쓸지. 끄면 그 키들은 터미널(서버)로 간다 (behavior/shortcuts.md §5, D126). */
+  shortcutsEnabled: boolean;
+  /** 기본값에서 바꾼 단축키만: 명령 id → 조합('Ctrl+Shift+KeyT'). 빈 글자는 키 없음 (behavior/shortcuts.md §5). */
+  shortcuts: Record<string, string>;
   bell: boolean;
   shiftEnterNewline: boolean;
   rememberWindow: boolean;
@@ -137,6 +141,10 @@ export interface Settings {
   syncAuto: boolean;
   osc52Copy: boolean;
   sidebarWidth: number;
+  /** 사이드바의 "즐겨찾기" 구역을 접어 두었는지 (ui/sidebar.md §3, D131). */
+  favoritesCollapsed: boolean;
+  /** 사이드바의 "최근 사용" 구역을 접어 두었는지 (ui/sidebar.md §3, D131). */
+  recentCollapsed: boolean;
   rightPanelWidth: number;
   /** 사용 용도(D78): '' 아직 안 고름 / personal(기한 없음) / business(30일 평가 뒤 라이선스). */
   usage: '' | 'personal' | 'business';

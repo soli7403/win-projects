@@ -186,8 +186,11 @@ button { font: inherit; color: inherit; }
 .app { height: 100vh; display: flex; flex-direction: column; }
 .toolrow { display: flex; align-items: center; gap: 4px; padding: 6px 8px; flex: none; }
 .toolrow.vertical { flex-direction: column; padding: 6px 0; }
-.leftcol { display: flex; flex-direction: column; flex: none; min-height: 0; background: var(--bg); }
-.leftcol-body { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+/* 왼쪽 열: 너비는 열이 갖고(인라인 width = 설정 sidebarWidth) 안의 서버 목록·명령 모음은 그 너비를 채운다.
+   안의 내용(긴 문구 등)이 열을 넓히지 못하게 min-width 0 · overflow hidden 을 둔다 (D130). */
+.leftcol { position: relative; display: flex; flex-direction: column; flex: none; min-width: 0; min-height: 0; background: var(--bg); border-right: 1px solid var(--border); }
+.leftcol-body { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.leftcol-body > .sidebar { border-right: none; }
 /* 서버 목록 : 스니펫 = (100 − 비율) : 비율. 스니펫이 닫히면 서버 목록이 전부 차지. */
 .leftcol-body > .sidebar { flex: var(--side-flex, 1) 1 0; min-height: 80px; }
 .snippet-divider { flex: none; height: 6px; margin: -3px 0; cursor: row-resize; position: relative; z-index: 6; }
@@ -224,7 +227,7 @@ button { font: inherit; color: inherit; }
 .tabgroup-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .tab-sftp { margin-left: auto; margin-top: 5px; flex: none; }
 .tab-sftp.on { background: var(--accent-soft); }
-.snippet-dock { flex: 1 1 0; min-height: 80px; display: flex; flex-direction: column; border-top: 1px solid var(--border); background: var(--bg); }
+.snippet-dock { flex: 1 1 0; min-width: 0; min-height: 80px; overflow: hidden; display: flex; flex-direction: column; border-top: 1px solid var(--border); background: var(--bg); }
 .tabbar.in-group { height: 38px; flex: none; border-bottom: 1px solid var(--border); background: var(--panel); padding: 0 4px; }
 .split-drop {
   position: absolute; top: 4px; right: 4px; bottom: 4px; width: calc(50% - 4px); z-index: 20;
@@ -255,7 +258,7 @@ button { font: inherit; color: inherit; }
 .shortcut-table span:nth-child(odd) { text-align: right; }
 
 /* 사이드바. 근거: spec/ui/tokens.md §3(사이드바 행·섹션 제목). */
-.sidebar { position: relative; display: flex; flex-direction: column; min-height: 0; background: var(--bg); border-right: 1px solid var(--border); outline: none; }
+.sidebar { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg); border-right: 1px solid var(--border); outline: none; }
 .side-head { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 .search-box {
   display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 7px;
@@ -266,6 +269,12 @@ button { font: inherit; color: inherit; }
 .side-btns .btn { flex: 1 1 auto; justify-content: center; padding: 0 6px; white-space: nowrap; }
 .side-tree { flex: 1; overflow: auto; padding: 4px 6px; }
 .side-section { font-size: 11px; font-weight: 700; color: var(--fg-3); letter-spacing: 0.4px; padding: 10px 6px 4px; display: flex; align-items: center; gap: 4px; }
+/* 접을 수 있는 구역 제목(즐겨찾기·최근 사용): 글자 모양은 다른 구역 제목과 같고, 줄 전체가 버튼이다 (D131). */
+/* "서버" 구역 제목 위의 구분선: 위에 즐겨찾기·최근 사용 구역이 있을 때만 (D132). 선 위아래에 6px 씩 띄운다. */
+.side-section.divided { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--border); }
+.side-section-toggle { width: 100%; border: none; background: transparent; font-family: inherit; text-align: left; cursor: pointer; border-radius: 6px; }
+.side-section-toggle:hover { color: var(--fg-2); }
+.side-section-toggle:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
 .side-row {
   position: relative; height: 30px; display: flex; align-items: center; gap: 6px; padding-right: 8px;
   border-radius: 6px; margin-bottom: 6px; cursor: default; white-space: nowrap; color: var(--fg);

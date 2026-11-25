@@ -13,7 +13,7 @@ import { useWorkspace } from '../state/workspace';
 import { sessionsIn, findPane, type LayoutNode } from '../lib/layout';
 import { matchesDangerous, LineTracker, pasteLineCount } from '../lib/termGuard';
 import { decodeOsc52 } from '../lib/osc52';
-import { shortcutFor } from '../lib/keys';
+import { activeShortcut } from '../state/shortcuts';
 import { resolveTermTheme } from '../lib/termThemes';
 import { attachHighlighter, type Highlighter } from '../lib/termHighlight';
 import { attachFindMarks, type FindMarks } from '../lib/termFind';
@@ -398,10 +398,11 @@ function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): K
   });
 
   // 키 처리: 앱 단축키는 터미널로 보내지 않는다(window 캡처에서 처리).
+  // 단축키를 껐거나 그 키를 비웠으면 앱 단축키가 아니므로 터미널(서버)로 간다 (shortcuts.md §5, D126).
   t.attachCustomKeyEventHandler((e) => {
     if (e.type !== 'keydown') return true;
     if (useUi.getState().dialogs.length > 0) return false;
-    if (shortcutFor(e)) return false;
+    if (activeShortcut(e)) return false;
     if (e.ctrlKey && e.shiftKey && e.code === 'KeyC') {
       void copySelection(t);
       return false;

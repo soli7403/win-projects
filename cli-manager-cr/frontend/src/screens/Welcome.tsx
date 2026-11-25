@@ -1,10 +1,11 @@
 // 시작 화면(탭이 하나도 없을 때 작업 영역). 근거: spec/ui/shell.md §4.
-// 단축키 표(12개)는 behavior/shortcuts.md §4 가 필요하므로 4단계에서 채운다.
+// 단축키 표(12줄)와 안내의 키는 지금 설정의 키를 보인다(behavior/shortcuts.md §4·§5, D126).
 import { Download, Plus, Terminal, Zap } from 'lucide-react';
 import { useApp } from '../state/app';
 import { effectiveColor, recentHosts } from '../lib/hosts';
 import { sidebarSubtitle } from '../lib/tree';
-import { START_SHORTCUTS, shortcutText } from '../lib/shortcuts';
+import { startShortcutRows } from '../lib/shortcuts';
+import { useShortcutLabels } from '../state/shortcuts';
 import { LogoMark } from '../ui/Logo';
 import { openHost, runShortcut } from '../state/actions';
 import { useUi } from '../state/ui';
@@ -16,20 +17,25 @@ export function Welcome() {
   const hosts = store?.hosts ?? [];
   const groups = store?.groups ?? [];
   const recent = recentHosts(hosts);
+  const labels = useShortcutLabels();
+  // 안내 문장의 키: 빠른 연결을 여는 키 중 지금 있는 것. 하나도 없으면(끄거나 비움) 문장을 보이지 않는다.
+  const quickKey = labels.quick || labels.newTab || labels.quickAlt || labels.quickOpen;
 
   return (
     <div className="welcome">
       <div className="welcome-card">
         <LogoMark size={48} />
         <h1>DariTerm</h1>
-        <p className="muted" style={{ margin: 0 }}>
-          {t('welcome.hint').split('{key}')[0]}<span className="kbd">Ctrl+K</span>{t('welcome.hint').split('{key}')[1]}
-        </p>
+        {quickKey && (
+          <p className="muted" style={{ margin: 0 }}>
+            {t('welcome.hint').split('{key}')[0]}<span className="kbd">{quickKey}</span>{t('welcome.hint').split('{key}')[1]}
+          </p>
+        )}
         <div className="welcome-actions">
           <button className="btn primary" onClick={() => useUi.getState().openQuick(null)}>
             <Zap size={15} />{t('welcome.quick')}
           </button>
-          <button className="btn" title="Ctrl+Alt+T" onClick={() => runShortcut('newLocal')}>
+          <button className="btn" title={labels.newLocal || undefined} onClick={() => runShortcut('newLocal')}>
             <Terminal size={15} />{t('host.localTerminal')}
           </button>
           <button className="btn" onClick={() => useUi.getState().openEditor({ kind: 'host', hostId: null, groupId: null })}>
@@ -58,10 +64,10 @@ export function Welcome() {
           </div>
         )}
         <div className="shortcut-table" style={{ gridTemplateColumns: '1fr 1fr', width: '100%', gap: '6px 22px' }}>
-          {START_SHORTCUTS.map((s) => (
+          {startShortcutRows(labels).map((s) => (
             <div key={s.name} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span className="muted">{shortcutText(s).name}</span>
-              <span className="kbd">{shortcutText(s).keys}</span>
+              <span className="muted">{s.name}</span>
+              <span className="kbd">{s.keys}</span>
             </div>
           ))}
         </div>

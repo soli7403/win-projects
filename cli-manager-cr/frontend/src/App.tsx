@@ -7,7 +7,8 @@ import { useUi } from './state/ui';
 import { useRequests, type UiRequest } from './state/requests';
 import { useWorkspace } from './state/workspace';
 import { subscribeSessionEvents, runShortcut } from './state/actions';
-import { shortcutFor } from './lib/keys';
+import { keyCapture } from './lib/keys';
+import { activeShortcut } from './state/shortcuts';
 import { ContextMenuHost } from './ui/ContextMenu';
 import { DialogHost } from './ui/DialogHost';
 import { Toasts } from './ui/Toasts';
@@ -73,8 +74,10 @@ export function App() {
     const stopImport = startImportSuggestion();
 
     // 단축키: 볼트 잠김·대화상자 열림 조건을 따른다(shortcuts.md §1). 빠른 접속이 열려 있으면 모두 동작.
+    // 키와 사용 여부는 설정(shortcuts·shortcutsEnabled)을 따른다. 설정 화면이 키를 받는 중에는 쉰다 (§5, D126).
     const onKey = (e: KeyboardEvent) => {
-      const action = shortcutFor(e);
+      if (keyCapture.active) return;
+      const action = activeShortcut(e);
       if (!action) return;
       const v = useApp.getState().vault;
       if (v?.initialized && !v.unlocked) return;

@@ -15,7 +15,7 @@ import { PanelHost, SftpDock } from './RightPanel';
 import { CopyJobs } from './CopyJobs';
 import { useSplitDropHint } from './splitDropHint';
 import { SnippetsPanel } from './SnippetsPanel';
-import { Sidebar } from './Sidebar';
+import { Sidebar, SidebarResizer, useSidebarWidth } from './Sidebar';
 import { UpdateBadge } from '../ui/UpdateBadge';
 // 이 파일은 t 를 지역 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
 import { relabel, t as tr, type MsgId } from '../i18n';
@@ -255,6 +255,8 @@ function SnippetDivider({ containerRef }: { containerRef: React.RefObject<HTMLDi
 export function Shell() {
   const sidebarOpen = useUi((s) => s.sidebarOpen);
   const snippetRatio = useUi((s) => s.snippetRatio);
+  // 왼쪽 열의 너비: 열 전체(아이콘 묶음·서버 목록·명령 모음)가 같은 너비를 쓴다 (D130).
+  const sidebarWidth = useSidebarWidth();
   const leftRef = useRef<HTMLDivElement>(null);
   const split = useWorkspace((s) => isSplit(s.tabs));
   const ratio = useWorkspace((s) => s.groupRatio);
@@ -267,7 +269,7 @@ export function Shell() {
     <div className="app">
       <div className="body">
         {sidebarOpen ? (
-          <div className="leftcol">
+          <div className="leftcol" style={{ width: sidebarWidth }}>
             <ToolRow vertical={false} />
             {/* 서버 목록 + 스니펫이 나눠 쓰는 영역. 비율은 SnippetDivider 로 바꾼다. */}
             <div
@@ -285,6 +287,8 @@ export function Shell() {
                 </>
               )}
             </div>
+            {/* 너비 조절 손잡이: 열 전체 높이(서버 목록 + 명령 모음)에서 잡힌다. */}
+            <SidebarResizer />
           </div>
         ) : (
           <div className="rail">

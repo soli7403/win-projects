@@ -1,6 +1,6 @@
-// 설정 화면: 크게 보기 모달, 왼쪽 구역 내비 9개 + 오른쪽 본문. 모든 변경은 즉시 저장. 근거: spec/ui/settings.md.
+// 설정 화면: 크게 보기 모달, 왼쪽 구역 내비 10개 + 오른쪽 본문. 모든 변경은 즉시 저장. 근거: spec/ui/settings.md.
 import { useState, type ReactNode, type KeyboardEvent } from 'react';
-import { Palette, Keyboard, ImageUp, Plug, ScrollText, RefreshCw, Shield, Archive, Info } from 'lucide-react';
+import { Palette, Keyboard, Command, ImageUp, Plug, ScrollText, RefreshCw, Shield, Archive, Info } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { useUi, type SettingsSection } from '../state/ui';
 import { useApp } from '../state/app';
@@ -8,6 +8,7 @@ import { saveSettings } from '../state/settings';
 import type { Settings as SettingsT } from '../ipc/types';
 import { SettingsAppearance } from './SettingsAppearance';
 import { SettingsInput } from './SettingsInput';
+import { SettingsShortcuts } from './SettingsShortcuts';
 import { SettingsFiles } from './SettingsFiles';
 import { SettingsConnection } from './SettingsConnection';
 import { SettingsLog } from './SettingsLog';
@@ -21,6 +22,7 @@ import { t, type MsgId } from '../i18n';
 const SECTIONS: { id: SettingsSection; label: MsgId; icon: typeof Palette }[] = [
   { id: 'appearance', label: 'settings.sec.appearance', icon: Palette },
   { id: 'input', label: 'settings.sec.input', icon: Keyboard },
+  { id: 'shortcuts', label: 'settings.sec.shortcuts', icon: Command },
   { id: 'files', label: 'settings.sec.files', icon: ImageUp },
   { id: 'connection', label: 'settings.sec.connection', icon: Plug },
   { id: 'log', label: 'settings.sec.log', icon: ScrollText },
@@ -98,6 +100,7 @@ export function Settings() {
   const body: Record<SettingsSection, ReactNode> = {
     appearance: <SettingsAppearance />,
     input: <SettingsInput />,
+    shortcuts: <SettingsShortcuts />,
     files: <SettingsFiles />,
     connection: <SettingsConnection />,
     log: <SettingsLog />,

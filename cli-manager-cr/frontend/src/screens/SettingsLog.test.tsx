@@ -33,10 +33,10 @@ function patched(key: string): unknown[] {
 }
 
 describe('설정 > 로그 (D120)', () => {
-  it('구역 목록에 "연결" 다음으로 "로그"가 있다 (9개)', () => {
+  it('구역 목록에 "연결" 다음으로 "로그"가 있다 (10개)', () => {
     openSection('connection');
     const names = within(screen.getByRole('navigation')).getAllByRole('button').map((b) => b.textContent);
-    expect(names).toEqual(['화면', '입력', '파일 전송', '연결', '로그', 'git 동기화', '보안', '백업', '정보']);
+    expect(names).toEqual(['화면', '입력', '단축키', '파일 전송', '연결', '로그', 'git 동기화', '보안', '백업', '정보']);
   });
 
   it('"연결"에는 로그 항목이 없고 자동 재연결·배치 복원만 남는다', () => {

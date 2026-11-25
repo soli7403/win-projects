@@ -21,6 +21,7 @@ import { ENV_INFO } from '../lib/defaults';
 import { useWorkspace } from '../state/workspace';
 import { findPane, findPaneBySession, sessionsIn, type LayoutNode } from '../lib/layout';
 // 이 파일은 t 를 탭 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
+import { saveSettings } from '../state/settings';
 import { t as tr } from '../i18n';
 
 /** 이 서버의 열린 칸 목록(모든 탭, 탭 순서대로). */
@@ -160,7 +161,6 @@ export function Sidebar() {
   const groups = store?.groups ?? [];
   const hosts = store?.hosts ?? [];
   const searching = query.trim().length > 0;
-  const width = store?.settings.sidebarWidth ?? 260;
 
   const matched = useMemo(() => hosts.filter((h) => matchesQuery(h, groups, query)), [hosts, groups, query]);
   // 지워진 서버는 선택에서 뺀다. 2개 이상일 때만 여러 개 선택 상태.
@@ -318,24 +318,6 @@ export function Sidebar() {
     if (e.key === 'Enter') void openHost(h.id, e.ctrlKey ? { kind: 'rightGroup' } : e.shiftKey ? { kind: 'split', dir: 'col' } : { kind: 'tab' });
   };
 
-  const onResizeDown = (e: RPointerEvent<HTMLDivElement>) => {
-    const startX = e.clientX;
-    const startW = width;
-    let latest = startW;
-    const move = (ev: PointerEvent) => {
-      latest = clampSidebarWidth(startW + ev.clientX - startX);
-      useApp.setState((s) => (s.store ? { store: { ...s.store, settings: { ...s.store.settings, sidebarWidth: latest } } } : s));
-    };
-    const up = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      const st = useApp.getState().store;
-      if (st) void patchStore({ settings: { ...st.settings, sidebarWidth: latest } });
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  };
-
   const hostRow = (h: Host, depth: number, opts: { selectable?: boolean } = { selectable: true }) => {
     const Icon = PROTOCOL_ICON[h.protocol];
     const color = effectiveColor(h, groups);
@@ -490,10 +472,25 @@ export function Sidebar() {
     .sort((a, b) => (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0))
     .slice(0, 5);
   const showRecent = !searching && hosts.length > 6 && recent.length > 0;
+  // "즐겨찾기"·"최근 사용" 구역은 제목을 눌러 접는다. 접힘은 설정에 저장한다 (sidebar.md §3, D131).
+  const favoritesCollapsed = !!store?.settings.favoritesCollapsed;
+  const recentCollapsed = !!store?.settings.recentCollapsed;
+  /** 접을 수 있는 구역의 제목 줄. 누르면 접힘을 뒤집어 저장한다. */
+  const sectionHead = (key: 'favoritesCollapsed' | 'recentCollapsed', collapsed: boolean, icon: ReactNode, label: string) => (
+    <button
+      type="button"
+      className="side-section side-section-toggle"
+      aria-expanded={!collapsed}
+      onClick={() => void saveSettings({ [key]: !collapsed })}
+    >
+      {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+      {icon} {label}
+    </button>
+  );
   const noMatch = searching && matched.length === 0 && hosts.length > 0;
 
   return (
-    <aside className="sidebar" style={{ width }} aria-label={tr('shell.servers')} onKeyDown={onKey} tabIndex={-1}>
+    <aside className="sidebar" aria-label={tr('shell.servers')} onKeyDown={onKey} tabIndex={-1}>
       <div className="side-head">
         <div className="search-box">
           <Search size={14} />
@@ -540,17 +537,18 @@ export function Sidebar() {
       >
         {!searching && favorites.length > 0 && (
           <>
-            <div className="side-section"><Star size={12} /> {tr('sb.favorites')}</div>
-            {favorites.map((h) => hostRow(h, 0, { selectable: false }))}
+            {sectionHead('favoritesCollapsed', favoritesCollapsed, <Star size={12} />, tr('sb.favorites'))}
+            {!favoritesCollapsed && favorites.map((h) => hostRow(h, 0, { selectable: false }))}
           </>
         )}
         {showRecent && (
           <>
-            <div className="side-section"><Clock size={12} /> {tr('sb.recent')}</div>
-            {recent.map((h) => hostRow(h, 0, { selectable: false }))}
+            {sectionHead('recentCollapsed', recentCollapsed, <Clock size={12} />, tr('sb.recent'))}
+            {!recentCollapsed && recent.map((h) => hostRow(h, 0, { selectable: false }))}
           </>
         )}
-        <div className="side-section">{tr('sb.servers')}{hosts.length > 0 ? ` · ${hosts.length}` : ''}</div>
+        {/* 위에 즐겨찾기·최근 사용 구역이 있으면 "서버" 제목 위에 선을 그어 구분한다(접혀 있어도). D132 */}
+        <div className={`side-section${(!searching && favorites.length > 0) || showRecent ? ' divided' : ''}`}>{tr('sb.servers')}{hosts.length > 0 ? ` · ${hosts.length}` : ''}</div>
         {rootGroups.map((g) => folderRow(g, 0))}
         {looseHosts.map((h) => hostRow(h, 0))}
         {hosts.length === 0 && (
@@ -562,8 +560,39 @@ export function Sidebar() {
           <div className="faint small" style={{ padding: '8px 10px' }}>{tr('sb.noMatch', { query: query.trim() })}</div>
         )}
       </div>
-
-      <div className="side-resize" onPointerDown={onResizeDown} role="separator" aria-orientation="vertical" aria-label={tr('sb.width')} />
     </aside>
   );
+}
+
+/** 기본 왼쪽 열 너비(px). 저장된 값이 없을 때 쓴다 (data/store.md §4 sidebarWidth). */
+export const SIDEBAR_WIDTH_DEFAULT = 260;
+
+/** 왼쪽 열(아이콘 묶음 + 서버 목록 + 명령 모음)의 너비. 서버 목록만이 아니라 열 전체가 이 너비다 (ui/sidebar.md §1, D130). */
+export function useSidebarWidth(): number {
+  return useApp((s) => s.store?.settings.sidebarWidth ?? SIDEBAR_WIDTH_DEFAULT);
+}
+
+/**
+ * 왼쪽 열의 오른쪽 가장자리: 좌우로 끌어 열 너비를 바꾼다(200~520px). 끄는 동안은 화면에만 반영하고 놓을 때 저장한다.
+ * 왼쪽 열(.leftcol) 안에 두어 서버 목록과 명령 모음 높이 전체에서 잡힌다.
+ */
+export function SidebarResizer() {
+  const onResizeDown = (e: RPointerEvent<HTMLDivElement>) => {
+    const startX = e.clientX;
+    const startW = useApp.getState().store?.settings.sidebarWidth ?? SIDEBAR_WIDTH_DEFAULT;
+    let latest = startW;
+    const move = (ev: PointerEvent) => {
+      latest = clampSidebarWidth(startW + ev.clientX - startX);
+      useApp.setState((s) => (s.store ? { store: { ...s.store, settings: { ...s.store.settings, sidebarWidth: latest } } } : s));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      const st = useApp.getState().store;
+      if (st && latest !== startW) void useApp.getState().patchStore({ settings: { ...st.settings, sidebarWidth: latest } });
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return <div className="side-resize" onPointerDown={onResizeDown} role="separator" aria-orientation="vertical" aria-label={tr('sb.width')} />;
 }

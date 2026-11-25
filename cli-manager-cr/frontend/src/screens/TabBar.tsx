@@ -8,6 +8,7 @@ import { isFileDrag, hoverStart, hoverEnd, dropFiles, tabSessionId } from './fil
 import { focusActiveTerminal } from './TerminalView';
 // 이 파일은 t 를 탭 변수 이름으로 많이 쓰므로 번역 함수는 tr 로 가져온다(D75).
 import { t as tr } from '../i18n';
+import { useShortcutLabels } from '../state/shortcuts';
 
 export const TAB_MIME = 'application/x-dariterm-tab';
 
@@ -48,6 +49,7 @@ export function tabMark(active: boolean, color: string | undefined): { bar?: str
 /** 탭 막대. group 을 주면 그 그룹의 탭만 보이는 열 안 탭 막대(화면 나누기, ui/shell.md §2.3). */
 export function TabBar({ group }: { group?: 0 | 1 }) {
   const allTabs = useWorkspace((s) => s.tabs);
+  const scLabels = useShortcutLabels();
   const g: 0 | 1 = group ?? 0;
   const split = isSplit(allTabs);
   const tabs = allTabs.filter((t) => groupOf(t) === g);
@@ -105,11 +107,11 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
         ? { label: tr('tab.toRight'), disabled: allTabs.length < 2, onSelect: () => moveTabToGroup(t.id, 1) }
         : { label: tr('tab.toLeft'), onSelect: () => moveTabToGroup(t.id, 0) },
       ...(split ? [{ label: tr('tab.merge'), onSelect: () => mergeGroups() } as MenuItem] : []),
-      { label: t.broadcast ? tr('tab.broadcastOff') : tr('tab.broadcastOn'), shortcut: 'Ctrl+Shift+B', disabled: panes < 2, onSelect: () => toggleBroadcast(t.id) },
+      { label: t.broadcast ? tr('tab.broadcastOff') : tr('tab.broadcastOn'), shortcut: scLabels.broadcast || undefined, disabled: panes < 2, onSelect: () => toggleBroadcast(t.id) },
       { label: tr('tab.detach'), disabled: panes < 2, onSelect: () => detachPanes(t.id) },
       { separator: true },
       { label: tr('tab.closeOthers'), onSelect: () => void closeOthers(t) },
-      { label: tr('tab.close'), shortcut: 'Ctrl+Shift+W', danger: true, onSelect: () => void confirmClose(t) },
+      { label: tr('tab.close'), shortcut: scLabels.closePane || undefined, danger: true, onSelect: () => void confirmClose(t) },
     ];
   };
 
@@ -242,7 +244,7 @@ export function TabBar({ group }: { group?: 0 | 1 }) {
       </button>
       <button
         className={`icon-btn tab-sftp${sftpOpen ? ' on' : ''}`}
-        title="SFTP (Ctrl+Shift+S)"
+        title={scLabels.sftp ? `SFTP (${scLabels.sftp})` : 'SFTP'}
         aria-label="SFTP"
         aria-pressed={sftpOpen}
         onClick={() => toggleSftp(g)}

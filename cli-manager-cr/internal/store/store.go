@@ -55,7 +55,9 @@ var g_mapSettingsDefault = map[string]any{
 	"sessionLogKeepDays":  30,
 	"sessionLogSyncSec":   2,
 	"sessionLogTimestamp": false,
-	"sessionLogAnsi":      false, // 세션 로그에 ANSI 시퀀스를 그대로 남긴다 (session.md §6, D120)
+	"sessionLogAnsi":      false,            // 세션 로그에 ANSI 시퀀스를 그대로 남긴다 (session.md §6, D120)
+	"shortcutsEnabled":    true,             // 앱 단축키 전체 사용 (shortcuts.md §5, D126)
+	"shortcuts":           map[string]any{}, // 기본값에서 바꾼 단축키만: 명령 id → 조합, 빈 글자는 키 없음
 	"bell":                false,
 	"shiftEnterNewline":   true,
 	"rememberWindow":      true,
@@ -65,6 +67,8 @@ var g_mapSettingsDefault = map[string]any{
 	"syncAuto":            true,
 	"osc52Copy":           true,
 	"sidebarWidth":        260,
+	"favoritesCollapsed":  false, // 사이드바 "즐겨찾기" 구역 접힘 (sidebar.md §3, D131)
+	"recentCollapsed":     false, // 사이드바 "최근 사용" 구역 접힘
 	"rightPanelWidth":     340,
 	// D78: 사용 용도·업무용 라이선스. usage ''=아직 안 고름 / personal / business(30일 평가), usageSince=업무용 고른 시각(ms).
 	"usage":            "",

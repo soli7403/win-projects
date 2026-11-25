@@ -15,6 +15,7 @@ import type { MenuItem } from '../state/ui';
 import { isFileDrag, hoverStart, hoverEnd, dropFiles } from './fileDrag';
 // 이 파일은 t 를 지역 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
 import { relabel, t as tr } from '../i18n';
+import { useShortcutLabels } from '../state/shortcuts';
 
 const PANE_MIME = 'application/x-dariterm-pane';
 /** 사이드바 서버 끌어 놓기 MIME(에이전트 B 가 dragstart 에서 설정). */
@@ -122,6 +123,7 @@ export function PaneZoomButton({ zoomed, onToggle }: { zoomed: boolean; onToggle
 function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: number }) {
   const entry = useWorkspace((s) => (pane.sessionId ? s.sessions[pane.sessionId] : undefined));
   const focused = tab.focusedPane === pane.id;
+  const scLabels = useShortcutLabels();
   const info = entry?.info;
   const env = info?.env && info.env !== 'none' ? info.env : undefined;
   const color = info?.color;
@@ -223,11 +225,11 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
     { separator: true },
     { label: tr('pane.selectAll'), disabled: !hasSession, onSelect: () => selectAllInPane(pane.id) },
     { label: tr('pane.clear'), disabled: !hasSession, onSelect: () => termHandles.get(pane.id)?.clear() },
-    { label: tr('pane.find'), shortcut: 'Ctrl+Shift+F', disabled: !hasSession, onSelect: () => window.dispatchEvent(new CustomEvent(FIND_EVENT, { detail: pane.id })) },
+    { label: tr('pane.find'), shortcut: scLabels.find || undefined, disabled: !hasSession, onSelect: () => window.dispatchEvent(new CustomEvent(FIND_EVENT, { detail: pane.id })) },
     { separator: true },
-    { label: tr('sc.splitRight'), shortcut: 'Ctrl+Shift+D', disabled: !info || !canSplit, onSelect: () => void splitSame('row') },
-    { label: tr('sc.splitDown'), shortcut: 'Ctrl+Shift+E', disabled: !info || !canSplit, onSelect: () => void splitSame('col') },
-    { label: info?.protocol === 'local' ? tr('pane.openFiles') : tr('pane.openSftp'), shortcut: 'Ctrl+Shift+S', disabled: !info?.canSftp && info?.protocol !== 'local', onSelect: () => { focusPane(pane.id); useUi.getState().setSftpOpen(groupOf(tab), true); } },
+    { label: tr('sc.splitRight'), shortcut: scLabels.splitRight || undefined, disabled: !info || !canSplit, onSelect: () => void splitSame('row') },
+    { label: tr('sc.splitDown'), shortcut: scLabels.splitDown || undefined, disabled: !info || !canSplit, onSelect: () => void splitSame('col') },
+    { label: info?.protocol === 'local' ? tr('pane.openFiles') : tr('pane.openSftp'), shortcut: scLabels.sftp || undefined, disabled: !info?.canSftp && info?.protocol !== 'local', onSelect: () => { focusPane(pane.id); useUi.getState().setSftpOpen(groupOf(tab), true); } },
     { label: tr('pane.reconnect'), disabled: !hasSession || entry?.info.state === 'connected', onSelect: () => void reconnect() },
     { separator: true },
     { label: tr('pane.close'), danger: true, onSelect: () => void closePane(pane.id) },

@@ -3,6 +3,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { X } from 'lucide-react';
 import { t } from '../i18n';
+import { keyCapture } from '../lib/keys';
 
 interface ModalProps {
   title: string;
@@ -36,7 +37,8 @@ export function Modal({
   useEffect(() => {
     prevFocus.current = document.activeElement;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      // 설정의 단축키 구역이 키를 받는 중이면 Esc 는 그쪽의 취소다 (D126).
+      if (e.key === 'Escape' && !keyCapture.active) {
         // Esc 는 모달이 먼저 가로채고 아래로 전달하지 않는다.
         e.preventDefault();
         e.stopPropagation();

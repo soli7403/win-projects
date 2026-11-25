@@ -1,10 +1,10 @@
-// 설정 8 · 정보·단축키. 근거: spec/ui/settings.md §8, spec/behavior/shortcuts.md §4, spec/acceptance G6·G7.
+// 설정 · 정보. 근거: spec/ui/settings.md §8, spec/acceptance G6·G7.
+// 단축키 표는 "단축키" 구역(SettingsShortcuts.tsx)으로 옮겼다 (D126).
 // 결정 D63(D8 대체): 참고한 프로젝트(BrightTerm v1.1.0, MIT)의 고지를 "참고한 프로젝트" 필드에 보인다.
 // 결정 D73: 사용 조건(개인 무료 · 업무용 유료) 요약과 전문, 설정된 외부 링크([업무용 라이선스 구매]·[후원하기]·[홈페이지]).
 import { useEffect, useState } from 'react';
 import { ToggleRow } from '../ui/Controls';
 import { LogoMark } from '../ui/Logo';
-import { SHORTCUT_LABELS, shortcutText } from '../lib/shortcuts';
 import { getBackend } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { useUpdate } from '../state/update';
@@ -127,23 +127,6 @@ export function SettingsAbout() {
         <div className="detail-box">{info.dataDir ?? ''}</div>
       </div>
 
-      <div>
-        <div className="set-section-title" style={{ marginBottom: 8 }}>{t('about.shortcuts')}</div>
-        <div className="sc-table">
-          {SHORTCUT_LABELS.map((s) => (
-            <ShortcutRow key={s.name} {...shortcutText(s)} />
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function ShortcutRow({ name, keys }: { name: string; keys: string }) {
-  return (
-    <>
-      <span className="sc-name">{name}</span>
-      <span className="kbd">{keys}</span>
     </>
   );
 }

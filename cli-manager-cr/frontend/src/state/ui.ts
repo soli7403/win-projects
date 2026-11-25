@@ -45,7 +45,7 @@ export type EditorState =
   | { kind: 'host'; hostId: string | null; groupId: string | null }
   | { kind: 'folder'; folderId: string | null; parentId: string | null };
 
-export type SettingsSection = 'appearance' | 'input' | 'files' | 'connection' | 'log' | 'sync' | 'security' | 'backup' | 'about';
+export type SettingsSection = 'appearance' | 'input' | 'shortcuts' | 'files' | 'connection' | 'log' | 'sync' | 'security' | 'backup' | 'about';
 
 interface UiState {
   /** 설정 화면(크게 보기 모달). section 은 열 때 보일 구역(기본 모양). */
