@@ -43,13 +43,16 @@ Free for personal use. Business use requires a license — contact soli97403@gma
 Free for personal, non-commercial use. Use by or for a business, organization or government requires a paid license per user. Contact soli97403@gmail.com. The full license is shown in the app under Settings > About.
 
 **What's new in this version** (1.1.0 — 이 버전의 새로운 기능, 1500자 이내. 전체 이력은 [CHANGELOG.md](../../CHANGELOG.md))
-- Use PuTTY .ppk keys (format 2 and 3) directly, and SSH agent sign-in now also uses Pageant on Windows.
+- Use PuTTY .ppk keys (format 2 and 3) directly; SSH agent sign-in also uses Pageant on Windows.
 - Connect through an HTTP or SOCKS5 proxy, forward your SSH agent (ssh -A), and open a SOCKS proxy over SSH (dynamic forwarding, ssh -D).
 - ZMODEM file transfer: run sz or rz on the server to download or upload files from the terminal (SSH and serial).
+- New Settings > Shortcuts: change or clear each app shortcut, or turn all app shortcuts off so the keys go to vi or tmux.
+- Import sessions from Xshell (.xts export or a single .xsh session file), including folders and port forwarding.
 - Keyword highlighting: show words such as ERROR or FAIL in a color you choose.
 - Serial RTS/CTS and XON/XOFF flow control now take effect. New encodings: EUC-JP, GBK and Big5.
 - Session logs can put a timestamp on every line; turning logging on or off applies to open sessions at once.
-- Terminal search marks the current match in red and shows matches on the scrollbar. Caps Lock warning on the lock screen.
+- Telnet and serial disconnect messages now show the cause.
+- Terminal search marks the current match in red and shows matches on the scrollbar. Favorites and Recent in the server list can be collapsed.
 - After an idle auto-logout on the server, DariTerm reconnects automatically (exit still closes the session).
 - Store installs tell you when a new version is available and can open the Windows update dialog.
 - Removed "tile all tabs" and "choose where to open", which ignored the split limits.
@@ -105,10 +108,13 @@ SSH, 텔넷, 시리얼 포트로 접속하거나 로컬 셸(명령 프롬프트,
 - PuTTY 키(.ppk, 형식 2·3)를 변환 없이 쓰고, Windows 의 SSH 에이전트 로그인이 Pageant 도 씁니다.
 - HTTP·SOCKS5 프록시를 거쳐 접속하고, SSH 에이전트 전달(ssh -A)과 SSH 를 거치는 SOCKS 프록시(동적 포워딩, ssh -D)를 쓸 수 있습니다.
 - ZMODEM 파일 전송: 서버에서 sz·rz 를 실행하면 터미널에서 바로 받고 올립니다(SSH·시리얼).
+- 설정 > 단축키: 앱 단축키를 하나씩 바꾸거나 지우고, 모두 꺼서 그 키를 vi·tmux 로 보낼 수 있습니다.
+- Xshell 세션 가져오기(.xts 내보내기 파일 또는 .xsh 세션 파일 하나) — 폴더와 포트 포워딩까지 옮깁니다.
 - 키워드 강조: ERROR·FAIL 같은 글자를 고른 색으로 표시합니다.
 - 시리얼 흐름 제어(RTS/CTS·XON/XOFF)가 실제로 동작합니다. 인코딩 EUC-JP·GBK·Big5 추가.
 - 세션 로그 줄마다 시각을 붙일 수 있고, 출력 기록을 켜고 끄면 열린 세션에도 곧바로 적용됩니다.
-- 터미널 찾기의 현재 항목이 빨강으로 보이고 스크롤 막대에 위치가 표시됩니다. 잠금 화면 Caps Lock 안내.
+- 텔넷·시리얼이 끊기면 끊긴 까닭을 함께 보여 줍니다.
+- 터미널 찾기의 현재 항목이 빨강으로 보이고 스크롤 막대에 위치가 표시됩니다. 서버 목록의 즐겨찾기·최근 사용을 접을 수 있습니다.
 - 서버의 유휴 자동 로그아웃 뒤 자동으로 다시 연결합니다(exit 는 전처럼 닫힘).
 - 스토어 설치본은 새 버전을 알려 주고 Windows 업데이트 확인 창을 띄울 수 있습니다.
 - 창 수 한도를 무시하던 "바둑판으로"와 "열 위치 선택"을 없앴습니다.
