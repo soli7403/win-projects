@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "node run-vitest.mjs run"
   },
   "dependencies": {
     "@xterm/addon-fit": "0.11.0",
@@ -15,19 +15,19 @@
     "@xterm/addon-web-links": "0.12.0",
     "@xterm/addon-webgl": "0.19.0",
     "@xterm/xterm": "6.0.0",
-    "lucide-react": "1.61.0",
-    "react": "19.2.9",
-    "react-dom": "19.2.9",
-    "zustand": "5.0.16"
+    "lucide-react": "1.80.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zustand": "5.1.0"
   },
   "devDependencies": {
     "@testing-library/react": "16.3.3",
-    "@types/react": "19.3.0",
+    "@types/react": "19.3.2",
     "@types/react-dom": "19.3.0",
-    "@vitejs/plugin-react": "6.1.2",
-    "jsdom": "30.1.3",
-    "typescript": "6.0.3",
-    "vite": "8.3.5",
-    "vitest": "4.1.12"
+    "@vitejs/plugin-react": "6.3.0",
+    "jsdom": "31.0.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.2"
   }
 }

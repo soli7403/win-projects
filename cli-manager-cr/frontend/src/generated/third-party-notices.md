@@ -41,18 +41,18 @@ DariTerm 실행 파일에는 아래 오픈소스 구성 요소가 들어 있습�
 
 | 종류 | 이름 | 버전 | 라이선스 |
 |---|---|---|---|
-| Go | Go 표준 라이브러리·런타임 | go1.26.2 | BSD |
+| Go | Go 표준 라이브러리·런타임 | go1.27.4 | BSD |
 | Go | github.com/kr/fs | v0.1.0 | BSD |
 | Go | github.com/leaanthony/go-ansi-parser | v1.6.1 | MIT |
 | Go | github.com/leaanthony/slicer | v1.6.0 | MIT |
 | Go | github.com/leaanthony/u | v1.1.1 | MIT |
 | Go | github.com/pkg/errors | v0.9.1 | BSD |
-| Go | github.com/pkg/sftp | v1.13.12 | BSD |
+| Go | github.com/pkg/sftp | v1.13.13 | BSD |
 | Go | github.com/rivo/uniseg | v0.4.7 | MIT |
-| Go | github.com/wailsapp/go-webview2 | v1.0.19 | MIT |
-| Go | github.com/wailsapp/wails/v2 | v2.10.2 | MIT |
+| Go | github.com/wailsapp/go-webview2 | v1.0.23 | MIT |
+| Go | github.com/wailsapp/wails/v2 | v2.17.1 | MIT |
 | Go | go.bug.st/serial | v1.8.0 | BSD |
-| Go | golang.org/x/crypto | v0.58.0 | BSD |
+| Go | golang.org/x/crypto | v0.59.0 | BSD |
 | Go | golang.org/x/sys | v0.50.0 | BSD |
 | Go | golang.org/x/text | v0.44.0 | BSD |
 | npm | @xterm/addon-fit | 0.11.0 | MIT |
@@ -60,13 +60,13 @@ DariTerm 실행 파일에는 아래 오픈소스 구성 요소가 들어 있습�
 | npm | @xterm/addon-web-links | 0.12.0 | MIT |
 | npm | @xterm/addon-webgl | 0.19.0 | MIT |
 | npm | @xterm/xterm | 6.0.0 | MIT |
-| npm | lucide-react | 1.61.0 | MIT |
-| npm | react | 19.2.9 | MIT |
-| npm | react-dom | 19.2.9 | MIT |
-| npm | scheduler | 0.27.0 | MIT |
-| npm | zustand | 5.0.16 | MIT |
+| npm | lucide-react | 1.80.0 | MIT |
+| npm | react | 19.3.1 | MIT |
+| npm | react-dom | 19.3.1 | MIT |
+| npm | scheduler | 0.28.0 | MIT |
+| npm | zustand | 5.1.0 | MIT |
 
-### Go 표준 라이브러리·런타임 go1.26.2
+### Go 표준 라이브러리·런타임 go1.27.4
 
 ~~~~
 Copyright 2009 The Go Authors.
@@ -236,7 +236,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ~~~~
 
-### github.com/pkg/sftp v1.13.12
+### github.com/pkg/sftp v1.13.13
 
 ~~~~
 Copyright (c) 2013, Dave Cheney
@@ -276,7 +276,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ~~~~
 
-### github.com/wailsapp/go-webview2 v1.0.19
+### github.com/wailsapp/go-webview2 v1.0.23
 
 ~~~~
 MIT License
@@ -303,7 +303,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ~~~~
 
-### github.com/wailsapp/wails/v2 v2.10.2
+### github.com/wailsapp/wails/v2 v2.17.1
 
 ~~~~
 MIT License
@@ -365,7 +365,7 @@ ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ~~~~
 
-### golang.org/x/crypto v0.58.0
+### golang.org/x/crypto v0.59.0
 
 ~~~~
 Copyright 2009 The Go Authors.
@@ -583,7 +583,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ~~~~
 
-### lucide-react 1.61.0
+### lucide-react 1.80.0
 
 ~~~~
 ISC License
@@ -631,7 +631,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ~~~~
 
-### react 19.2.9
+### react 19.3.1
 
 ~~~~
 MIT License
@@ -657,7 +657,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ~~~~
 
-### react-dom 19.2.9
+### react-dom 19.3.1
 
 ~~~~
 MIT License
@@ -683,7 +683,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ~~~~
 
-### scheduler 0.27.0
+### scheduler 0.28.0
 
 ~~~~
 MIT License
@@ -709,7 +709,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ~~~~
 
-### zustand 5.0.16
+### zustand 5.1.0
 
 ~~~~
 MIT License
