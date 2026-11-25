@@ -47,7 +47,10 @@ type engine struct {
 	// bResync 는 오류 뒤 ZRPOS 를 보내고 상대의 새 ZDATA 를 기다리는 중이라는 뜻이다. 그동안 흘러오는 것은
 	// 이미 버리기로 한 데이터라, 그 안에서 헤더처럼 보이다 만 것들은 오류로 세지 않는다(ZRPOS 를 보낼 때 한 번 셌다).
 	bResync bool
-	arrRead [32 * 1024]byte
+	// bDataCrc32 는 상대가 마지막으로 보낸 데이터 프레임이 CRC-32 였는지다 (중단 뒤 끝자락을 가를 때 쓴다).
+	bDataCrc32 bool
+	bDropped   []byte // 취소한 뒤 읽어서 버린 마지막 묶음
+	arrRead    [32 * 1024]byte
 }
 
 func newEngine(stream Stream, bInitial []byte, opts Options) *engine {
@@ -85,6 +88,8 @@ func (pEngine *engine) readByte() (byte, error) {
 		}
 		if pEngine.cancelled() {
 			// 취소한 뒤에 도착한 것은 전송 중이던 데이터다: 화면으로 되돌리지 않고 버린다.
+			// 다만 그 끝에 셸 출력이 붙어 왔을 수 있어, 부른 쪽이 가를 수 있게 끝자락은 남겨 둔다 (Result.Dropped).
+			pEngine.bDropped = append([]byte(nil), pEngine.bIn[pEngine.iIn:]...)
 			pEngine.bIn, pEngine.iIn = pEngine.bIn[:0], 0
 			return 0, ErrCancelled
 		}

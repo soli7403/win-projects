@@ -12,6 +12,7 @@ import (
 )
 
 // ErrPortClosed 는 시리얼 포트가 닫혔을 때의 이유다 (protocols.md §5).
+// 읽기·쓰기 오류로 닫힌 경우는 까닭을 붙인 오류(closecause.go 의 serialClosed)를 돌려주며, errors.Is 로는 이것과 같다 (D127).
 var ErrPortClosed = i18n.NewError("be.serial.closed")
 
 // G_cdurSerialReadTick 은 읽기 시한이다. 이 주기로 Read 가 돌아와 대기 중인 로컬 에코를 내보낸다 (protocols.md §5).
@@ -149,7 +150,7 @@ func (pSerial *SerialConn) Read(bBuf []byte) (int, error) {
 		}
 		nRaw, errRead := pSerial.port.Read(bRaw)
 		if errRead != nil {
-			return 0, ErrPortClosed
+			return 0, serialClosed(errRead, pSerial.isClosed()) // 닫힌 까닭을 문구에 붙인다 (KI-009, D127)
 		}
 		if nRaw == 0 {
 			continue // 시한: 데이터 없음. 위에서 대기분을 다시 본다.
@@ -275,7 +276,7 @@ func (pSerial *SerialConn) Write(bData []byte) error {
 	}
 	pSerial.mtxWrite.Unlock()
 	if errWrite != nil {
-		return ErrPortClosed
+		return serialClosed(errWrite, pSerial.isClosed())
 	}
 	if bFlow {
 		pSerial.noteFlowResult(nSent == len(bSend))
@@ -314,6 +315,13 @@ func (pSerial *SerialConn) noteFlowResult(bAllSent bool) {
 // Resize 는 시리얼에 아무 영향이 없다 (protocols.md §5).
 func (pSerial *SerialConn) Resize(iCols int, iRows int) error {
 	return nil
+}
+
+// isClosed 는 이쪽에서 Close 를 불렀는지 돌려준다 (그 뒤의 읽기·쓰기 오류에는 까닭을 붙이지 않는다).
+func (pSerial *SerialConn) isClosed() bool {
+	pSerial.mtxState.Lock()
+	defer pSerial.mtxState.Unlock()
+	return pSerial.bClosed
 }
 
 // Close 는 포트를 닫는다.

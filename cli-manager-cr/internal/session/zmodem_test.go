@@ -473,3 +473,165 @@ func TestFormatBytes(t *testing.T) {
 		}
 	}
 }
+
+// 받는 중에 취소하면, 서버가 이미 보낸 전송 데이터가 뒤이어 흘러와도 화면에 내보내지 않고 버린다.
+// 그 끝에 붙어 온 셸 프롬프트와 그 뒤의 출력은 화면에 나온다 (zmodem.md §7 — 2026-11-25 실제 lrzsz 로 확인한 흐름).
+func TestZmodemCancelDropsDataInFlight(t *testing.T) {
+	durOld := G_durZmodemDrainQuiet
+	G_durZmodemDrainQuiet = 200 * time.Millisecond
+	t.Cleanup(func() { G_durZmodemDrainQuiet = durOld })
+
+	szDir := t.TempDir()
+	pLink := newLinkTransport()
+	pSession, rec := openZmodemSession(t, pLink, &ZmodemHooks{DownloadDir: func() string { return szDir }})
+	pEnd := &remoteEnd{pLink: pLink}
+	chHold := make(chan struct{}) // 끝까지 닫지 않는다: 서버 흉내의 보내는 쪽은 64KB 를 보낸 뒤 멈춰 있다
+	go func() {
+		_ = pEnd.Write([]byte(g_cszTestZrqinit))
+		src := zmodem.FileSource{Name: "flood.bin", Size: 10 * 1024 * 1024, ModTime: time.Now(),
+			Open: func() (io.ReadSeekCloser, error) { return &holdReader{chHold: chHold, iBefore: 64 * 1024}, nil }}
+		var detector zmodem.Detector
+		bBuf := make([]byte, 4096)
+		for {
+			nRead, errRead := pEnd.Read(bBuf)
+			if errRead != nil {
+				return
+			}
+			if _, kind, bEngine := detector.Feed(bBuf[:nRead]); kind == zmodem.KindRemoteAccepts {
+				_, _ = zmodem.Send(pEnd, bEngine, func() ([]zmodem.FileSource, error) { return []zmodem.FileSource{src}, nil }, zmodem.Options{})
+				return
+			}
+		}
+	}()
+	szTemp := filepath.Join(szDir, "flood.bin"+g_cszZmodemTempSuffix)
+	waitUntil(t, func() bool {
+		pInfo, errStat := os.Stat(szTemp)
+		return errStat == nil && pInfo.Size() > 0
+	}, 5*time.Second)
+	pSession.Input("\x03")
+
+	// 취소 뒤에도 흘러오는 데이터: 1024바이트 조각 300개(끝 표시 ZDLE 'i' + CRC 4바이트), 마지막 조각 뒤에 프롬프트가 바로 붙는다.
+	bPiece := append(bytes.Repeat([]byte("G"), 1024), 0x18, 'i', 'c', 'r', 'c', '4')
+	var bFlood []byte
+	for iPiece := 0; iPiece < 300; iPiece++ {
+		bFlood = append(bFlood, bPiece...)
+	}
+	_ = pEnd.Write(append(bFlood, "PROMPT$ "...))
+
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), "PROMPT$ ") }, 5*time.Second)
+	waitUntil(t, func() bool { return !pSession.zActive.Load() }, time.Second)
+	if strings.Contains(rec.screen(), "GGGG") {
+		t.Fatal("취소 뒤에 온 전송 데이터가 화면에 나오면 안 됨")
+	}
+	if _, errStat := os.Stat(szTemp); !os.IsNotExist(errStat) {
+		t.Fatal("취소하면 받던 파일이 남지 않아야 함")
+	}
+	// 조용해진 뒤의 출력은 그대로 화면에 나온다 (뒤처리가 걸어 둔 읽기를 읽기 루프가 이어 받는다).
+	_ = pEnd.Write([]byte("NEXT-OUTPUT"))
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), "NEXT-OUTPUT") }, 2*time.Second)
+	iPrompt := strings.Index(rec.screen(), "PROMPT$ ")
+	if iNext := strings.Index(rec.screen(), "NEXT-OUTPUT"); iNext < iPrompt {
+		t.Fatalf("출력 순서가 바뀜: 프롬프트 %d, 다음 출력 %d", iPrompt, iNext)
+	}
+}
+
+// 서버가 시작 표시만 보내고 아무 응답도 하지 않으면, 시한이 지난 뒤 전송을 중단하고 세션은 그대로 쓴다 (zmodem.md §7, KI-012).
+func TestZmodemStalledRemoteTimesOut(t *testing.T) {
+	durOld, durQuiet := G_durZmodemStall, G_durZmodemDrainQuiet
+	G_durZmodemStall, G_durZmodemDrainQuiet = 300*time.Millisecond, 100*time.Millisecond
+	t.Cleanup(func() { G_durZmodemStall, G_durZmodemDrainQuiet = durOld, durQuiet })
+
+	pLink := newLinkTransport()
+	pSession, rec := openZmodemSession(t, pLink, &ZmodemHooks{DownloadDir: func() string { return t.TempDir() }})
+	pEnd := &remoteEnd{pLink: pLink}
+	_ = pEnd.Write([]byte(g_cszTestZrqinit)) // sz 가 시작만 하고 멈췄다
+
+	waitUntil(t, func() bool { return pSession.zActive.Load() }, time.Second)
+	waitUntil(t, func() bool { return !pSession.zActive.Load() }, 3*time.Second)
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), "응답하지 않아") }, 2*time.Second) // 응답 없음 안내
+	// 서버에는 중단 신호(CAN 5개 이상)가 갔다.
+	var bSent []byte
+	for len(pLink.chToRemote) > 0 {
+		bSent = append(bSent, <-pLink.chToRemote...)
+	}
+	if !bytes.Contains(bSent, []byte{0x18, 0x18, 0x18, 0x18, 0x18}) {
+		t.Fatalf("시한이 지나면 서버에 중단을 알려야 함: %q", bSent)
+	}
+	// 연결은 끊기지 않았다: 입력이 서버로 가고, 서버의 출력이 화면에 나온다.
+	if pSession.Snapshot().M_szState != G_cszStateConnected {
+		t.Fatalf("세션 상태: %s", pSession.Snapshot().M_szState)
+	}
+	pSession.Input("after")
+	select {
+	case bGot := <-pLink.chToRemote:
+		if string(bGot) != "after" {
+			t.Fatalf("시한 뒤 입력: %q", string(bGot))
+		}
+	case <-time.After(time.Second):
+		t.Fatal("시한 뒤에는 입력이 서버로 가야 함")
+	}
+	_ = pEnd.Write([]byte("PROMPT$ "))
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), "PROMPT$ ") }, 2*time.Second)
+}
+
+// 서버가 조용한 동안에도 Ctrl+C 는 곧바로 전송을 끝낸다(전에는 서버에서 다음 바이트가 와야 끝났다).
+func TestZmodemCancelWhileRemoteSilent(t *testing.T) {
+	durQuiet := G_durZmodemDrainQuiet
+	G_durZmodemDrainQuiet = 100 * time.Millisecond
+	t.Cleanup(func() { G_durZmodemDrainQuiet = durQuiet })
+
+	pLink := newLinkTransport()
+	pSession, rec := openZmodemSession(t, pLink, &ZmodemHooks{DownloadDir: func() string { return t.TempDir() }})
+	pEnd := &remoteEnd{pLink: pLink}
+	_ = pEnd.Write([]byte(g_cszTestZrqinit))
+	waitUntil(t, func() bool { return pSession.zActive.Load() }, time.Second)
+
+	tmStart := time.Now()
+	pSession.Input("\x03") // 서버는 그 뒤로도 아무것도 보내지 않는다
+	waitUntil(t, func() bool { return !pSession.zActive.Load() }, 2*time.Second)
+	if durTook := time.Since(tmStart); durTook > time.Second {
+		t.Fatalf("조용한 서버에서 취소가 너무 늦음: %s", durTook)
+	}
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), "취소했습니다") }, 2*time.Second) // 취소 안내
+	// 그 뒤의 출력은 화면에 나온다 (걸려 있던 읽기를 읽기 루프가 이어 받는다).
+	_ = pEnd.Write([]byte("PROMPT$ "))
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), "PROMPT$ ") }, 2*time.Second)
+}
+
+// tmux·screen 안에서 sz·rz 를 실행하면 ZDLE 이 빠진 시작 표시가 글자로 온다: 전송을 시작하지 않고 까닭을 알린다.
+// 서버로는 아무것도 보내지 않는다 (2026-11-25 tmux 3.2a 에서 본 모양).
+func TestZmodemMangledStartShowsNotice(t *testing.T) {
+	pLink := newLinkTransport()
+	pSession, rec := openZmodemSession(t, pLink, &ZmodemHooks{DownloadDir: func() string { return t.TempDir() }})
+	pEnd := &remoteEnd{pLink: pLink}
+	_ = pEnd.Write([]byte("rz\x1b[H**B0000000"))
+	_ = pEnd.Write([]byte("0000000\x1b[H")) // 묶음 경계에 걸쳐 와도 찾는다
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), "tmux") }, 2*time.Second)
+	if pSession.zActive.Load() {
+		t.Fatal("깨진 시작 표시로는 전송을 시작하면 안 됨")
+	}
+	if !strings.Contains(rec.screen(), "**B00000000000000") {
+		t.Fatal("서버가 보낸 글은 그대로 화면에 나와야 함")
+	}
+	// 같은 표시가 곧바로 다시 와도 안내는 한 번만 낸다.
+	_ = pEnd.Write([]byte("**B0100000023be50"))
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), "**B0100000023be50") }, 2*time.Second)
+	if iCount := strings.Count(rec.screen(), "깨져서"); iCount != 1 {
+		t.Fatalf("안내 횟수 = %d, 기대 1", iCount)
+	}
+	if len(pLink.chToRemote) != 0 {
+		t.Fatal("깨진 시작 표시를 봤다고 서버로 무엇을 보내면 안 됨")
+	}
+}
+
+// 설정으로 ZMODEM 을 끄면 깨진 시작 표시도 살피지 않는다.
+func TestZmodemMangledStartIgnoredWhenDisabled(t *testing.T) {
+	pLink := newLinkTransport()
+	_, rec := openZmodemSession(t, pLink, &ZmodemHooks{Enabled: func() bool { return false }})
+	pEnd := &remoteEnd{pLink: pLink}
+	_ = pEnd.Write([]byte("**B00000000000000 END"))
+	waitUntil(t, func() bool { return strings.Contains(rec.screen(), " END") }, 2*time.Second)
+	if strings.Contains(rec.screen(), "tmux") {
+		t.Fatal("ZMODEM 이 꺼져 있으면 안내를 내면 안 됨")
+	}
+}

@@ -34,6 +34,10 @@ type Result struct {
 	Skipped  int    // 건너뛴 파일 수
 	Bytes    int64  // 주고받은 바이트 수
 	Leftover []byte // ZMODEM 이 아닌 것으로 남은 바이트 (화면 출력으로 되돌린다)
+	// DataCrc32 는 받던 데이터 프레임이 CRC-32 였는지다. 받다가 중단했을 때 TrailingOutput 에 넘긴다.
+	DataCrc32 bool
+	// Dropped 는 취소한 뒤 읽어서 버린 마지막 묶음이다 (화면으로 되돌리지 않는다. 끝자락을 가를 때만 쓴다).
+	Dropped []byte
 }
 
 // Receive 는 서버가 보내는 파일들을 받는다. bInitial 은 Detector 가 돌려준 바이트(시작 표시 포함)다.
@@ -52,6 +56,8 @@ func Receive(stream Stream, bInitial []byte, sink Sink, opts Options) (Result, e
 	}
 	errRun := pEngine.receiveLoop(sink, &result)
 	result.Leftover = pEngine.leftover()
+	result.DataCrc32 = pEngine.bDataCrc32
+	result.Dropped = pEngine.bDropped
 	if errRun != nil {
 		if _, bStream := errRun.(*StreamError); !bStream && errRun != ErrRemoteCancelled {
 			_ = stream.Write(AbortSequence())
@@ -212,6 +218,7 @@ func (pEngine *engine) receiveData(info FileInfo, writer FileWriter) (int64, err
 				continue
 			}
 			pEngine.bResync = false
+			pEngine.bDataCrc32 = hdr.bFormat == g_cbZbin32
 			bFrameDone := false
 			for !bFrameDone {
 				bData, bEnd, bOk, errData := pEngine.readSubpacket(hdr.bFormat == g_cbZbin32)

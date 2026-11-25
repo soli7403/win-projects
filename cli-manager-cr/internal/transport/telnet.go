@@ -15,6 +15,7 @@ import (
 const G_cdurTelnetConnect = 15 * time.Second
 
 // ErrRemoteClosed 는 상대가 연결을 끊었을 때의 오류다 (protocols.md §4: "연결이 종료되었습니다").
+// 텔넷은 끊긴 까닭을 붙인 오류(closecause.go 의 telnetClosed)를 돌려주며, errors.Is 로는 이것과 같다 (D127).
 var ErrRemoteClosed = i18n.NewError("be.remote.closed")
 
 // ErrRemoteExited 는 서버가 셸을 정상적으로 끝냈을 때(종료 코드·신호와 함께 채널을 닫음)의 오류다.
@@ -100,7 +101,7 @@ func (pTelnet *TelnetConn) Read(bBuf []byte) (int, error) {
 			}
 		}
 		if errRead != nil {
-			return 0, ErrRemoteClosed
+			return 0, telnetClosed(errRead) // 끊긴 까닭을 문구에 붙인다 (KI-009, D127)
 		}
 	}
 }

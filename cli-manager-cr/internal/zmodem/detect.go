@@ -60,3 +60,52 @@ func (pDetector *Detector) Feed(bData []byte) (bBefore []byte, kind Kind, bEngin
 func (pDetector *Detector) Reset() {
 	pDetector.iMatched = 0
 }
+
+// g_ciMangledLength 는 ZDLE 이 빠진 시작 표시의 길이다: "**B0" + 종류 한 글자 + 16진 12자(값 8 + CRC 4).
+const g_ciMangledLength = 17
+
+// MangledDetector 는 ZDLE(0x18)이 빠진 채 온 시작 표시를 찾는다: `**B00000000000000`(sz), `**B0100000023be50`(rz) 같은 글.
+// tmux·screen 은 안에서 돈 프로그램의 출력을 해석해 다시 그리면서 제어 문자인 ZDLE 을 버린다. 그러면 Detector 는
+// 시작 표시를 보지 못하고 전송도 될 수 없다(뒤따르는 이진 데이터도 같은 식으로 깨진다). 이 모양을 알아보면
+// 사용자에게 까닭을 알려 줄 수 있다. 표시가 출력 묶음 경계에 걸쳐 와도 찾는다.
+type MangledDetector struct {
+	iMatched int // 지금까지 맞춘 글자 수
+}
+
+// Feed 는 출력 묶음 하나를 살펴, ZDLE 이 빠진 시작 표시가 이 묶음에서 끝났으면 true 를 돌려준다.
+func (pDetector *MangledDetector) Feed(bData []byte) bool {
+	bFound := false
+	for _, bOne := range bData {
+		bMatch := false
+		switch iAt := pDetector.iMatched; {
+		case iAt < 2:
+			bMatch = bOne == '*'
+		case iAt == 2:
+			bMatch = bOne == 'B'
+		case iAt == 3:
+			bMatch = bOne == '0'
+		case iAt == 4:
+			bMatch = bOne == '0' || bOne == '1'
+		default:
+			bMatch = bOne >= '0' && bOne <= '9' || bOne >= 'a' && bOne <= 'f'
+		}
+		switch {
+		case bMatch:
+			pDetector.iMatched++
+			if pDetector.iMatched == g_ciMangledLength {
+				bFound = true
+				pDetector.iMatched = 0
+			}
+		case bOne == '*':
+			// "***" 처럼 별이 이어지면 마지막 두 개가 표시의 앞부분일 수 있다.
+			if pDetector.iMatched >= 2 {
+				pDetector.iMatched = 2
+			} else {
+				pDetector.iMatched = 1
+			}
+		default:
+			pDetector.iMatched = 0
+		}
+	}
+	return bFound
+}

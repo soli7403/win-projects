@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hash/crc32"
 	"io"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -675,5 +676,78 @@ func TestReceiveAcceptErrorAborts(t *testing.T) {
 		}
 	case <-time.After(3 * time.Second):
 		t.Fatal("보내는 쪽이 중단 알림을 받지 못함")
+	}
+}
+
+// 받다가 중단한 전송의 끝자락에서 마지막 데이터 조각 뒤의 화면 출력을 가른다 (실제 lrzsz 에서 본 모양: 조각 끝 + 프롬프트).
+func TestTrailingOutput(t *testing.T) {
+	bData := bytes.Repeat([]byte{0x18, 0x11, 'a', 0xff}, 64) // 바꿔서 가야 하는 바이트가 섞인 내용
+	const cszPrompt = "\x1b]0;user@host:~\x07[user@host ~]$ "
+	for _, bCrc32 := range []bool{true, false} {
+		bStream := appendSubpacket(nil, bData, g_cbZcrcg, bCrc32)
+		bStream = appendSubpacket(bStream, bData, g_cbZcrcg, bCrc32)
+		bAfter, bFound := TrailingOutput(append(append([]byte(nil), bStream...), cszPrompt...), bCrc32)
+		if !bFound || string(bAfter) != cszPrompt {
+			t.Fatalf("crc32=%v: 조각 뒤의 출력 = %q (found=%v)", bCrc32, bAfter, bFound)
+		}
+		// 조각 끝에서 딱 끝났으면 뒤에 붙은 것이 없다.
+		if bAfter, bFound = TrailingOutput(bStream, bCrc32); !bFound || len(bAfter) != 0 {
+			t.Fatalf("crc32=%v: 조각 끝에서 끝난 흐름 = %q (found=%v)", bCrc32, bAfter, bFound)
+		}
+		// CRC 가 잘린 채 끝났으면 빈 값이다.
+		if bAfter, bFound = TrailingOutput(bStream[:len(bStream)-1], bCrc32); !bFound || len(bAfter) != 0 {
+			t.Fatalf("crc32=%v: CRC 가 잘린 흐름 = %q (found=%v)", bCrc32, bAfter, bFound)
+		}
+	}
+	// CRC 바이트가 바꿔서(ZDLE + 값) 온 경우: 두 바이트를 한 바이트로 센다.
+	bEscaped := []byte{'x', g_cbZdle, g_cbZcrcg, g_cbZdle, 0x58, 'A', g_cbZdle, 0x51, 'B', '$', ' '}
+	if bAfter, bFound := TrailingOutput(bEscaped, true); !bFound || string(bAfter) != "$ " {
+		t.Fatalf("바꿔서 온 CRC: %q (found=%v)", bAfter, bFound)
+	}
+	// 데이터 조각이 없으면 찾지 못한 것으로 알린다.
+	if _, bFound := TrailingOutput([]byte("plain shell output\r\n$ "), true); bFound {
+		t.Fatal("조각 끝 표시가 없으면 found=false 여야 함")
+	}
+	if _, bFound := TrailingOutput(nil, true); bFound {
+		t.Fatal("빈 입력은 found=false 여야 함")
+	}
+}
+
+// tmux·screen 이 ZDLE 을 버린 시작 표시("**B0" + 종류 + 16진 12자)를 찾는다. 진짜 시작 표시(ZDLE 포함)는 찾지 않는다.
+func TestMangledDetector(t *testing.T) {
+	for _, tc := range []struct {
+		szName string
+		slIn   []string
+		iWant  int
+	}{
+		{"sz 의 표시", []string{"rz\x1b[H**B00000000000000\x1b[H"}, 1},
+		{"rz 의 표시", []string{"rz waiting to receive.**B0100000023be50"}, 1},
+		{"묶음 경계에 걸침", []string{"abc*", "*B0", "0000000", "0000000 xyz"}, 1},
+		{"한 글자씩", strings.Split("**B0100000023be50", ""), 1},
+		{"별이 더 붙음", []string{"****B00000000000000"}, 1},
+		{"두 번", []string{"**B00000000000000 ... **B0100000023be50"}, 2},
+		{"진짜 시작 표시(ZDLE 있음)", []string{"rz\r**\x18B00000000000000\r\x8a\x11"}, 0},
+		{"16진이 모자람", []string{"**B0000000000000 "}, 0},
+		{"대문자 16진", []string{"**B0100000023BE50"}, 0},
+		{"다른 종류(ZFIN)", []string{"**B0800000000022d"}, 0},
+		{"보통 글", []string{"ls -la **/*.go\r\nB0 0 1\r\n"}, 0},
+	} {
+		var detector MangledDetector
+		iGot := 0
+		for _, szPart := range tc.slIn {
+			if detector.Feed([]byte(szPart)) {
+				iGot++
+			}
+		}
+		// "두 번"은 한 묶음 안에 둘이 들어 있어 Feed 한 번이 true 다: 묶음 수로 센다.
+		if tc.szName == "두 번" {
+			if iGot != 1 {
+				t.Errorf("%s: 묶음 하나에 여러 번 있어도 true 한 번이어야 함, got %d", tc.szName, iGot)
+			}
+			continue
+		}
+		if iGot != tc.iWant {
+			t.Errorf("%s: 찾은 횟수 = %d, 기대 %d", tc.szName, iGot, tc.iWant)
+		}
 	}
 }

@@ -331,21 +331,36 @@ func (pSession *Session) onRemoteExited(iGen int) {
 // readLoop 는 연결의 출력을 읽어 화면과 로그로 보낸다. 끝나면 끊김 처리한다.
 func (pSession *Session) readLoop(conn Transport, iGen int) {
 	bBuf := make([]byte, 32*1024)
-	var zDetector zmodem.Detector // 이 연결의 출력에서 ZMODEM 시작 표시를 찾는다 (zmodem.md)
+	var zDetector zmodem.Detector       // 이 연결의 출력에서 ZMODEM 시작 표시를 찾는다 (zmodem.md)
+	var chAhead chan readResult         // 끝난 ZMODEM 전송이 걸어 둔 읽기 하나 (zmodemLink)
+	var zMangled zmodem.MangledDetector // tmux·screen 이 ZDLE 을 버린 시작 표시를 찾는다 (zmodem.md §3)
+	var tmMangledNotice time.Time       // 그 안내를 마지막으로 낸 때
 	for {
 		// 프런트가 아직 처리하지 않은 출력이 상한을 넘으면 여기서 멈춘다 (session.md §8 출력 흐름 제어).
 		// 읽기를 멈추면 TCP 윈도우·PTY 파이프가 차서 상대 프로세스가 스스로 느려진다.
 		pSession.credit.Wait()
-		nRead, errRead := conn.Read(bBuf)
+		var nRead int
+		var errRead error
+		if chAhead != nil {
+			ahead := <-chAhead
+			chAhead = nil
+			nRead, errRead = copy(bBuf, ahead.bData), ahead.err
+		} else {
+			nRead, errRead = conn.Read(bBuf)
+		}
 		if nRead > 0 && pSession.isCurrent(iGen) { // 닫힌 뒤 읽힌 조각은 버린다
 			bScreen := bBuf[:nRead]
+			bMangled := false
 			if pSession.zmodemOn() {
 				bBefore, kind, bEngine := zDetector.Feed(bScreen)
+				if kind == zmodem.KindNone {
+					bMangled = zMangled.Feed(bScreen)
+				}
 				if kind != zmodem.KindNone {
 					// 서버에서 sz·rz 가 시작됐다: 표시 앞의 출력만 화면에 보내고, 전송이 끝날 때까지 연결을 엔진에 넘긴다.
 					pSession.writeOutput(pSession.decoder.Decode(bBefore))
-					bLeft, errStream := pSession.runZmodem(conn, kind, bEngine)
-					bScreen = bLeft
+					bLeft, chNext, errStream := pSession.runZmodem(conn, kind, bEngine)
+					bScreen, chAhead = bLeft, chNext
 					if errStream != nil {
 						errRead = errStream // 전송 중에 연결이 끊겼다: 아래에서 끊김으로 처리한다
 					}
@@ -353,6 +368,12 @@ func (pSession *Session) readLoop(conn Transport, iGen int) {
 			}
 			if len(bScreen) > 0 {
 				pSession.writeOutput(pSession.decoder.Decode(bScreen))
+			}
+			if bMangled && time.Since(tmMangledNotice) >= G_durZmodemMangledNotice {
+				// 시작 표시가 깨져서 왔다(tmux·screen 안): 전송은 될 수 없으니 까닭과 끝내는 방법을 알린다.
+				// 서버로는 아무것도 보내지 않는다 — 이 글이 실행 중인 sz·rz 의 것이 아닐 수도 있다(파일 내용 등).
+				tmMangledNotice = time.Now()
+				pSession.writeOutput(noticeLine(i18n.T("be.zm.muxed")))
 			}
 		}
 		if errRead != nil {

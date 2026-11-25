@@ -55,7 +55,8 @@ func (pSession *Session) cancelZmodem(conn Transport) {
 
 // runZmodem 은 전송 하나를 끝까지 돌린다. 읽기 루프 고루틴에서 부른다.
 // 돌려주는 바이트는 ZMODEM 이 아닌 것으로 남은 출력(화면으로 보낸다), 오류는 연결이 끊겼을 때만 nil 이 아니다.
-func (pSession *Session) runZmodem(conn Transport, kind zmodem.Kind, bEngine []byte) ([]byte, error) {
+// 채널은 nil 이 아니면 이미 걸어 둔 읽기 하나다: 읽기 루프가 conn.Read 대신 그 결과를 먼저 받아야 한다.
+func (pSession *Session) runZmodem(conn Transport, kind zmodem.Kind, bEngine []byte) ([]byte, chan readResult, error) {
 	pSession.zCancel.Store(false)
 	pSession.zActive.Store(true)
 	defer pSession.zActive.Store(false)
@@ -64,11 +65,13 @@ func (pSession *Session) runZmodem(conn Transport, kind zmodem.Kind, bEngine []b
 	bSending := kind == zmodem.KindRemoteAccepts
 	pView := &zmodemView{pSession: pSession, bSending: bSending}
 	opts := zmodem.Options{Cancelled: pSession.zCancel.Load, Progress: pView.onProgress}
+	// 엔진은 연결을 바로 읽지 않고 zmodemLink 를 거친다: 서버가 응답 없이 멈춰도 시한이 지나면 끝나고, Ctrl+C 가 곧바로 듣는다.
+	pLink := &zmodemLink{conn: conn, fnCancel: pSession.zCancel.Load}
 
 	var result zmodem.Result
 	var errRun error
 	if bSending {
-		result, errRun = zmodem.Send(conn, bEngine, func() ([]zmodem.FileSource, error) {
+		result, errRun = zmodem.Send(pLink, bEngine, func() ([]zmodem.FileSource, error) {
 			pSession.writeOutput(noticeLine(i18n.T("be.zm.pick")))
 			if pHooks.PickFiles == nil {
 				return nil, nil
@@ -85,17 +88,40 @@ func (pSession *Session) runZmodem(conn Transport, kind zmodem.Kind, bEngine []b
 			szDir = pHooks.DownloadDir()
 		}
 		pView.szDir = szDir
-		result, errRun = zmodem.Receive(conn, bEngine, &zmodemSink{szDir: szDir, pView: pView}, opts)
+		result, errRun = zmodem.Receive(pLink, bEngine, &zmodemSink{szDir: szDir, pView: pView}, opts)
 	}
 
+	if len(pLink.bRest) > 0 {
+		// 연결에서 읽었지만 엔진에 넘기지 못한 바이트: 엔진이 남긴 것 뒤에 잇는다.
+		result.Leftover = append(result.Leftover, pLink.bRest...)
+	}
+	if errors.Is(errRun, errZmodemStalled) {
+		// 서버가 시한 동안 아무것도 보내지 않았다: 연결은 살아 있으므로 끊김으로 보지 않고, 중단을 알린 뒤 전송만 끝낸다.
+		_ = conn.Write(zmodem.AbortSequence())
+		errRun = errZmodemStalled
+	}
 	var errStream *zmodem.StreamError
+	// 받다가 중단했으면(취소·실패) 상대가 이미 보낸 데이터가 한동안 더 흘러온다: 화면에 내보내지 않고 버린다 (zmodem.md §7).
+	var bTail []byte
+	if !bSending && errRun != nil && !errors.Is(errRun, zmodem.ErrNotZmodem) && !errors.As(errRun, &errStream) {
+		// 엔진이 읽어 두고 쓰지 않은 것(Leftover)과 취소 뒤 버린 묶음(Dropped)도 전송 데이터다: 끝자락에 넣어 함께 가른다.
+		bSeen := append(append([]byte(nil), result.Dropped...), result.Leftover...)
+		result.Leftover = nil
+		var errDrain error
+		if bTail, errDrain = drainAborted(pLink, bSeen, result.DataCrc32); errDrain != nil {
+			errRun = &zmodem.StreamError{Err: errDrain}
+		}
+	}
 	switch {
 	case errRun == nil:
 		pSession.writeOutput(noticeLine(i18n.T("be.zm.done", "n", result.Files, "size", formatBytes(result.Bytes))))
 	case errors.Is(errRun, zmodem.ErrNotZmodem):
 		// 시작 표시처럼 보였을 뿐이다: 아무 안내 없이 읽은 바이트를 화면으로 되돌린다.
 	case errors.As(errRun, &errStream):
-		return result.Leftover, errStream.Err
+		return result.Leftover, nil, errStream.Err
+	case errors.Is(errRun, errZmodemStalled):
+		pView.endLine()
+		pSession.writeOutput(noticeLine(i18n.T("be.zm.stalled", "sec", int(G_durZmodemStall/time.Second))))
 	case errors.Is(errRun, zmodem.ErrCancelled):
 		pView.endLine()
 		pSession.writeOutput(noticeLine(i18n.T("be.zm.cancelled")))
@@ -106,7 +132,147 @@ func (pSession *Session) runZmodem(conn Transport, kind zmodem.Kind, bEngine []b
 		pView.endLine()
 		pSession.writeOutput(noticeLine(i18n.T("be.zm.failed", "error", errRun)))
 	}
-	return result.Leftover, nil
+	// 걸어 둔 읽기가 남아 있으면(취소·시한으로 끝났을 때) 읽기 루프가 이어 받는다.
+	return append(result.Leftover, bTail...), pLink.chPending, nil
+}
+
+// readResult 는 따로 걸어 둔 읽기 하나의 결과다.
+type readResult struct {
+	bData []byte
+	err   error
+}
+
+// ZMODEM 전송의 시간 값. 시험에서 줄일 수 있게 변수다.
+var (
+	// G_durZmodemStall 동안 서버에서 아무것도 오지 않으면(엔진이 응답을 기다리는 중에) 전송을 중단한다 (zmodem.md §7).
+	G_durZmodemStall = 60 * time.Second
+	// G_durZmodemMangledNotice 안에는 "시작 표시가 깨져서 왔다"는 안내를 다시 내지 않는다 (sz·rz 가 표시를 되풀이해 보낸다).
+	G_durZmodemMangledNotice = 10 * time.Second
+	// G_durZmodemDrainQuiet 동안 아무것도 오지 않으면 흘러오던 데이터가 끝난 것으로 본다.
+	G_durZmodemDrainQuiet = 500 * time.Millisecond
+	// G_durZmodemDrainMax 를 넘도록 계속 오면 버리기를 그만둔다 (그 뒤의 출력은 화면에 나온다).
+	G_durZmodemDrainMax = 20 * time.Second
+)
+
+const (
+	g_cdurZmodemPoll    = 100 * time.Millisecond // 읽기를 기다리는 동안 취소를 살피는 간격
+	g_ciZmodemDrainTail = 4096                   // 끝자락으로 기억해 두는 바이트 수
+	g_ciZmodemDrainShow = 256                    // 마지막 데이터 조각 뒤에 붙어 온 것이 이보다 길면 화면 출력으로 보지 않는다
+)
+
+// errZmodemStalled 는 서버가 G_durZmodemStall 동안 응답하지 않았다는 오류다.
+var errZmodemStalled = errors.New("zmodem: remote not responding")
+
+// zmodemLink 는 전송 동안 엔진이 쓰는 연결(zmodem.Stream)이다.
+// 연결의 읽기(Transport.Read)에는 시한을 걸 수 없으므로 읽기를 고루틴에 걸어 두고 결과를 기다린다.
+// 기다리는 동안 취소를 살피고, 너무 오래 조용하면 errZmodemStalled 로 끝낸다. 전송이 끝났을 때 걸려 있는
+// 읽기(chPending)는 읽기 루프가 이어 받는다 — 그 읽기가 받는 것은 전송 뒤의 화면 출력이다.
+// 읽기 루프 고루틴 하나만 쓴다(잠금 없음).
+type zmodemLink struct {
+	conn      Transport
+	fnCancel  func() bool
+	chPending chan readResult // 걸어 둔 읽기. 없으면 nil
+	bRest     []byte          // 읽었지만 아직 넘기지 않은 바이트
+}
+
+func (pLink *zmodemLink) Write(bData []byte) error { return pLink.conn.Write(bData) }
+
+// wait 는 읽기 하나의 결과를 durWait 동안 기다린다. 시간 안에 오지 않으면 false 이고 읽기는 걸린 채 남는다.
+func (pLink *zmodemLink) wait(durWait time.Duration) (readResult, bool) {
+	if pLink.chPending == nil {
+		chRead := make(chan readResult, 1)
+		conn := pLink.conn
+		go func() {
+			bBuf := make([]byte, 32*1024)
+			nRead, errRead := conn.Read(bBuf)
+			chRead <- readResult{bData: bBuf[:nRead], err: errRead}
+		}()
+		pLink.chPending = chRead
+	}
+	timer := time.NewTimer(durWait)
+	defer timer.Stop()
+	select {
+	case got := <-pLink.chPending:
+		pLink.chPending = nil
+		return got, true
+	case <-timer.C:
+		return readResult{}, false
+	}
+}
+
+// Read 는 서버에서 온 바이트를 돌려준다. 취소했으면 (0, nil) 로 곧바로 돌아가 엔진이 취소를 알아채게 한다.
+func (pLink *zmodemLink) Read(bBuf []byte) (int, error) {
+	if len(pLink.bRest) > 0 {
+		nCopy := copy(bBuf, pLink.bRest)
+		pLink.bRest = pLink.bRest[nCopy:]
+		return nCopy, nil
+	}
+	tmStall := time.Now().Add(G_durZmodemStall)
+	for {
+		if pLink.fnCancel != nil && pLink.fnCancel() {
+			return 0, nil
+		}
+		got, bGot := pLink.wait(g_cdurZmodemPoll)
+		if bGot {
+			if len(got.bData) == 0 {
+				return 0, got.err
+			}
+			// 데이터와 오류가 함께 왔으면 데이터부터 넘긴다(오류는 다음 읽기에서 다시 난다).
+			nCopy := copy(bBuf, got.bData)
+			pLink.bRest = got.bData[nCopy:]
+			return nCopy, nil
+		}
+		if time.Now().After(tmStall) {
+			return 0, errZmodemStalled
+		}
+	}
+}
+
+// drainAborted 는 받기를 중단한 뒤 흘러오는 전송 데이터를 읽어 버린다.
+// G_durZmodemDrainQuiet 동안 조용해질 때까지 읽는다. 조용해졌을 때 걸려 있는 읽기는 pLink.chPending 에 남아
+// 읽기 루프가 이어 받는다(그 읽기가 받는 것은 중단 뒤의 새 출력이다).
+// 돌려주는 바이트는 마지막 데이터 조각 뒤에 바로 붙어 온 화면 출력(셸 프롬프트)이다.
+// bSeen 은 엔진이 이미 읽어 버린 마지막 부분이다(끝자락의 앞부분이 된다).
+func drainAborted(pLink *zmodemLink, bSeen []byte, bCrc32 bool) ([]byte, error) {
+	tmGiveUp := time.Now().Add(G_durZmodemDrainMax)
+	bTail := bSeen
+	if len(bTail) > g_ciZmodemDrainTail {
+		bTail = bTail[len(bTail)-g_ciZmodemDrainTail:]
+	}
+	bTail = append([]byte(nil), bTail...)
+	iTotal := len(bSeen)
+	for {
+		got, bGot := pLink.wait(G_durZmodemDrainQuiet)
+		if !bGot {
+			return drainedOutput(bTail, iTotal, bCrc32), nil
+		}
+		if got.err != nil && len(got.bData) == 0 {
+			return nil, got.err
+		}
+		iTotal += len(got.bData)
+		bTail = append(bTail, got.bData...)
+		if len(bTail) > g_ciZmodemDrainTail {
+			bTail = append([]byte(nil), bTail[len(bTail)-g_ciZmodemDrainTail:]...)
+		}
+		if time.Now().After(tmGiveUp) {
+			return nil, nil
+		}
+	}
+}
+
+// drainedOutput 은 버린 바이트의 끝자락에서 화면으로 되돌릴 부분을 고른다.
+func drainedOutput(bTail []byte, iTotal int, bCrc32 bool) []byte {
+	bAfter, bFound := zmodem.TrailingOutput(bTail, bCrc32)
+	if bFound {
+		if len(bAfter) > g_ciZmodemDrainShow {
+			return nil // 데이터 조각이 중간에서 잘렸다: 화면 출력과 가를 수 없다
+		}
+		return bAfter
+	}
+	if iTotal > len(bTail) {
+		return nil // 끝자락이 통째로 조각 하나의 안쪽이다
+	}
+	return bTail // 데이터 조각이 하나도 없었다: 헤더·셸 출력뿐이다
 }
 
 // noticeLine 은 터미널 안내 한 줄(청록 ●)을 만든다.

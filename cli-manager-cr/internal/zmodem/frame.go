@@ -193,3 +193,38 @@ func appendSubpacket(bOut []byte, bData []byte, bEnd byte, bCrc32 bool) []byte {
 func AbortSequence() []byte {
 	return []byte{0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 8, 8, 8, 8, 8, 8, 8, 8}
 }
+
+// TrailingOutput 은 받다가 중단한 전송의 끝자락(bTail)에서, 마지막 데이터 조각 뒤에 붙어 온 바이트를 돌려준다.
+// 중단을 알린 뒤에도 상대가 이미 보낸 데이터가 한동안 흘러오고, 그 끝에 셸 프롬프트 같은 화면 출력이 바로 붙는다.
+// 데이터 조각은 ZDLE + 끝 표시(ZCRCE·ZCRCG·ZCRCQ·ZCRCW) + CRC 로 끝나고, 조각 안의 ZDLE 은 항상 바꿔서 오므로
+// 이 두 바이트는 조각 끝에만 나온다. 끝 표시가 없으면 bFound 가 false 다(끝자락에 데이터 조각이 없었다).
+// CRC 가 끝자락에서 잘렸으면 빈 값을 돌려준다.
+func TrailingOutput(bTail []byte, bCrc32 bool) (bAfter []byte, bFound bool) {
+	iEnd := -1
+	for iIndex := len(bTail) - 2; iIndex >= 0; iIndex-- {
+		if bTail[iIndex] != g_cbZdle {
+			continue
+		}
+		if bNext := bTail[iIndex+1]; bNext >= g_cbZcrce && bNext <= g_cbZcrcw {
+			iEnd = iIndex + 2
+			break
+		}
+	}
+	if iEnd < 0 {
+		return nil, false
+	}
+	iCrc := 2
+	if bCrc32 {
+		iCrc = 4
+	}
+	for ; iCrc > 0; iCrc-- {
+		if iEnd < len(bTail) && bTail[iEnd] == g_cbZdle {
+			iEnd++ // 바꿔서 온 CRC 바이트는 두 바이트다
+		}
+		iEnd++
+		if iEnd > len(bTail) {
+			return nil, true
+		}
+	}
+	return bTail[iEnd:], true
+}
