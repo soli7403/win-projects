@@ -22,6 +22,7 @@
 | ui/host-editor.md | 서버 편집·폴더 편집 대화상자 | ready |
 | import.md | PuTTY·ssh config·AWS 읽기 규칙, 적용 규칙 | ready |
 | ui/settings.md | 설정 화면의 모든 항목·기본값·문구·정보/단축키 | ready |
+| ui/help.md | 도움말 창: 여는 곳·검색·목록 순서·본문 형식·질문 카드·그림·크기 조절 (2026-11-27, D155~D159) | ready |
 | ui/lock.md | 잠금 화면, 최초 설정, 복구 코드 흐름 | ready |
 | ui/sftp-snippets.md | 우측 패널의 SFTP 탐색기, 미리보기, 전송 상태, 스니펫 | ready |
 | behavior/file-panel.md | 로컬 터미널 파일 탐색, 탭 간 끌어 놓기 복사(서버↔서버는 임시 폴더 경유), 창 맨 아래 복사 작업 목록 | ready |

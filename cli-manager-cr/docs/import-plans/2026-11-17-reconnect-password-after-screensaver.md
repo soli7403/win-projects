@@ -437,7 +437,7 @@ DariTerm 은 명세(`spec/`)를 기준으로만 구현하는 clean-room 방식�
 - [x] 안 E 구현 (다이얼러 사본, 잠긴 동안 질문 창 차단, 세션 닫기 시 삭제) — D94
 - [x] 안 A 구현 (잠김 구분, 볼트 대기 상태, 잠금 해제 시 재개) — D94
 - [x] 안 A 안내 문구 10개 언어
-- [ ] 안 C 구현 — 실측 결과에 따라 (보류)
+- [x] 안 C 구현 — 2026-11-27 사용자 지시로 실측 없이 넣음(D154, [2026-11-27-16-screensaver-lock-detect.md](./2026-11-27-16-screensaver-lock-detect.md))
 - [x] §8.1 자동 테스트(안 C 제외), `go test -race ./...`, `npx tsc --noEmit` — 테스트 위치: `internal/sshconn/shell_exit_test.go`, `internal/session/exit_unlock_test.go`, `internal/app/ssh_locked_test.go`
 - [ ] §8.2 수동 시나리오 → 결과를 표에 적는다
 

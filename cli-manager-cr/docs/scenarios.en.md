@@ -123,6 +123,7 @@
 | 7-8 | Same command to many panes | Ctrl+Shift+B (this tab), top-left chain icon (all visible panes) | "Broadcast on" → input goes to every pane. Only with 2+ panes. |
 | 7-9 | Close a tab | Ctrl+Shift+W, the tab's X, middle-click | With several connections: "Close all N connections in this tab?". |
 | 7-10 | Reopen an open server | Pick an already-open server in the sidebar | Jump to that pane or open another (Open beside / Open new buttons). |
+| 7-11 | Session traffic | `↑ … ↓ …` on the right of the pane header (hover for exact values) | Bytes sent (input) and received (output) since the session opened, updated every second, kept across reconnects. Hidden when the header is 360 px wide or less. |
 
 ## 8. Working with files
 

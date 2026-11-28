@@ -45,13 +45,15 @@
 | jumpHostId | 문자열 또는 null(선택) | 점프 호스트 서버 id. 값이 `direct` 이면 jumpDirect 사용 |
 | jumpDirect | 객체(선택) | host, port, username, authType(`password`/`key`), credentialId(선택) |
 | agentForward | 불리언(선택) | SSH 에이전트 전달(2026-11-23, D111). 없으면 끔. SSH 만 쓴다 |
-| proxy | 객체(선택) | 프록시 경유(2026-11-23, D110): type(`http`/`socks5`), host, port, username(비면 인증 없음), credentialId(선택, 비밀번호 계정). 없거나 type·host 가 비면 바로 연결. SSH 만 쓴다 |
+| proxy | 객체(선택) | 프록시 경유(2026-11-23, D110): type(`http`/`socks5`/`command`), host, port, username(비면 인증 없음), credentialId(선택, 비밀번호 계정), command(type 이 `command` 일 때 실행할 명령 줄 — 2026-11-27 D152, 그때 host·port·username·credentialId 는 쓰지 않고 빈 값·0·null 로 저장). 없거나 type 이 비거나 host(명령이면 command)가 비면 바로 연결. SSH 만 쓴다 |
 | color | 문자열(선택) | |
 | env | 환경 값(선택) | |
 | tags | 문자열 배열 | |
 | encoding | `utf-8` `euc-kr` `cp949` `shift_jis` `euc-jp` `gbk` `big5` `latin1` (`euc-jp`·`gbk`·`big5` 는 2026-11-23 D118) | 새 서버 기본 `utf-8` |
 | termType | 문자열 | 새 서버 기본 `xterm-256color` |
 | startupCommand | 문자열(선택) | 접속 직후 보낼 명령 |
+| loginScript | 배열(선택) | 로그인 스크립트(2026-11-27, D139, behavior/session.md §5.1). 항목: id, expect(기다릴 글자, 비면 바로 보냄), send(보낼 글자. `{{password}}` 는 로그인 비밀번호로 바뀐다), secretId(선택, 2026-11-27 D148 — 볼트 항목(비밀번호 종류) id. 있으면 send 대신 그 항목의 비밀번호를 보내고 send 는 빈 글자로 저장). 최대 20단계. 단계가 없으면 필드를 두지 않는다. 로컬 터미널에는 없다. **평문으로 저장된다** |
+| triggerRules | 배열(선택) | 이 서버의 출력 트리거 규칙(2026-11-27, D149, behavior/terminal.md §10). 항목 모양은 설정의 `triggerRules` 와 같다. 찾을 글자가 빈 규칙은 저장하지 않고, 하나도 없으면 필드를 두지 않는다. 설정의 규칙과 함께 그 서버의 세션에만 쓴다 |
 | keepSession | 불리언(선택) | 세션 유지(tmux) |
 | tmuxName | 문자열(선택) | 비우면 서버 별칭(로컬은 폴더 이름) |
 | keepaliveSec | 숫자 | 새 서버 기본 30 |
@@ -89,6 +91,8 @@
 | guardDangerousOnProd | true | 운영 환경 위험 명령 확인 |
 | dangerousPatterns | 아래 목록 | 정규식 문자열 배열 |
 | highlightRules | 빈 배열 | 키워드 강조 규칙 배열(2026-11-23, D113). 항목: id, pattern(찾을 글자 또는 정규식), color(`#RRGGBB`), regex, caseSensitive, background(바탕 칠하기), enabled. 순서가 우선순위 ([../behavior/terminal.md](../behavior/terminal.md) §9) |
+| triggerOsNotify | true | 알림을 켠 출력 트리거가 맞았을 때 앱 창에 포커스가 없으면 Windows 알림도 띄운다(2026-11-27, D145, [../behavior/terminal.md](../behavior/terminal.md) §10) |
+| triggerRules | 빈 배열 | 출력 트리거 규칙 배열(2026-11-27, D140). 항목: id, pattern(찾을 글자 또는 정규식), regex, caseSensitive, notify(알림), sound(소리), replyOn(자동 응답 사용), reply(응답으로 입력할 글자), replyEnter(Enter 붙이기), enabled. 최대 30개 ([../behavior/terminal.md](../behavior/terminal.md) §10) |
 | autoReconnect | true | |
 | autoLockMinutes | 15 | 0 이면 자동 잠금 없음 |
 | uploadDir | `~/.dariterm/uploads`  | 붙여넣기 이미지·파일 업로드 폴더 |
@@ -154,6 +158,9 @@ dangerousPatterns 기본 목록(정규식 원문, 순서 유지):
 ## 7. 스니펫 (snippets[])
 
 id, name, body, sendEnter(불리언).
+
+- **변수**(2026-11-27, D138): body 안의 `{{이름}}` · `{{이름:기본값}}` 은 실행할 때 물어 채운다. 저장 형식은 그대로다(글자일 뿐) — behavior/terminal.md §7.1.
+- **매크로**(2026-11-27, D141): 항목에 `steps`(배열)가 있고 하나 이상이면 그 항목은 매크로다. 단계: id, expect(보내기 전에 기다릴 글자, 비면 출력이 조용해질 때까지), send(보낼 글자, 제어 문자는 `\x03` 처럼 적음), enter(Enter 붙이기). 최대 50단계. 매크로의 body 에는 단계의 send 를 줄마다 이어 적어 둔다(검색과, `steps` 를 모르는 옛 버전이 평범한 명령으로 보이게 하는 용도) — behavior/terminal.md §11.
 
 ## 8. knownHosts[]
 

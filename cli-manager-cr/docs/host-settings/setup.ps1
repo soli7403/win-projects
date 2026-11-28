@@ -19,6 +19,13 @@ if ($wailsNow -eq $wailsWant) {
     go install "github.com/wailsapp/wails/v2/cmd/wails@$wailsWant"
 }
 
+# C compiler for go test -race (06_gcc-race.md): MinGW-w64 gcc from WinLibs
+if (Get-Command gcc -ErrorAction SilentlyContinue) {
+    Write-Host "gcc: already installed"
+} else {
+    winget install --id BrechtSanders.WinLibs.POSIX.UCRT -e --source winget --silent --accept-source-agreements --accept-package-agreements
+}
+
 $nsis = Join-Path ${env:ProgramFiles(x86)} 'NSIS\makensis.exe'
 if (Test-Path $nsis) {
     Write-Host "NSIS: already installed ($nsis)"

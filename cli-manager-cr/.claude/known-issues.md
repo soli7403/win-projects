@@ -6,7 +6,16 @@
 
 ## ✅ ACTIVE
 
-(없음)
+### KI-013: 클립보드 시험이 `go test -race ./...` 전체 실행에서 가끔 실패함
+- **Status**: active
+- **Severity**: low (시험만, 앱 동작과 무관)
+- **Module**: internal/clipboard (clipboard_windows_test.go)
+- **Trigger areas**: `go test ./...`·`make test` 전체 실행, 클립보드 코드를 고칠 때
+- **증상**: `TestClipboardInfoIsFastForText` 가 가끔 `텍스트 판정이어야 함: {M_szType:empty …}` 로 실패. 그 패키지만 다시 돌리면 통과한다(2026-11-27, 3번 연속 통과).
+- **원인(추정)**: 시험이 실제 Windows 클립보드를 쓴다. 전체 실행은 패키지를 동시에 돌리므로 다른 시험이나 PC 의 다른 프로그램이 같은 순간 클립보드를 바꾸면 흔들린다.
+- **대처**: 실패하면 `go test -race ./internal/clipboard/` 로 다시 돌려 확인한다. 고치려면 클립보드 시험만 따로(`-p 1` 또는 별도 단계) 돌리게 하거나, 쓰기 직후 읽기를 몇 번 재시도하게 한다.
+- **History**:
+  - 2026-11-27: 다른 작업 폴더의 계획서들(2026-11-27-7·-10·-14)이 "clipboard KI-013 재실행 통과"로 적어 둔 것을 이 저장소에서도 재현해 등록
 
 ## ⏸️ DISMISSED
 

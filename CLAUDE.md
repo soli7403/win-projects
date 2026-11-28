@@ -114,6 +114,6 @@
 
 > `cli-manager`(BrightTerm v1.1.0 이식물, 옛 TermGo)는 2026-11-13 사용자 지시로 폴더를 삭제했다. git 이력에는 남아 있지만 **clean-room 규칙상 이력에서도 열람·복원하지 않는다**.
 
-**KI 번호는 레포 전체에서 이어진다.** 다음 번호: KI-013.
+**KI 번호는 레포 전체에서 이어진다.** 다음 번호: KI-014.
 공통 항목은 `.claude/known-issues.md`, 프로젝트 항목은 `<project>/.claude/known-issues.md`.
 WIP 재개 시 모두 스캔: `grep -l 'Status\*\*: in-progress' .claude/wip/*.md */.claude/wip/*.md`

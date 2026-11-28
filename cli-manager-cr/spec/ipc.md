@@ -48,9 +48,10 @@
 ### 세션
 | 채널 | 인자 | 결과 |
 |---|---|---|
-| `session.open` | `{hostId?, adhoc?, cols?, rows?}` (`adhoc`: host, cwd?, port?, username?, protocol?) | 세션 정보 `{id, hostId|null, title, protocol, target, color?, env?, state, connectedAt?, message?, canSftp, keepSession?}`. 서버 id 도 즉석 정보도 없으면 오류 "서버를 찾을 수 없습니다". **연결은 바로 시작하지 않고 약 30ms 뒤** 시작한다(프런트가 터미널을 등록할 시간). **로컬 터미널**: 저장된 로컬 서버는 `hostId` 로 열고(셸·시작 폴더는 서버 설정의 `local` 값), 즉석 로컬은 `adhoc: {host: "", protocol: "local", cwd?: 시작 폴더}` 로 연다 — 즉석 로컬에는 셸 지정이 없고 기본 셸을 쓴다. 즉석 SSH/텔넷은 `{host, port?, username?, protocol?}` |
+| `session.open` | `{hostId?, adhoc?, cols?, rows?}` (`adhoc`: host, cwd?, port?, username?, protocol?) | 세션 정보 `{id, hostId|null, title, protocol, target, color?, env?, state, connectedAt?, message?, canSftp, keepSession?, forwards?}`. 서버 id 도 즉석 정보도 없으면 오류 "서버를 찾을 수 없습니다". **연결은 바로 시작하지 않고 약 30ms 뒤** 시작한다(프런트가 터미널을 등록할 시간). **로컬 터미널**: 저장된 로컬 서버는 `hostId` 로 열고(셸·시작 폴더는 서버 설정의 `local` 값), 즉석 로컬은 `adhoc: {host: "", protocol: "local", cwd?: 시작 폴더}` 로 연다 — 즉석 로컬에는 셸 지정이 없고 기본 셸을 쓴다. 즉석 SSH/텔넷은 `{host, port?, username?, protocol?}` |
 | `session.close` | id | 없음. SFTP 캐시도 정리 |
 | `session.reconnect` | id | 없음 |
+| `session.forwards` | id | (2026-11-27, D142) 지금 연결의 포트 포워딩 배열 — 세션 정보의 `forwards` 와 같은 모양이고 `conns` 가 **묻는 순간의** 연결 수, `up`·`down` 이 접속한 뒤 지금까지의 바이트 수(D151, protocols.md §2.5)다. 연결이 없거나 포워딩이 없거나 모르는 id 면 빈 배열(오류 아님). 포트 포워딩 정보 창을 **열 때 한 번**, 그리고 그 창의 [새로고침]을 누를 때 묻는다(주기적으로 묻지 않는다) |
 | `session.ack` | id, 처리한 출력 묶음 수(정수) | 없음. 프런트가 `session.data` 묶음을 터미널에 다 쓴 뒤 보낸다(출력 흐름 제어, behavior/session.md §8). 모르는 id·넘치는 수는 무시 |
 | `local.shells` | | `[{path, label}]` (첫 항목이 기본) |
 | `local.tmuxAvailable` | | 불리언 |
@@ -72,6 +73,7 @@
 | `app.openExternal` | URL | 없음. **`http://` 또는 `https://` 로 시작하는 주소만** 기본 브라우저로 연다, 그 외는 무시 |
 | `app.resetWindow` | | 없음 |
 | `app.toggleFullScreen` | | 없음. **창 최대화 ↔ 복원 토글**(진짜 전체 화면 아님) |
+| `app.notify` | 제목, 본문 | `boolean` — OS 알림(Windows 알림 센터)을 띄웠으면 true, 띄울 수 없는 환경이면 false, 실패하면 오류. 처음 부를 때 한 번 알림 준비를 한다. 출력 트리거가 앱 창에 포커스가 없을 때 쓴다 (behavior/terminal.md §10, 2026-11-27 D145) |
 
 ### SFTP·붙여넣기
 | 채널 | 인자 | 결과 |
@@ -99,6 +101,7 @@
             "forwards"?, "serial"?, "startupCommand"?, "notes"? },   // data/store.md 서버 필드의 부분 집합
   "keyFile"?: 문자열(키 파일 경로),
   "jumpVia"?: 문자열(점프 호스트 주소),
+  "jumpChain"?: 문자열 배열(경유 서버가 여러 단계일 때 바깥부터의 주소, 마지막이 jumpVia — D153),
   "note"?: 문자열,
   "folderPath"?: 문자열 배열(넣을 폴더 아래 하위 폴더, SecureCRT·Xshell) }
 ```
@@ -136,6 +139,7 @@
 |---|---|---|
 | `session.data` | 세션 id, 텍스트 | 세션 출력. **약 12ms 단위로 묶어서** 보낸다(묶음 하나는 256KB 이하). 프런트는 묶음을 터미널에 쓴 뒤(또는 쓸 터미널이 없어 버린 뒤) `session.ack` 로 처리 개수를 알린다(behavior/session.md §8) |
 | `session.state` | 세션 정보. **`state` 값은 정확히 `connecting` · `connected` · `reconnecting` · `closed`(끊김) · `error`(실패)** — behavior/session.md §1 | 상태 변경(접속 중·연결됨·재접속·끊김·오류) |
+| `session.traffic` | (2026-11-27, D160) `{세션 id: {in, out}}` — 값이 바뀐 세션만. `in` 은 세션을 연 뒤 연결에서 받은 바이트, `out` 은 보낸 바이트(정수, 누적, 재접속해도 이어서) | **1초마다**, 바뀐 세션이 있을 때만(behavior/session.md §8) |
 | `ui.request` | 요청 객체 | §3 |
 | `transfer.update` | 전송 정보 `{id, sessionId, name, direction, bytes, total, state, error?, remotePath, localPath?}` | 전송 진행(최소 150ms 간격) |
 | `vault.changed` | 불리언(열림 여부) | 볼트 열림/잠김 |

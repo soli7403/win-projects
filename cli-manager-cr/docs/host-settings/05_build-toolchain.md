@@ -9,6 +9,7 @@
 | Go | **1.27.4** (2026-11-25, 1.26.2 에서 올림) | `winget upgrade --id GoLang.Go -e` (관리자 권한, MSI) | `C:\Program Files\Go` |
 | Wails CLI | **v2.17.1** (2026-11-25, v2.10.2 에서 올림) | `go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1` | `%USERPROFILE%\go\bin\wails.exe` |
 | Node.js | 24.14.1 (바꾸지 않음) | 원래 설치돼 있음 | — |
+| gcc (MinGW-w64) | 16.2.0 (2026-11-27) | `go test -race` 에만 필요 — [06_gcc-race.md](./06_gcc-race.md) | winget 패키지 폴더 |
 
 - Wails CLI 버전은 `go.mod` 의 `github.com/wailsapp/wails/v2` 와 같게 맞춘다(다르면 `wails build` 가 경고한다).
 - `go.mod` 의 `go` 지시문도 설치한 Go 와 같게 둔다(지금 `go 1.27.4`). 낮은 Go 로 빌드하면 `GOTOOLCHAIN=auto` 가 1.27.4 를 내려받는다.

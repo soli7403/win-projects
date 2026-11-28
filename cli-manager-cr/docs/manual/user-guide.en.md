@@ -43,6 +43,7 @@ The first launch takes four short steps:
 
 - **Top-left icons**: show/hide the server list, snippets, broadcast input to all panes, settings.
 - **Top-right icon**: SFTP (file) panel.
+- **Pane header**: server name and target, plus a `⇄ N` button when port forwarding is set. The `↑1.2 K ↓34 M` before the buttons on the right is the session's **traffic** — ↑ sent (input), ↓ received (output), since the session opened, updated every second. Hover it for exact values; it is hidden when the pane is narrow.
 - Click **"Unlocked"** at the bottom right to lock the app immediately.
 
 ## 4. Add a server and connect
@@ -172,6 +173,9 @@ Server editor > Advanced > "Jump server (ProxyJump)": pick a saved server or ent
 
 **Q. Port forwarding?**
 Server editor > Port forwarding tab: add L (a port on your PC → an address reachable from the server) or R.
+
+**Q. How much did this session send and receive?**
+The `↑ … ↓ …` on the right of the pane header shows bytes sent (input) and received (output) since the session opened, updated every second; hover it for exact values. It keeps counting across reconnects; SFTP and port forwards are counted separately. If the pane is too narrow to show it, widen the pane or maximize it with Ctrl+Shift+Enter.
 
 **Q. My PPK key won't load.**
 Convert PPK v3 keys with PuTTYgen → Conversions → Export OpenSSH key.

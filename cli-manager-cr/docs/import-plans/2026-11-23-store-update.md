@@ -23,7 +23,7 @@ Microsoft Store 로 설치한 실행에서는 **스토어에 새 버전이 있�
 | 언제 스토어에 묻나 | **Windows 의 스토어 설치본일 때만** (`GetCurrentPackageFullName` 으로 패키지된 앱인지 판정) | 사용자 지시. 설치 파일로 설치했거나 개발 빌드면 스토어에 물을 수 없다(패키지 신원이 없다) |
 | 묻는 방법 | Windows 의 스토어 기능 `Windows.Services.Store.StoreContext` 의 `GetAppAndOptionalStorePackageUpdatesAsync` | 스토어가 제공하는 정식 방법. 설치된 것보다 새 패키지만 돌려주므로 앱이 버전을 비교할 필요가 없다 |
 | 부르는 방법 | **숨긴 PowerShell 스크립트**를 거친다 | StoreContext 는 WinRT API 다. Go 에서 직접 부르려면 COM 가상 함수 표를 번호로 불러야 하는데, 번호 하나가 틀리면 앱이 죽고 이 PC 에서 시험할 방법이 없다. 스크립트는 실패해도 오류를 돌려줄 뿐이다. 이 앱은 파일 대화상자·클립보드 이미지도 같은 방식으로 한다 |
-| 패키지 신원 | 패키지된 앱이 띄운 자식 프로세스는 같은 신원을 물려받는다 | 그래서 자식 PowerShell 의 `StoreContext.GetDefault()` 가 이 앱의 것으로 동작한다(§G.2 에서 확인) |
+| 패키지 신원 | 패키지된 앱이 띄운 자식 프로세스는 같은 신원을 물려받는다 | 그래서 자식 PowerShell 의 `StoreContext.GetDefault()` 가 이 앱의 것으로 동작한다(§G.2 에서 확인). **[2026-11-26 바로잡음] 이 가정은 틀렸다 — 자식은 따로 정하지 않으면 패키지 밖에서 돈다. [2026-11-26-1-store-update-child-identity.md](./2026-11-26-1-store-update-child-identity.md) (D134)** |
 | 업데이트 확인(설치) | `RequestDownloadAndInstallStorePackageUpdatesAsync` — Windows 가 확인 창을 보이고, 확인하면 내려받아 설치한다 | 요청한 "update confirm". 앱이 직접 내려받거나 설치하지 않는다 |
 | 확인 창의 주인 | 앱의 주 창 핸들을 `IInitializeWithWindow` 로 알려 준다(스크립트 안의 작은 C# 선언) | 데스크톱 앱은 이것을 하지 않으면 창을 띄울 수 없다 |
 | 실패했을 때 | 오류 토스트 + **스토어의 제품 페이지를 연다**(`ms-windows-store://pdp/?productid=9N8WBPMRNBWV`) | 확인 창이 안 떠도 스토어 앱에서 직접 업데이트할 수 있다 |

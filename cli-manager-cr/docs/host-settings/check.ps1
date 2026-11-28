@@ -11,6 +11,9 @@ Check 'go 1.27.4' ($goVer -eq 'go1.27.4') $goVer
 $wailsVer = if (Get-Command wails -ErrorAction SilentlyContinue) { (wails version 2>$null | Select-Object -First 1) } else { '' }
 Check 'wails v2.17.1' ($wailsVer -eq 'v2.17.1') $wailsVer
 Check 'node' ([bool](Get-Command node -ErrorAction SilentlyContinue)) ''
+# C compiler for go test -race (06_gcc-race.md)
+$gccVer = if (Get-Command gcc -ErrorAction SilentlyContinue) { (gcc -dumpfullversion) } else { '' }
+Check 'gcc (go test -race)' ([bool]$gccVer) $gccVer
 # MSIX (03_msix.md)
 $sdk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Directory -ErrorAction SilentlyContinue | Where-Object { Test-Path (Join-Path $_.FullName 'x64\makeappx.exe') } | Sort-Object Name -Descending | Select-Object -First 1
 Check 'Windows SDK makeappx' ([bool]$sdk) $(if ($sdk) { $sdk.Name } else { '' })
