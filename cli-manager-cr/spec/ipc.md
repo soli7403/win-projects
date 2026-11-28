@@ -52,6 +52,14 @@
 | `session.close` | id | 없음. SFTP 캐시도 정리 |
 | `session.reconnect` | id | 없음 |
 | `session.forwards` | id | (2026-11-27, D142) 지금 연결의 포트 포워딩 배열 — 세션 정보의 `forwards` 와 같은 모양이고 `conns` 가 **묻는 순간의** 연결 수, `up`·`down` 이 접속한 뒤 지금까지의 바이트 수(D151, protocols.md §2.5)다. 연결이 없거나 포워딩이 없거나 모르는 id 면 빈 배열(오류 아님). 포트 포워딩 정보 창을 **열 때 한 번**, 그리고 그 창의 [새로고침]을 누를 때 묻는다(주기적으로 묻지 않는다) |
+| `session.setHexView` | id, on(bool) | (2026-11-28, D163) 받은 출력을 HEX 로 보일지. 세션 정보 `hexView` 로 알린다 (behavior/serial-tools.md §1) |
+| `session.sendHex` | id, text | (D163) 16진 입력을 바이트로 바꿔 인코딩 없이 보낸다. 결과는 보낸 바이트 수. 16진이 아니면 오류 "16진 바이트가 아닙니다 …" (serial-tools.md §2) |
+| `session.xmodemSend` | id, {oneK?: bool} | (D164) 파일 고르기 창 → XMODEM 보내기 시작. 고르면 true, 취소면 false. 전송은 뒤에서 하고 진행·결과는 터미널 출력으로 (serial-tools.md §3) |
+| `session.xmodemReceive` | id | (D164) 저장 창 → XMODEM 받기 시작. true / 취소 false |
+| `session.xmodemCancel` | id | (D164) 진행 중인 XMODEM 전송 취소. 없으면 아무것도 안 함 |
+| `key.generate` | {name, type?: ed25519\|rsa, bits?: 3072\|4096, passphrase?} | (2026-11-28, D162) 키를 만들어 보관함에 `key` 계정으로 저장. 결과 `{cred: 계정 메타, publicKey, fingerprint}`. 이름이 비면 오류 (behavior/ssh-keys.md §1) |
+| `key.publicKey` | credId | (D162) 키 계정의 `{publicKey, fingerprint}`. 비밀번호 계정이면 오류 |
+| `key.install` | sessionId, credId | (D162) 그 SSH 세션의 연결로 공개 키를 서버 `authorized_keys` 에 넣는다. 결과 `{status: added\|exists, fingerprint}`. SSH 가 아니면 오류 (ssh-keys.md §3) |
 | `session.ack` | id, 처리한 출력 묶음 수(정수) | 없음. 프런트가 `session.data` 묶음을 터미널에 다 쓴 뒤 보낸다(출력 흐름 제어, behavior/session.md §8). 모르는 id·넘치는 수는 무시 |
 | `local.shells` | | `[{path, label}]` (첫 항목이 기본) |
 | `local.tmuxAvailable` | | 불리언 |

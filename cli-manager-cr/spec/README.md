@@ -30,6 +30,8 @@
 | behavior/terminal.md | 붙여넣기·복사·검색·글꼴 확대·위험 명령 가드·자동 재접속·벨·로그 | ready |
 | behavior/session.md | 접속 수명주기, 재접속, 세션 유지(tmux), 점프 호스트, 포워딩 | ready |
 | behavior/zmodem.md | ZMODEM 파일 전송(서버의 sz·rz): 시작 감지, 받기·보내기, 진행 표시, 취소, 한도 (D114) | ready |
+| behavior/ssh-keys.md | SSH 키 만들기(Ed25519·RSA)·공개 키 보기·열린 연결로 서버 authorized_keys 에 등록 (2026-11-28, D162) | ready |
+| behavior/serial-tools.md | 시리얼 칸의 HEX 보기·HEX 보내기·XMODEM(체크섬·CRC·1K) 보내기·받기 (2026-11-28, D163·D164) | ready |
 | behavior/license.md | 사용 용도(개인/업무 30일 평가), 회사 PC 안내, 시작 알림, 업무용 라이선스 키 형식·확인 (D78) | ready |
 | behavior/i18n.md | 10개 언어, 첫 실행 언어 선택, OS 언어 맞추기, 언어 파일(locales/*.json), 즉시 바꾸기 (D75) | ready |
 | behavior/lifecycle.md | 시작 순서, 자동 잠금, 레이아웃 복원, 첫 실행 가져오기 제안, 업데이트 확인 | ready |

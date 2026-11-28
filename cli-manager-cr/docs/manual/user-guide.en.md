@@ -2,7 +2,7 @@
 
 DariTerm is a terminal app for people who work on servers. Use SSH, Telnet, serial devices and your PC's own shells (cmd, PowerShell, WSL) side by side in tabs and split panes. Server passwords and keys are encrypted and stored only on your PC.
 
-> This guide covers version 1.0.0. 한국어: [user-guide.ko.md](./user-guide.ko.md)
+> This guide covers version 1.2.0. 한국어: [user-guide.ko.md](./user-guide.ko.md)
 
 ---
 
@@ -94,7 +94,6 @@ When asked for a password, tick **"Save encrypted and sign in automatically next
 | Switch tabs | Ctrl+Tab, Ctrl+1–9 |
 | Type the same command into several servers | Ctrl+Shift+B (broadcast input on/off) |
 | Close | Ctrl+Shift+W |
-| Open every server in a folder | Right-click the folder → "Open all folder servers tiled" |
 | Two side-by-side views | Right-click a tab → "Move to right side", or drag a tab to the right edge and drop it when "Drop here to split left and right" appears |
 
 The tab you are looking at has a color bar on top (its server color, or blue). Other tabs get a light tint of their server color.
@@ -105,6 +104,7 @@ Click **Import** in the sidebar. DariTerm looks for:
 
 - PuTTY saved sessions
 - SecureCRT session folders (including folder structure and port forwarding) — use **Choose SecureCRT folder** for another location
+- Xshell sessions (an `.xts` export file or an `.xsh` session file, including folders and port forwarding)
 - `~/.ssh/config`
 - AWS EC2 — **Load AWS EC2** (requires the aws CLI)
 
@@ -130,29 +130,79 @@ Save frequently used commands and run them with one click.
 2. Enter a name and command (multiple lines allowed). Turn on "Run immediately after typing" to run it right away.
 3. Click a snippet to type it into the current pane. In a tab with broadcast input on, it goes to every pane.
 
-## 10. Staying secure
+## 10. Automate repetitive work
+
+| What you want | How |
+|---|---|
+| Fill in values each time | Write `{{name}}` or `{{name:default}}` in a snippet. DariTerm asks for the values and shows a preview of the filled command |
+| Type several steps, waiting for output | Snippets > **Macros**: each step is "when this text appears → send this". You can also **record** what you type in a pane (a recording badge appears in the status bar). In a broadcast tab, macros run in every pane |
+| Do it every time you connect | Server editor > **Automation** > Login script: a step like `password:` → `{{password}}` answers `sudo su -` or a device `enable` prompt. For other passwords pick a **vault value** instead of plain text |
+| Get notified when output appears | Settings > **Output rules** > Output triggers: on `ERROR`, show a notification, play a sound or reply. When the app is in the background it also appears in the Windows notification center. For one server only, use Server editor > Automation |
+| Color words in the output | Settings > Output rules > Keyword highlighting (display only) |
+
+## 11. Port forwarding, jump hosts and proxies
+
+- **Port forwarding**: Server editor > Port forwarding tab. L (a port on your PC → an address reachable from the server), R (a server port → an address on your PC side), D (a port on your PC as a SOCKS proxy). Each forward is reported in one line when you connect, and **`⇄ N`** in the pane header shows status, open connections and traffic.
+- **Jump hosts**: Server editor > Advanced > Jump host (ProxyJump). `ProxyJump a,b` in ssh config becomes a jump chain on import.
+- **Proxies**: Server editor > Advanced > Connect through a proxy — HTTP CONNECT, SOCKS5, or a **proxy command** (the input and output of an external command such as `ssh -W %h:%p bastion`, `ncat` or `cloudflared`).
+- **Agent**: the "SSH agent" sign-in uses both the Windows OpenSSH agent and Pageant. To use this PC's keys inside the server, turn on Advanced > Agent forwarding.
+
+## 12. Transfer files in the terminal (ZMODEM)
+
+In SSH and serial panes, run `sz file` on the server to download and `rz` to upload. The download folder and the on/off switch are in Settings > File transfer. **Ctrl+C** while receiving cancels and returns to the prompt. Transfers cannot work inside tmux or screen, so run them outside.
+
+## 13. Create an SSH key and add it to a server
+
+How to switch a server from password to key sign-in.
+
+1. Settings > Security > Saved accounts > **[Create SSH key]**: a name, the type (Ed25519 recommended, RSA 4096 for older servers) and an optional passphrase. The key is stored encrypted in the vault.
+2. In a pane signed in with a password, right-click > **Add public key to this server…**, pick the key and click [Add]. One line is added to `~/.ssh/authorized_keys` on the server (nothing changes if it is already there).
+3. Leave "Sign in to this server with this key from next time" on to switch the server settings to key sign-in as well.
+
+[Public key] on a key account shows the public key line and fingerprint to copy (for GitHub and so on).
+
+## 14. Serial devices: hex view, hex send and XMODEM
+
+In the right-click menu of a serial pane.
+
+| What you want | How |
+|---|---|
+| See received bytes as hex | **Show as hex** — 16 bytes per line like `01 41 FF  |.A.|`. Click again for text |
+| Send exact bytes | **Send hex…** — type `01 03 00 00 00 0A C5 CD` and click [Send]. The window stays open for repeated sends |
+| Upload firmware | **Send with XMODEM / XMODEM-1K** — pick a file, then start receiving on the device (`loadx` in a boot loader and so on) |
+| Get a file from the device | **Receive with XMODEM** — pick a name, then start sending on the device |
+| Stop a transfer | Ctrl+C or "Cancel XMODEM transfer" |
+
+## 15. Help window
+
+Click the **question mark** at the top left (or "Help for this section" in Settings) to search feature descriptions. Sort the list by feature order or A–Z, read the FAQ cards and screenshots (click to enlarge), and drag to resize the window.
+
+## 16. Staying secure
 
 - **Auto-lock**: after 15 minutes without input, or when Windows locks, DariTerm locks itself. Connections stay open. Change the time in Settings > Security.
 - **Unlock with Windows sign-in**: turn it on in Settings > Security.
 - **Forgot the password?** On the lock screen, choose "Reset with recovery code".
 - **Manage saved accounts**: Settings > Security > Saved accounts.
 
-## 11. Using several PCs
+## 17. Using several PCs
 
 - **Backup**: Settings > Backup → **Export backup**. On another PC, **Import backup** and unlock with the original PC's app lock password.
 - **git sync**: enter a **private** git repository in Settings > git sync. DariTerm uploads one file encrypted with your app lock password to keep server lists in sync.
 
-## 12. Settings at a glance
+## 18. Settings at a glance
 
 Settings (gear icon) are saved as soon as you change them.
 
 - **Appearance**: language, theme (dark/light), terminal colors, font, cursor, maximum vertical panes
 - **Input**: copy/paste behavior, confirm multi-line paste, production command warning
-- **File transfer**: server upload folder for images, auto-delete old uploads
-- **Connection**: reconnect when disconnected, restore last layout, log terminal output
-- **git sync / Security / Backup / About**
+- **Shortcuts**: change or clear the key for each action, turn all shortcuts on or off
+- **Output rules**: output triggers, keyword highlighting
+- **File transfer**: server upload folder for images, auto-delete old uploads, ZMODEM download folder
+- **Connection**: reconnect when disconnected, restore last layout (reopens your tabs, splits and servers when the app starts)
+- **Log**: log terminal output, timestamp each line, keep ANSI codes, retention
+- **git sync / Security (including Create SSH key) / Backup / About**
 
-## 13. Personal and business use
+## 19. Personal and business use
 
 - **Personal use** (learning, personal projects, hobbies) is free with no time limit.
 - **Business use** (work for a company, institution or organization, or commercial work) can be evaluated free for 30 days; after that each user needs a business license.
@@ -160,7 +210,7 @@ Settings (gear icon) are saved as soon as you change them.
 - After the evaluation ends the program keeps working; a notice appears once at startup.
 - Licensing inquiries: **soli97403@gmail.com**
 
-## 14. FAQ
+## 20. FAQ
 
 **Q. My connection keeps dropping.**
 With Settings > Connection "Reconnect when disconnected" on, DariTerm retries at 2, 4, 8, 16 and 30 seconds. After it stops, press Enter in the terminal to reconnect.
@@ -172,13 +222,13 @@ Turn on **"Keep session (tmux)"** in the server editor > Advanced. The server ne
 Server editor > Advanced > "Jump server (ProxyJump)": pick a saved server or enter one manually.
 
 **Q. Port forwarding?**
-Server editor > Port forwarding tab: add L (a port on your PC → an address reachable from the server) or R.
+Server editor > Port forwarding tab: add L, R or D (SOCKS) (§11).
 
 **Q. How much did this session send and receive?**
 The `↑ … ↓ …` on the right of the pane header shows bytes sent (input) and received (output) since the session opened, updated every second; hover it for exact values. It keeps counting across reconnects; SFTP and port forwards are counted separately. If the pane is too narrow to show it, widen the pane or maximize it with Ctrl+Shift+Enter.
 
-**Q. My PPK key won't load.**
-Convert PPK v3 keys with PuTTYgen → Conversions → Export OpenSSH key.
+**Q. Can I use PuTTY keys (.ppk)?**
+Yes. PPK formats 2 and 3 (including passphrase-protected keys) are read without conversion. To make a new key, use Create SSH key in §13.
 
 **Q. Is any of my data sent anywhere?**
 No. Server lists, passwords, keys and license checks are all handled on your PC.

@@ -1,6 +1,6 @@
 # DariTerm behavior scenarios
 
-> English version of [scenarios.md](./scenarios.md) (as of 2026-11-21, app 1.0.0). Format: "situation → what you do → what the app does".
+> English version of [scenarios.md](./scenarios.md) (as of 2026-11-28, app 1.2.0). Format: "situation → what you do → what the app does".
 
 ## Contents
 
@@ -20,6 +20,12 @@
 14. Language
 15. Usage and license
 16. Quitting and restarting
+17. Automation
+18. Port forwarding, jump hosts and proxies
+19. File transfer in the terminal (ZMODEM)
+20. SSH keys
+21. Serial tools (hex and XMODEM)
+22. Help window
 
 ---
 
@@ -177,18 +183,19 @@
 | 12-4 | Keep session with tmux | Server Advanced "Keep session (tmux)": programs on the server keep running after you close the pane or app, and reopening reattaches to the same screen. Without tmux it says so and works normally. On local Windows, WSL shells only. |
 | 12-5 | Local shell exits | "Shell exited" → Enter starts a new shell. |
 
-## 13. Settings (gear icon, 10 sections)
+## 13. Settings (gear icon, 11 sections)
 
 | Section | Main items |
 |---|---|
 | Appearance | Language · app theme (Dark/Light) · 6 terminal color themes (DariTerm Dark·Light, PuTTY Classic, Solarized Dark, Monokai, Nord) · font, size, line spacing · remember window size and position · [Reset to default size] · cursor style · scrollback lines · maximum vertical panes · blinking cursor · bell sound |
 | Input | Copy on select · paste with right click · paste with Ctrl+V · new line with Shift+Enter · OSC 52 · ask before pasting multiple lines · production dangerous-command warning and pattern list |
 | Shortcuts | Use shortcuts (turn all on/off, on by default) · change, clear or reset the key of each of the 34 app shortcuts · reset all to defaults · keys inside the terminal (cannot be changed) |
+| Output rules | Output triggers (notification, sound, automatic reply, Windows notifications) · keyword highlighting |
 | File transfer | Server upload folder · auto-delete days · temp folder for server-to-server copies · quote paths |
 | Connection | Reconnect when disconnected · restore last layout |
 | Logs | Log terminal output · timestamp each log line · keep ANSI codes · keep session logs (days; default 30, 0 = keep) · log file update interval · log folder |
 | git sync | Repository address · Sync now · automatic sync |
-| Security | Auto-lock (minutes) · unlock with Windows sign-in · change password · saved accounts |
+| Security | Auto-lock (minutes) · unlock with Windows sign-in · change password · saved accounts · **Create SSH key, public key** |
 | Backup | Export · Import |
 | About | Version · developer · license · **Usage (license key)** · terms of use · business license inquiries · referenced project · open source licenses · data folder path (display only) (update checking is currently turned off and hidden) |
 
@@ -222,6 +229,60 @@ Every setting is saved as soon as you change it (no Save button).
 | 16-2 | Next launch | Restores window size and position (setting), and **restores the last tabs and panes and reconnects to the same servers** (setting "Restore last layout"; passwords, screen contents and unsaved one-off SSH are not restored). |
 | 16-3 | Window off-screen | If the monitor layout changed, it opens centered. |
 | 16-4 | Maximize | F11: maximize ↔ restore the window (not true full screen). Works even with a dialog open. |
+
+## 17. Automation (snippet variables, macros, login scripts, output triggers)
+
+| # | Situation | What you do | What the app does |
+|---|---|---|---|
+| 17-1 | A different value each time | Write `{{name}}` or `{{name:default}}` in a snippet and click it | Asks for the values (with a preview) and types the filled command. |
+| 17-2 | Type while waiting for output | Snippets > Macros > New macro (steps: text to wait for → input) | Each step waits until its text appears, then types. In a broadcast tab each pane waits for its own output. |
+| 17-3 | Repeat what you typed | Start macro recording → type → stop | A recording badge in the status bar; stopping saves a macro. Shortcuts in Settings > Shortcuts (none by default). |
+| 17-4 | sudo or enable on every connect | Server editor > Automation > Login script | Runs the steps in order on every connect. `{{password}}` is the sign-in password, other passwords come from vault values. Stops when you type yourself. |
+| 17-5 | Notify on certain output | Settings > Output rules > Output triggers | When a line contains the text: notification, sound or automatic reply (hidden tabs too). Also in the Windows notification center when the app is in the background. Per-server rules in Server editor > Automation. |
+| 17-6 | Highlight words | Settings > Output rules > Keyword highlighting | Changes only how the text looks (regex, case, background fill). |
+
+## 18. Port forwarding, jump hosts and proxies
+
+| # | Situation | What you do | What the app does |
+|---|---|---|---|
+| 18-1 | Set up forwarding | Server editor > Port forwarding (L, R, D) | One line per forward on connect (failures in red). `⇄ N` in the pane header opens a table of type, addresses, status, connections and traffic. |
+| 18-2 | Behind a firewall | Advanced > Connect through a proxy (HTTP, SOCKS5, proxy command) | Uses the proxy, or the input and output of an external command (`ssh -W %h:%p bastion` and so on), as the tunnel. |
+| 18-3 | Several hops | Advanced > Jump host, or `ProxyJump a,b` imported from ssh config | Chains target → b → a. |
+| 18-4 | Your keys inside the server | Advanced > Agent forwarding | `ssh` and `git` on the server use this PC's agent keys (OpenSSH agent and Pageant). |
+
+## 19. File transfer in the terminal (ZMODEM)
+
+| # | Situation | What you do | What the app does |
+|---|---|---|---|
+| 19-1 | Download a server file | Run `sz file` on the server | Saves to the download folder in Settings > File transfer, shows one progress line, then "ZMODEM transfer complete". |
+| 19-2 | Upload to the server | Run `rz` on the server | File picker → uploads. Cancelling stops the transfer. |
+| 19-3 | Stop | Ctrl+C while receiving | Discards incoming data and returns to the prompt. If the server is silent for 60 seconds, only the transfer ends. |
+| 19-4 | Inside tmux | `sz` inside tmux or screen | Explains that the transfer cannot work there and how to end it (Ctrl+X five times). |
+
+## 20. SSH keys
+
+| # | Situation | What you do | What the app does |
+|---|---|---|---|
+| 20-1 | Create a key | Settings > Security > [Create SSH key] (name, Ed25519/RSA 4096, passphrase) | Saves a key account in the vault and opens the public key window (copy, fingerprint). |
+| 20-2 | Add it to a server | Right-click an SSH pane signed in with a password > Add public key to this server… | Adds one line to `~/.ssh/authorized_keys` over the current connection (unchanged if the key is there). With "Sign in to this server with this key from next time" on, the server settings switch to the key. |
+| 20-3 | See the public key again | [Public key] on a key account | The public key line and fingerprint, with [Copy]. |
+| 20-4 | Server without sh | Add to a Windows OpenSSH server | "Could not add the public key on the server: …" — copy the public key and add it yourself. |
+
+## 21. Serial tools (hex and XMODEM)
+
+| # | Situation | What you do | What the app does |
+|---|---|---|---|
+| 21-1 | See bytes | Right-click a serial pane > Show as hex | Each received chunk as `01 41 FF  |.A.|` lines (16 bytes). Click again for text. |
+| 21-2 | Send bytes | Right-click > Send hex… → `01 03 00 00 00 0A C5 CD` | Sends the bytes as they are, without encoding. [Send] is off if the input is not hex. The window stays open. |
+| 21-3 | Upload firmware | Right-click > Send with XMODEM / XMODEM-1K → file → start receiving on the device | CRC or checksum chosen automatically, 1K only with CRC. Reports a failure if the device does not start within 60 seconds. |
+| 21-4 | Get a file from the device | Right-click > Receive with XMODEM → name → start sending on the device | Receives into `.dtpart`, renames when done. Removes the 0x1A padding at the end of the last block. |
+| 21-5 | Stop | Ctrl+C or "Cancel XMODEM transfer" during a transfer | Sends CAN to the device and shows "XMODEM transfer cancelled". Keys are not sent to the device during a transfer. |
+
+## 22. Help window
+
+| # | Situation | What you do | What the app does |
+|---|---|---|---|
+| 22-1 | Look up a feature | Question mark at the top left (or "Help for this section" in Settings) | Searches 30 feature descriptions, sorted by feature order or A–Z, with FAQ cards, screenshots (click to enlarge) and a resizable window. |
 
 ---
 

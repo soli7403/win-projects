@@ -20,13 +20,13 @@ const IMG_DIR = LANG === 'en' ? 'img-en' : 'img';
 const TEXT = {
   ko: {
     title: 'DariTerm 사용자 매뉴얼', sub: '멀티 프로토콜 터미널·SFTP 통합 클라이언트 — 상황별 동작 안내',
-    meta: '기준 버전: 1.0.0 (2026-11-21) · 게시자: YangHun Lee · 구성: 16개 영역 + 단축키 부록',
+    meta: '기준 버전: 1.2.0 (2026-11-28) · 게시자: YangHun Lee · 구성: 22개 영역 + 단축키 부록',
     note: '각 표는 "상황 → 하는 일 → 앱 동작" 순서입니다. 화면 그림의 서버 이름·주소 등 개인 정보는 흐리게 처리했습니다.',
     foot: '© 2026 YangHun Lee (kai). All rights reserved. · 업무용 라이선스 문의: soli97403@gmail.com',
   },
   en: {
     title: 'DariTerm User Manual', sub: 'Multi-protocol terminal and SFTP client — what happens in each situation',
-    meta: 'Version 1.0.0 (2026-11-21) · Publisher: YangHun Lee · 16 areas + shortcut appendix',
+    meta: 'Version 1.2.0 (2026-11-28) · Publisher: YangHun Lee · 22 areas + shortcut appendix',
     note: 'Each table reads "situation → what you do → what the app does". Screenshots use sample data.',
     foot: '© 2026 YangHun Lee (kai). All rights reserved. · Business license inquiries: soli97403@gmail.com',
   },
