@@ -3,21 +3,17 @@
 package storeupdate
 
 import (
-	"context"
 	"fmt"
-	"os/exec"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 	"unsafe"
-
-	"dariterm/internal/procutil"
 )
 
 // Windows 의 스토어 기능(Windows.Services.Store.StoreContext)은 WinRT API 라서, 이 앱의 다른 OS 대화상자와 같이
-// 숨긴 PowerShell 을 거쳐 부른다. 패키지된 앱이 띄운 자식 프로세스는 같은 패키지 신원을 물려받으므로
-// StoreContext 가 이 앱의 것으로 동작한다. 스크립트가 실패하면 오류를 돌려줄 뿐 앱에는 영향이 없다.
+// 숨긴 PowerShell 을 거쳐 부른다. 자식 프로세스는 그냥 띄우면 패키지 신원이 없으므로 runInPackage 로
+// 패키지 안에서 실행해야 StoreContext 가 이 앱의 것으로 동작한다 (D134). 스크립트가 실패하면 오류를 돌려줄 뿐 앱에는 영향이 없다.
 
 const (
 	// g_ciNoPackage 는 GetCurrentPackageFullName 이 "패키지된 앱이 아님"을 알리는 값(APPMODEL_ERROR_NO_PACKAGE)이다.
@@ -102,13 +98,9 @@ Write-Output ("STATE|{0}" -f $result.OverallState)
 
 // runScript 는 숨긴 PowerShell 로 스크립트를 실행하고 표준 출력 줄을 돌려준다.
 func runScript(szScript string, durTimeout time.Duration) ([]string, error) {
-	ctxRun, fnCancel := context.WithTimeout(context.Background(), durTimeout)
-	defer fnCancel()
-	pCmd := exec.CommandContext(ctxRun, "powershell.exe", "-NoProfile", "-NonInteractive", "-STA", "-Command", szScript)
-	procutil.HideConsole(pCmd)
-	bOut, errRun := pCmd.Output()
+	bOut, errRun := runInPackage("powershell.exe", []string{"-NoProfile", "-NonInteractive", "-STA", "-Command", szScript}, durTimeout)
 	if errRun != nil {
-		return nil, fmt.Errorf("storeupdate: %w", errRun)
+		return nil, errRun
 	}
 	var slLines []string
 	for _, szLine := range strings.Split(strings.ReplaceAll(string(bOut), "\r\n", "\n"), "\n") {

@@ -64,14 +64,14 @@ func (pService *Service) registerImport() {
 		return importer.ScanSecureCrt(szDir), nil
 	})
 	pRouter.Handle("import.scanXshell", func(slArgs []json.RawMessage) (any, error) {
-		// 경로(내보내기 파일 .xts 또는 세션 폴더)를 안 주면 내보내기 파일을 고르게 한다. 취소하면 null (spec/ipc.md).
+		// 경로(내보내기 파일 .xts, 세션 파일 .xsh, 세션 폴더)를 안 주면 파일을 고르게 한다. 취소하면 null (spec/ipc.md).
 		szPath := ""
 		if len(slArgs) > 0 {
 			szPath, _ = argString(slArgs, 0)
 		}
 		if szPath == "" {
 			szHome, _ := os.UserHomeDir()
-			szFilter := i18n.T("be.dlg.xshellFilter") + " (*.xts)|*.xts|*.*|*.*"
+			szFilter := i18n.T("be.dlg.xshellFilter") + " (*.xts, *.xsh)|*.xts;*.xsh|*.*|*.*"
 			szPicked, errPick := dialog.OpenFileOf(i18n.T("be.dlg.pickXshell"), szHome, szFilter)
 			if errPick != nil {
 				return nil, errPick
