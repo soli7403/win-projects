@@ -12,11 +12,14 @@ import { TerminalView, termHandles, pasteFromClipboard, targetsFor, selectAllInP
 import { forceImagePaste, uploadAndInsert } from '../state/paste';
 import { getBackend, errorMessage } from '../ipc/backend';
 import type { MenuItem } from '../state/ui';
+import type { SessionInfo } from '../ipc/types';
 import { isFileDrag, hoverStart, hoverEnd, dropFiles } from './fileDrag';
 // 이 파일은 t 를 지역 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
 import { relabel, t as tr } from '../i18n';
 import { useShortcutLabels } from '../state/shortcuts';
 import { ForwardsDialog } from './ForwardsDialog';
+import { KeyInstallDialog } from './KeyDialogs';
+import { HexSendDialog } from './HexSendDialog';
 import { failedCount } from '../lib/forwards';
 import { useSessionTraffic } from '../state/traffic';
 import { formatBytes, formatBytesCompact } from '../lib/format';
@@ -236,6 +239,13 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
   const forwards = info?.state === 'connected' ? info.forwards ?? [] : [];
   const fwdFailed = failedCount(forwards);
   const [fwdOpen, setFwdOpen] = useState(false);
+  const [keyOpen, setKeyOpen] = useState(false);
+  const [hexOpen, setHexOpen] = useState(false);
+  const invokeSession = (channel: string, args: unknown[] = []) => {
+    if (!info) return;
+    getBackend().invoke(channel, [info.id, ...args]).catch((e) => useApp.getState().pushToast({ kind: 'error', text: errorMessage(e) }));
+  };
+  const toolItems = paneToolItems(info, { invoke: invokeSession, openHex: () => setHexOpen(true), openKey: () => setKeyOpen(true) });
   const reconnect = async () => {
     if (!info) return;
     try {
@@ -257,6 +267,7 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
     { label: tr('sc.splitDown'), shortcut: scLabels.splitDown || undefined, disabled: !info || !canSplit, onSelect: () => void splitSame('col') },
     { label: info?.protocol === 'local' ? tr('pane.openFiles') : tr('pane.openSftp'), shortcut: scLabels.sftp || undefined, disabled: !info?.canSftp && info?.protocol !== 'local', onSelect: () => { focusPane(pane.id); useUi.getState().setSftpOpen(groupOf(tab), true); } },
     ...(forwards.length ? [{ label: tr('fwdinfo.menu', { count: forwards.length }), onSelect: () => setFwdOpen(true) }] : []),
+    ...toolItems,
     { label: tr('pane.reconnect'), disabled: !hasSession || entry?.info.state === 'connected', onSelect: () => void reconnect() },
     { separator: true },
     { label: tr('pane.close'), danger: true, onSelect: () => void closePane(pane.id) },
@@ -342,6 +353,12 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
         )}
         {total >= 2 && hasSession && <div className="pane-watermark">{relabel(info?.title)}</div>}
       </div>
+      {(keyOpen || hexOpen) && info && (
+        <div onMouseDown={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()}>
+          {keyOpen && <KeyInstallDialog sessionId={info.id} target={info.target} hostId={info.hostId} onClose={() => setKeyOpen(false)} />}
+          {hexOpen && <HexSendDialog sessionId={info.id} onClose={() => setHexOpen(false)} />}
+        </div>
+      )}
       {fwdOpen && info && forwards.length > 0 && (
         // 창 안의 클릭·우클릭이 칸으로 번지지 않게 막는다(칸 메뉴가 뜨거나 끌기가 시작되지 않게).
         <div onMouseDown={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()}>
@@ -350,4 +367,26 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
       )}
     </div>
   );
+}
+
+/** 칸 우클릭 메뉴의 세션 도구. 시리얼은 HEX·XMODEM(serial-tools.md, D163·D164), SSH 는 공개 키 등록(ssh-keys.md §3, D162).
+ * 연결된 동안만 누를 수 있다. */
+export function paneToolItems(
+  info: SessionInfo | undefined,
+  act: { invoke: (channel: string, args?: unknown[]) => void; openHex: () => void; openKey: () => void },
+): MenuItem[] {
+  const connected = info?.state === 'connected';
+  if (info?.protocol === 'serial') {
+    return [
+      { separator: true },
+      { label: info.hexView ? tr('serial.textView') : tr('serial.hexView'), disabled: !connected, onSelect: () => act.invoke('session.setHexView', [!info.hexView]) },
+      { label: tr('serial.hexSend'), disabled: !connected, onSelect: act.openHex },
+      { label: tr('serial.xmSend'), disabled: !connected, onSelect: () => act.invoke('session.xmodemSend', [{ oneK: false }]) },
+      { label: tr('serial.xmSend1k'), disabled: !connected, onSelect: () => act.invoke('session.xmodemSend', [{ oneK: true }]) },
+      { label: tr('serial.xmRecv'), disabled: !connected, onSelect: () => act.invoke('session.xmodemReceive') },
+      { label: tr('serial.xmCancel'), disabled: !connected, onSelect: () => act.invoke('session.xmodemCancel') },
+    ];
+  }
+  if (info?.protocol === 'ssh') return [{ label: tr('key.installMenu'), disabled: !connected, onSelect: act.openKey }];
+  return [];
 }

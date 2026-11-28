@@ -25,6 +25,13 @@ func (pSession *Session) Input(szText string) {
 	pSession.mtxData.Unlock()
 	if transport != nil {
 		pSession.cancelLoginOnInput(szText) // 사용자가 직접 입력하면 로그인 스크립트는 멈춘다 (session.md §5.1)
+		if pSession.xm.Load() != nil {
+			// XMODEM 전송 중: 입력을 보내지 않는다. Ctrl+C 는 전송 취소다 (serial-tools.md §3).
+			if strings.Contains(szText, "") {
+				pSession.XmodemCancel()
+			}
+			return
+		}
 		if pSession.zActive.Load() {
 			// ZMODEM 전송 중: 입력이 전송 데이터에 섞이면 안 되므로 보내지 않는다. Ctrl+C 는 전송 취소다 (zmodem.md).
 			if strings.Contains(szText, "\x03") {

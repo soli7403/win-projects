@@ -138,6 +138,17 @@ Add forwards in the Server editor > **Port forwarding** tab.
 - **Agent forwarding** (`ssh -A`): toggle in Server editor > Advanced (off by default). Lets `ssh` and `git` on the server use this PC's agent keys. Turn it on only for trusted servers.
 - Key files can be OpenSSH or PuTTY `.ppk`, without conversion.
 
+## Create an SSH key and add it to a server {#ssh-keys}
+
+How to switch a server from password to key sign-in.
+
+1. **Settings > Security > Saved accounts** > [Create SSH key]: enter a name, the type (Ed25519 recommended, RSA 4096 for older servers) and an optional passphrase, then [Create]. The key is stored encrypted in the vault.
+2. In a pane signed in to the server with a password, right-click > **Add public key to this server…**, pick the key and click [Add]. One line is added to `~/.ssh/authorized_keys` on the server (nothing changes if it is already there).
+3. Leave "Sign in to this server with this key from next time" on to switch the server settings to key sign-in as well.
+
+- [Public key] on a key account shows the public key line and fingerprint to copy (for other servers, GitHub and so on).
+- Adding runs `sh` on the server. If the server has no `sh` (for example Windows OpenSSH), copy the public key and add it yourself.
+
 ## Keeping sessions (tmux) {#tmux}
 
 Turn on Server editor > Advanced > **Keep session (tmux)** to work inside a tmux session on the server. Work keeps running when the pane closes or the connection drops, and reconnecting returns to that screen.
@@ -151,6 +162,16 @@ Connect to device consoles (routers, switches) over USB-serial. Set the protocol
 
 - Speed (default 9600), data bits, parity, stop bits, flow control (none, RTS/CTS, XON/XOFF), what Enter sends, local echo.
 - Input the device has not accepted for over 2 seconds is dropped with a notice.
+
+## Serial hex view, hex send and XMODEM {#serial-tools}
+
+In the right-click menu of a serial pane (while connected).
+
+- **Show as hex**: received bytes are shown as hex and text, like `01 41 FF  |.A.|` (16 bytes per line, each received chunk on a new line). Click again for "Show as text".
+- **Send hex…**: sends bytes written like `01 03 00 00 00 0A C5 CD` as they are (spaced, run together or `0x01,0x03`). The window stays open so you can send the same value again.
+- **Send with XMODEM / XMODEM-1K**: pick a file, then start receiving on the device (for example `loadx` in a boot loader). 1K uses 1024-byte blocks and is faster (only when the device uses CRC).
+- **Receive with XMODEM**: pick a name to save as, then start sending on the device. The padding (0x1A) at the end of the last block is removed.
+- During a transfer, keys are not sent to the device. Press **Ctrl+C** or "Cancel XMODEM transfer" to stop.
 
 ## File transfer (SFTP) {#sftp}
 

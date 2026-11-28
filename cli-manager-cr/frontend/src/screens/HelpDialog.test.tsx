@@ -54,7 +54,7 @@ describe('도움말 창 — 정렬·질문 카드·그림 (D156~D158)', () => {
     expect(screen.getByRole('button', { name: '가나다순' }).getAttribute('aria-pressed')).toBe('true');
     const sorted = listTitles();
     expect(sorted[0]).toBe('개인용·업무용과 업데이트');
-    expect(sorted.length).toBe(28);
+    expect(sorted.length).toBe(30);
     cleanup();
     render(<HelpDialog />);
     expect(listTitles()).toEqual(sorted);

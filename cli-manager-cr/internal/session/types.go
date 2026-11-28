@@ -42,6 +42,8 @@ type Info struct {
 	M_bKeepSession   bool    `json:"keepSession,omitempty"`
 	// M_slForwards 는 지금 연결에 설정한 포트 포워딩과 그 결과다 (session.md §1, D136). 없으면 싣지 않는다.
 	M_slForwards []ForwardInfo `json:"forwards,omitempty"`
+	// M_bHexView 는 받은 출력을 HEX 로 보이는 중인지다 (serial-tools.md §1, D163). 꺼져 있으면 싣지 않는다.
+	M_bHexView bool `json:"hexView,omitempty"`
 }
 
 // ForwardInfo 는 포트 포워딩 하나의 설정 결과다 (session.md §1 forwards).

@@ -49,6 +49,7 @@ type Session struct {
 	zActive      atomic.Bool    // ZMODEM 전송 중 (터미널 입력을 서버로 보내지 않는다)
 	zCancel      atomic.Bool    // 사용자가 ZMODEM 전송을 취소했다
 	traffic      trafficCounter // 세션을 연 뒤 연결에서 읽은·쓴 바이트 (traffic.go, D160)
+	xmodemState                 // HEX 보기·XMODEM 전송 (serialtools.go, D163·D164)
 }
 
 // G_cdurUserExitWindow 는 서버가 셸을 끝냈을 때 "사용자가 끝낸 것"으로 보는 시간 창이다 (session.md §4).
@@ -360,7 +361,9 @@ func (pSession *Session) readLoop(conn Transport, iGen int) {
 		if nRead > 0 && pSession.isCurrent(iGen) { // 닫힌 뒤 읽힌 조각은 버린다
 			bScreen := bBuf[:nRead]
 			bMangled := false
-			if pSession.zmodemOn() {
+			if pSession.feedXmodem(bScreen) {
+				bScreen = nil // XMODEM 전송 중: 받은 바이트는 모두 엔진의 것이다 (serial-tools.md §3)
+			} else if pSession.zmodemOn() {
 				bBefore, kind, bEngine := zDetector.Feed(bScreen)
 				if kind == zmodem.KindNone {
 					bMangled = zMangled.Feed(bScreen)
@@ -375,7 +378,9 @@ func (pSession *Session) readLoop(conn Transport, iGen int) {
 					}
 				}
 			}
-			if len(bScreen) > 0 {
+			if len(bScreen) > 0 && pSession.hexView.Load() {
+				pSession.writeOutput(HexDump(bScreen)) // HEX 보기: 글자로 풀지 않는다 (serial-tools.md §1)
+			} else if len(bScreen) > 0 {
 				szScreen := pSession.decoder.Decode(bScreen)
 				pSession.writeOutput(szScreen)
 				pSession.feedLogin(conn, szScreen, iGen)
@@ -388,6 +393,7 @@ func (pSession *Session) readLoop(conn Transport, iGen int) {
 			}
 		}
 		if errRead != nil {
+			pSession.stopXmodemOnClose()
 			if errors.Is(errRead, transport.ErrRemoteExited) {
 				pSession.onRemoteExited(iGen)
 				return

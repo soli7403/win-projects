@@ -255,6 +255,23 @@ export function createFakeBackend(): Backend {
       return undefined;
     },
     'session.reconnect': () => undefined,
+    // SSH 키(D162): 만들면 키 계정을 더하고, 공개 키는 고정된 시험용 값이다.
+    'key.generate': ([input]) => {
+      const i = (input ?? {}) as { name?: string; type?: string };
+      if (!i.name?.trim()) throw new Error('키 이름을 입력하세요');
+      const meta: CredMeta = { id: `k-${Date.now()}-${creds.length}`, name: i.name.trim(), kind: 'key', updatedAt: Date.now() };
+      creds.push(meta);
+      const kind = i.type === 'rsa' ? 'ssh-rsa' : 'ssh-ed25519';
+      return { cred: { ...meta }, publicKey: `${kind} AAAAC3NzaC1lZDI1NTE5AAAAIFAKEKEYFORTESTS user@pc`, fingerprint: 'SHA256:fakeFingerprintForTests' };
+    },
+    'key.publicKey': () => ({ publicKey: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFAKEKEYFORTESTS user@pc', fingerprint: 'SHA256:fakeFingerprintForTests' }),
+    'key.install': () => ({ status: 'added', fingerprint: 'SHA256:fakeFingerprintForTests' }),
+    // 시리얼 도구(D163·D164): 화면 확인용으로 상태만 바꾼다.
+    'session.setHexView': () => undefined,
+    'session.sendHex': ([, text]) => String(text ?? '').split(/[\s,]+/).filter(Boolean).length,
+    'session.xmodemSend': () => false,
+    'session.xmodemReceive': () => false,
+    'session.xmodemCancel': () => undefined,
     'session.ack': () => undefined,
     'session.forwards': () => [],
     'clip.writeText': () => undefined,

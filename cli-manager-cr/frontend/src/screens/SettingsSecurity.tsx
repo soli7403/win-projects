@@ -9,6 +9,7 @@ import { saveSettings } from '../state/settings';
 import type { CredMeta, Host } from '../ipc/types';
 import { NumberField, useSetting, Group } from './Settings';
 import { t } from '../i18n';
+import { KeyGenerateDialog, PublicKeyDialog, type PublicKeyInfo } from './KeyDialogs';
 
 export function SettingsSecurity() {
   const [autoLock] = useSetting('autoLockMinutes');
@@ -93,6 +94,9 @@ function ChangePassword() {
 
 function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: string; body: string; okText?: string; danger?: boolean }) => Promise<boolean> }) {
   const [creds, setCreds] = useState<CredMeta[]>([]);
+  // SSH 키 만들기 창, 공개 키 창(만든 직후면 공개 키를 함께 넘긴다) (settings.md §6.3, D162).
+  const [genOpen, setGenOpen] = useState(false);
+  const [pubFor, setPubFor] = useState<{ id: string; name: string; info?: PublicKeyInfo } | null>(null);
   const prompt = useUi((s) => s.prompt);
   const pushToast = useApp((s) => s.pushToast);
   const refreshStore = useApp((s) => s.refreshStore);
@@ -145,7 +149,10 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
 
   return (
     <div>
-      <div className="set-section-title">{t('cred.saved', { count: creds.length })}</div>
+      <div className="set-section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>{t('cred.saved', { count: creds.length })}</span>
+        <button className="btn small-btn" type="button" onClick={() => setGenOpen(true)}>{t('key.generate')}</button>
+      </div>
       <Group>
       {creds.length === 0 && <div className="cred-row"><span className="cred-sub">{t('cred.none')}</span></div>}
       {creds.map((c) => {
@@ -164,6 +171,7 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
                 {users.length > 0 ? t('cred.usedBy', { names: rest > 0 ? t('drop.andMore', { names: shown, count: rest }) : shown }) : t('cred.unused')}
               </div>
             </div>
+            {c.kind === 'key' && <button className="btn small-btn" type="button" onClick={() => setPubFor({ id: c.id, name: c.name })}>{t('key.showPublic')}</button>}
             <button className="btn small-btn" type="button" onClick={() => void rename(c)}>{t('cred.rename')}</button>
             <button className="icon-btn" type="button" aria-label={t('common.delete')} title={t('common.delete')} onClick={() => void remove(c)}>
               <Trash2 size={15} />
@@ -172,6 +180,18 @@ function CredList({ hosts, confirm }: { hosts: Host[]; confirm: (o: { title: str
         );
       })}
       </Group>
+      {genOpen && (
+        <KeyGenerateDialog
+          onCancel={() => setGenOpen(false)}
+          onDone={(k) => {
+            setGenOpen(false);
+            pushToast({ kind: 'ok', text: t('key.created', { name: k.cred.name }) });
+            void load();
+            setPubFor({ id: k.cred.id, name: k.cred.name, info: { publicKey: k.publicKey, fingerprint: k.fingerprint } });
+          }}
+        />
+      )}
+      {pubFor && <PublicKeyDialog credId={pubFor.id} name={pubFor.name} info={pubFor.info} onClose={() => setPubFor(null)} />}
     </div>
   );
 }

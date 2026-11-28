@@ -248,6 +248,8 @@ export interface SessionInfo {
   connectedAt?: number;
   message?: string;
   canSftp: boolean;
+  /** 받은 출력을 HEX 로 보이는 중 (serial-tools.md §1, D163). */
+  hexView?: boolean;
   keepSession?: boolean;
   /** 지금 연결에 설정한 포트 포워딩과 그 결과(session.md §1). 없으면 필드가 없다. */
   forwards?: ForwardInfo[];

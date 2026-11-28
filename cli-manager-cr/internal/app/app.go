@@ -79,6 +79,8 @@ func NewService(szDataDir string, emitter ipc.Emitter) (*Service, error) {
 	pService.registerStore()
 	pService.registerVault()
 	pService.registerCred()
+	pService.registerKeys()
+	pService.registerSerialTools()
 	pService.registerApp()
 	pService.registerLicense()
 	pService.registerSession()
