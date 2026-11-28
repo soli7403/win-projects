@@ -44,10 +44,10 @@ function patched(key: string): unknown[] {
 const keyBox = (name: string, keys: string) => screen.getByRole('button', { name: `${name}: ${keys}` });
 
 describe('설정 > 단축키 (D126)', () => {
-  it('구역 목록에 "입력" 다음으로 "단축키"가 있다 (10개)', () => {
+  it('구역 목록에 "입력" 다음으로 "단축키", 그다음 "출력 규칙"이 있다 (11개)', () => {
     openSection('shortcuts');
     const names = within(screen.getByRole('navigation')).getAllByRole('button').map((b) => b.textContent);
-    expect(names).toEqual(['화면', '입력', '단축키', '파일 전송', '연결', '로그', 'git 동기화', '보안', '백업', '정보']);
+    expect(names).toEqual(['화면', '입력', '단축키', '출력 규칙', '파일 전송', '연결', '로그', 'git 동기화', '보안', '백업', '정보']);
   });
 
   it('"정보"에는 단축키 표가 없다', async () => {
@@ -59,9 +59,10 @@ describe('설정 > 단축키 (D126)', () => {
     invoke.mockImplementation(async () => undefined);
   });
 
-  it('명령 34개가 기본 키와 함께 보이고, 터미널 안의 고정 키 3개는 따로 보인다', () => {
+  it('명령 37개가 기본 키와 함께 보이고, 터미널 안의 고정 키 3개는 따로 보인다', () => {
     const { container } = openSection('shortcuts');
-    expect(container.querySelectorAll('.sc-edit-row')).toHaveLength(34);
+    expect(container.querySelectorAll('.sc-edit-row')).toHaveLength(37);
+    expect(screen.getByText('마지막 매크로 다시 실행')).toBeTruthy();
     expect(keyBox('빠른 연결 / 명령', 'Ctrl+K')).toBeTruthy();
     expect(keyBox('이전 탭', 'Ctrl+Shift+Tab')).toBeTruthy();
     expect(keyBox('3번째 탭', 'Ctrl+3')).toBeTruthy();

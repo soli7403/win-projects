@@ -2,6 +2,7 @@
 import type { AuthType, CredMeta, Host, Protocol } from '../ipc/types';
 import { getBackend } from '../ipc/backend';
 import { JUMP_DIRECT, localOptions, PROXY_DEFAULT_PORT, type JumpDirect, type ProxyConf, type ProxyType, type SerialOpts } from './hostForm';
+import { cleanLoginScript } from './loginScript';
 import { t } from '../i18n';
 
 export interface SaveInput {
@@ -29,6 +30,10 @@ export interface SaveInput {
   termType: string;
   keepaliveSec: number;
   startupCommand?: string;
+  /** 로그인 스크립트 단계(빈 단계는 저장할 때 뺀다). */
+  loginScript?: Host['loginScript'];
+  /** 이 서버의 출력 트리거 규칙(D149). */
+  triggerRules?: Host['triggerRules'];
   keepSession: boolean;
   tmuxName: string;
   forwards: Host['forwards'];
@@ -39,7 +44,7 @@ export interface SaveInput {
   jumpChoice: string;
   jump: { host: string; port: number; username: string; authType: JumpDirect['authType']; password: string; keyText: string; passphrase: string };
   /** 프록시 경유: type 이 '' 이면 사용 안 함. password 는 새로 넣었을 때만 값이 있다. */
-  proxy?: { type: ProxyType | ''; host: string; port: number; username: string; password: string };
+  proxy?: { type: ProxyType | ''; host: string; port: number; username: string; password: string; command?: string };
   /** SSH 에이전트 전달. */
   agentForward?: boolean;
 }
@@ -120,7 +125,11 @@ export async function buildHostFromForm(i: SaveInput): Promise<Host> {
   // 2-1) 프록시 경유(SSH 만). 비밀번호를 새로 넣었으면 "{별칭} 프록시" 계정으로 저장한다.
   //      사용자 이름을 비우면 인증 없는 프록시로 보고 계정 연결을 끊는다.
   let proxy: ProxyConf | undefined;
-  if (i.protocol === 'ssh' && i.proxy && i.proxy.type && i.proxy.host.trim()) {
+  if (i.protocol === 'ssh' && i.proxy?.type === 'command') {
+    // 프록시 명령(D152): 주소·계정 없이 명령 줄만.
+    const command = (i.proxy.command ?? '').trim();
+    if (command) proxy = { type: 'command', host: '', port: 0, username: '', credentialId: null, command };
+  } else if (i.protocol === 'ssh' && i.proxy && i.proxy.type && i.proxy.host.trim()) {
     const prev = i.original?.proxy as ProxyConf | undefined;
     const user = i.proxy.username.trim();
     let proxyCred = user ? prev?.credentialId ?? null : null;
@@ -130,7 +139,7 @@ export async function buildHostFromForm(i: SaveInput): Promise<Host> {
     proxy = {
       type: i.proxy.type,
       host: i.proxy.host.trim(),
-      port: i.proxy.port || PROXY_DEFAULT_PORT[i.proxy.type],
+      port: i.proxy.port || PROXY_DEFAULT_PORT[i.proxy.type as Exclude<ProxyType, 'command'>],
       username: user,
       credentialId: proxyCred,
     };
@@ -176,6 +185,8 @@ export async function buildHostFromForm(i: SaveInput): Promise<Host> {
     termType: i.termType.trim() || 'xterm-256color',
     keepaliveSec: isNet ? Number(i.keepaliveSec) || 0 : base.keepaliveSec,
     startupCommand: i.startupCommand?.trim() || undefined,
+    loginScript: isLocal ? undefined : cleanLoginScript(i.loginScript),
+    triggerRules: cleanHostTriggers(i.triggerRules),
     keepSession: i.protocol === 'ssh' || isLocal ? i.keepSession : undefined,
     tmuxName: (i.protocol === 'ssh' || isLocal) && i.keepSession ? i.tmuxName.trim() || undefined : undefined,
     forwards: i.protocol === 'ssh' ? i.forwards : [],
@@ -186,6 +197,12 @@ export async function buildHostFromForm(i: SaveInput): Promise<Host> {
 }
 
 /** 서버 목록 반영(§1.5 8번): 새로 만들면 추가, 아니면 교체. */
+/** 서버별 트리거 규칙 저장값: 찾을 글자가 빈 규칙은 빼고, 하나도 없으면 undefined(필드를 남기지 않는다, D149). */
+export function cleanHostTriggers(rules: Host['triggerRules']): Host['triggerRules'] {
+  const out = (rules ?? []).filter((r) => r.pattern !== '');
+  return out.length ? out : undefined;
+}
+
 export function applyHost(hosts: Host[], next: Host, editing: boolean): Host[] {
   return editing ? hosts.map((h) => (h.id === next.id ? next : h)) : [...hosts, next];
 }

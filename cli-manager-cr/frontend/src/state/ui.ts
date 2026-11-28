@@ -45,13 +45,17 @@ export type EditorState =
   | { kind: 'host'; hostId: string | null; groupId: string | null }
   | { kind: 'folder'; folderId: string | null; parentId: string | null };
 
-export type SettingsSection = 'appearance' | 'input' | 'shortcuts' | 'files' | 'connection' | 'log' | 'sync' | 'security' | 'backup' | 'about';
+export type SettingsSection = 'appearance' | 'input' | 'shortcuts' | 'rules' | 'files' | 'connection' | 'log' | 'sync' | 'security' | 'backup' | 'about';
 
 interface UiState {
   /** 설정 화면(크게 보기 모달). section 은 열 때 보일 구역(기본 모양). */
   settings: { open: boolean; section: SettingsSection };
   openSettings: (section?: SettingsSection) => void;
   closeSettings: () => void;
+  /** 도움말 창(ui/help.md, D155). topic 은 처음 보일 항목 id, returnTo 는 닫을 때 다시 열 설정 구역. */
+  help: { open: boolean; topic: string | null; returnTo: SettingsSection | null };
+  openHelp: (topic?: string | null, returnTo?: SettingsSection | null) => void;
+  closeHelp: () => void;
   /** 서버 가져오기 대화상자 열림 여부. */
   importOpen: boolean;
   openImportDialog: () => void;
@@ -135,6 +139,12 @@ export const useUi = create<UiState>((set, get) => ({
   settings: { open: false, section: 'appearance' },
   openSettings: (section = 'appearance') => set({ settings: { open: true, section } }),
   closeSettings: () => set((s) => ({ settings: { ...s.settings, open: false } })),
+  help: { open: false, topic: null, returnTo: null },
+  // 설정에서 열면 설정을 닫고 도움말만 띄운다(창이 겹치면 Esc 가 둘을 함께 닫는다). 닫을 때 설정으로 돌아간다.
+  openHelp: (topic = null, returnTo = null) =>
+    set((s) => ({ help: { open: true, topic, returnTo }, settings: returnTo ? { ...s.settings, open: false } : s.settings })),
+  closeHelp: () =>
+    set((s) => ({ help: { open: false, topic: null, returnTo: null }, settings: s.help.returnTo ? { open: true, section: s.help.returnTo } : s.settings })),
   importOpen: false,
   openImportDialog: () => set({ importOpen: true }),
   closeImportDialog: () => set({ importOpen: false }),

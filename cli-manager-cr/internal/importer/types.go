@@ -37,6 +37,22 @@ type HostDraft struct {
 	M_slForwards       []Forward `json:"forwards,omitempty"`
 	M_pSerial          *Serial   `json:"serial,omitempty"`
 	M_szNotes          string    `json:"notes,omitempty"`
+	// M_slLoginScript 는 로그인 스크립트다 (data/store.md §3 loginScript, D150). 읽을 수 있는 가져오기만 채운다.
+	M_slLoginScript []LoginStep `json:"loginScript,omitempty"`
+	// M_pProxy 는 프록시 경유 설정이다 (지금은 ssh config 의 ProxyCommand 만, D152).
+	M_pProxy *ProxyDraft `json:"proxy,omitempty"`
+}
+
+// ProxyDraft 는 가져온 서버의 프록시 경유 설정이다 (data/store.md §3 proxy).
+type ProxyDraft struct {
+	M_szType    string `json:"type"`              // 지금은 command 만
+	M_szCommand string `json:"command,omitempty"` // 프록시 명령 줄 (%h %p %r)
+}
+
+// LoginStep 은 로그인 스크립트의 한 단계다 (data/store.md §3 loginScript).
+type LoginStep struct {
+	M_szExpect string `json:"expect"`
+	M_szSend   string `json:"send"`
 }
 
 // Candidate 는 가져오기 후보 한 건이다 (spec/import.md 머리).
@@ -46,7 +62,10 @@ type Candidate struct {
 	M_host      HostDraft `json:"host"`
 	M_szKeyFile string    `json:"keyFile,omitempty"`
 	M_szJumpVia string    `json:"jumpVia,omitempty"`
-	M_szNote    string    `json:"note,omitempty"`
+	// M_slJumpChain 은 경유 서버가 여러 단계일 때 바깥(이 PC 가 먼저 연결하는 서버)부터의 주소 목록이다.
+	// 마지막 항목이 M_szJumpVia 와 같다. 한 단계면 비어 있다 (ssh config 의 ProxyJump a,b, D153).
+	M_slJumpChain []string `json:"jumpChain,omitempty"`
+	M_szNote      string   `json:"note,omitempty"`
 	// M_slFolderPath 는 넣을 폴더 아래에 만들 하위 폴더 이름들이다 (SecureCRT·Xshell, import.md §1.5·§1.6).
 	M_slFolderPath []string `json:"folderPath,omitempty"`
 }

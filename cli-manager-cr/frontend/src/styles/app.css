@@ -241,6 +241,9 @@ button { font: inherit; color: inherit; }
 .statusbar .grow { flex: 1; }
 .statusbar .link-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 11.5px; padding: 0; }
 .badge-bc { background: var(--warn); color: #fff; font-weight: 700; padding: 0 6px; border-radius: 4px; }
+/* 매크로 녹화 중 표시(누르면 정지). 근거: spec/ui/shell.md §3 (D141). */
+.badge-rec { background: var(--danger); color: #fff; font: inherit; font-size: 11.5px; font-weight: 700; padding: 0 8px; border: none; border-radius: 4px; cursor: pointer; }
+.icon-btn.recording { background: var(--danger-soft); color: var(--danger); }
 
 /* 시작 화면 */
 .welcome { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
@@ -325,7 +328,41 @@ button { font: inherit; color: inherit; }
 .pane-head .pane-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pane-head .pane-target { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .pane-head .spacer { flex: 1; }
+/* 세션 전송량 (ui/panes.md §2.7, D160). 제목줄이 흔들리지 않게: 줄어들지 않는 고정 폭 칸 둘(화살표+숫자 6글자, 왼쪽 맞춤, 고정폭 숫자 —
+   남는 폭은 칸 뒤로 가서 화살표와 숫자가 떨어지지 않는다),
+   제목·주소가 먼저 말줄임으로 줄고, 칸 폭이 360px 아래로 좁아지면 통째로 숨긴다(컨테이너 질의). 끊긴 세션은 흐리게 마지막 값을 둔다. */
+.pane-head { container-type: inline-size; container-name: pane-head; }
+.pane-traffic {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; margin-right: 2px;
+  font-family: var(--mono, ui-monospace, Consolas, monospace); font-size: 10.5px; line-height: 1; color: var(--fg-3);
+  font-variant-numeric: tabular-nums; white-space: nowrap; user-select: none;
+}
+.pane-traffic .v { display: inline-block; min-width: 6ch; text-align: left; }
+.pane.focused .pane-traffic, .pane:hover .pane-traffic { color: var(--fg-2); }
+.pane-traffic.idle, .pane.focused .pane-traffic.idle { opacity: 0.55; }
+@container pane-head (max-width: 360px) { .pane-traffic { display: none; } }
 .env-tag { font-size: 10px; font-weight: 700; padding: 0 5px; border-radius: 4px; color: #fff; }
+/* 좁은 칸에서 환경 태그("운영")가 두 줄로 꺾이지 않게 — 제목·주소가 먼저 말줄임으로 준다 (D160 때 함께 고침). */
+.pane-head .env-tag { flex: none; white-space: nowrap; }
+/* 변수 값을 묻는 창의 미리 보기 (ui/sftp-snippets.md §4.3). */
+.vars-preview {
+  margin: 0; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg);
+  font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; max-height: 140px; overflow: auto;
+}
+/* 창 머리글의 포트 포워딩 버튼(아이콘 + 개수)과 정보 창의 표. 근거: spec/ui/panes.md §2.6 (D137). */
+.pane-fwd {
+  flex: none; display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; border-radius: 9px;
+  border: 1px solid var(--accent); background: transparent; color: var(--fg-2); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer;
+}
+.pane-fwd:hover { background: var(--hover); color: var(--fg); }
+.pane-fwd.failed { border-color: var(--warn); color: var(--warn); }
+.fwd-info { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.fwd-info th { text-align: left; font-weight: 600; color: var(--fg-2); padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.fwd-info td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.fwd-info td:nth-child(1), .fwd-info td:nth-child(2) { white-space: nowrap; }
+.fwd-info tr.failed td.mono { color: var(--fg-3); }
+.fwd-ok { color: var(--ok, #22c55e); }
+.fwd-bad { color: var(--danger); word-break: break-word; }
 .pane-body { flex: 1; min-height: 0; position: relative; display: flex; padding: 4px 2px 2px 8px; background: #0d1117; }
 .term-host { flex: 1; min-width: 0; min-height: 0; display: flex; }
 /* 세션별로 살려 두는 터미널 DOM(칸이 다시 그려질 때 떼었다 붙인다). */

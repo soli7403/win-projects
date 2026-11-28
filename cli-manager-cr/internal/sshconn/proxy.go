@@ -24,11 +24,12 @@ const (
 
 // Proxy 는 프록시 설정 하나다.
 type Proxy struct {
-	Type     string // http | socks5
+	Type     string // http | socks5 | command
 	Host     string
 	Port     int
 	Username string // 비면 인증 없이 시도한다
 	Password string
+	Command  string // Type 이 command 일 때 실행할 명령 줄 (%h %p %r, D152). 그때 Host·Port 는 쓰지 않는다
 }
 
 // ErrProxyAuth 는 프록시가 사용자 이름·비밀번호를 받아들이지 않았을 때의 오류다.
@@ -49,6 +50,9 @@ func (pConn *bufferedConn) Read(bBuf []byte) (int, error) {
 func dialDirect(tgt *Target, szAddr string) (net.Conn, error) {
 	if tgt.Proxy == nil {
 		return net.DialTimeout("tcp", szAddr, G_cdurConnectTimeout)
+	}
+	if tgt.Proxy.Type == G_cszProxyCommand {
+		return dialCommand(tgt.Proxy.Command, tgt.Host, tgt.Port, tgt.Username)
 	}
 	return dialViaProxy(tgt.Proxy, tgt.Host, tgt.Port, G_cdurConnectTimeout)
 }

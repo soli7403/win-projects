@@ -25,6 +25,8 @@ export interface ImportCandidate {
   host: ImportHost;
   keyFile?: string;
   jumpVia?: string;
+  /** 경유 서버가 여러 단계일 때 바깥부터의 주소 목록(ssh config 의 ProxyJump a,b, D153). 마지막이 jumpVia. */
+  jumpChain?: string[];
   note?: string;
   /** 넣을 폴더 아래에 만들 하위 폴더 이름들(SecureCRT·Xshell, spec/import.md §1.5·§1.6). */
   folderPath?: string[];

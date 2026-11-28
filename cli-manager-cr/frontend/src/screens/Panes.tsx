@@ -1,6 +1,6 @@
 // 칸·분할 화면. 근거: spec/ui/panes.md §2, §4(크기 조절), §7(끌어 놓기), spec/ui/tokens.md §3(칸·분할선).
-import { useRef, type DragEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
-import { Link, Rows2, Square, RotateCw, X, Search, ZoomIn, Image as ImageIcon } from 'lucide-react';
+import { useRef, useState, type DragEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
+import { Link, Rows2, Square, RotateCw, X, Search, ZoomIn, Image as ImageIcon, ArrowLeftRight } from 'lucide-react';
 import type { LayoutNode, PaneNode, SplitNode, Dir } from '../lib/layout';
 import { edgeToSplit, edgeZone, findPane, paneIds, type Edge } from '../lib/layout';
 import { groupOf, useWorkspace, type Tab } from "../state/workspace";
@@ -16,6 +16,10 @@ import { isFileDrag, hoverStart, hoverEnd, dropFiles } from './fileDrag';
 // 이 파일은 t 를 지역 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
 import { relabel, t as tr } from '../i18n';
 import { useShortcutLabels } from '../state/shortcuts';
+import { ForwardsDialog } from './ForwardsDialog';
+import { failedCount } from '../lib/forwards';
+import { useSessionTraffic } from '../state/traffic';
+import { formatBytes, formatBytesCompact } from '../lib/format';
 
 const PANE_MIME = 'application/x-dariterm-pane';
 /** 사이드바 서버 끌어 놓기 MIME(에이전트 B 가 dragstart 에서 설정). */
@@ -120,6 +124,24 @@ export function PaneZoomButton({ zoomed, onToggle }: { zoomed: boolean; onToggle
   );
 }
 
+/**
+ * 창 머리글의 세션 전송량 (ui/panes.md §2.7, D160): `↑ 보낸 것 ↓ 받은 것`, 세션을 연 뒤 누적.
+ * 이 세션의 값만 구독하므로 1초마다 값이 바뀌어도 이 작은 요소만 다시 그려진다.
+ * 제목줄이 흔들리지 않게: 화살표+숫자 칸은 고정 폭(6글자, 왼쪽 맞춤, 고정폭 숫자)이고 줄어들지 않으며, 칸이 좁으면 CSS 가 통째로 숨긴다.
+ */
+export function PaneTraffic({ sessionId, live }: { sessionId: string; live: boolean }) {
+  const traffic = useSessionTraffic(sessionId);
+  const nIn = traffic?.in ?? 0;
+  const nOut = traffic?.out ?? 0;
+  const title = tr('pane.trafficTitle', { out: formatBytes(nOut), in: formatBytes(nIn) });
+  return (
+    <span className={`pane-traffic${live ? '' : ' idle'}`} title={title} aria-label={title} data-testid="pane-traffic">
+      <span className="v" aria-hidden="true">↑{formatBytesCompact(nOut)}</span>
+      <span className="v" aria-hidden="true">↓{formatBytesCompact(nIn)}</span>
+    </span>
+  );
+}
+
 function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: number }) {
   const entry = useWorkspace((s) => (pane.sessionId ? s.sessions[pane.sessionId] : undefined));
   const focused = tab.focusedPane === pane.id;
@@ -210,6 +232,10 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
   };
 
   const hasSession = !!info;
+  // 포트 포워딩 표시(§2.6): 연결된 동안, 설정된 포워딩이 있을 때만 머리글에 버튼을 둔다.
+  const forwards = info?.state === 'connected' ? info.forwards ?? [] : [];
+  const fwdFailed = failedCount(forwards);
+  const [fwdOpen, setFwdOpen] = useState(false);
   const reconnect = async () => {
     if (!info) return;
     try {
@@ -230,6 +256,7 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
     { label: tr('sc.splitRight'), shortcut: scLabels.splitRight || undefined, disabled: !info || !canSplit, onSelect: () => void splitSame('row') },
     { label: tr('sc.splitDown'), shortcut: scLabels.splitDown || undefined, disabled: !info || !canSplit, onSelect: () => void splitSame('col') },
     { label: info?.protocol === 'local' ? tr('pane.openFiles') : tr('pane.openSftp'), shortcut: scLabels.sftp || undefined, disabled: !info?.canSftp && info?.protocol !== 'local', onSelect: () => { focusPane(pane.id); useUi.getState().setSftpOpen(groupOf(tab), true); } },
+    ...(forwards.length ? [{ label: tr('fwdinfo.menu', { count: forwards.length }), onSelect: () => setFwdOpen(true) }] : []),
     { label: tr('pane.reconnect'), disabled: !hasSession || entry?.info.state === 'connected', onSelect: () => void reconnect() },
     { separator: true },
     { label: tr('pane.close'), danger: true, onSelect: () => void closePane(pane.id) },
@@ -263,7 +290,19 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
         <span className="pane-title">{relabel(info?.title) ?? tr('pane.empty')}</span>
         {linkInput && hasSession && <Link size={12} color="var(--warn)" aria-label={tr('pane.broadcasting')} className="pane-link" />}
         {info && <span className="faint small pane-target">{info.target}</span>}
+        {forwards.length > 0 && (
+          <button
+            className={`pane-fwd${fwdFailed ? ' failed' : ''}`}
+            title={fwdFailed ? tr('fwdinfo.btnFailed', { count: forwards.length, failed: fwdFailed }) : tr('fwdinfo.btn', { count: forwards.length })}
+            aria-label={tr('fwdinfo.btn', { count: forwards.length })}
+            onClick={() => setFwdOpen(true)}
+          >
+            <ArrowLeftRight size={11} />
+            {forwards.length}
+          </button>
+        )}
         <span className="spacer" />
+        {info && <PaneTraffic sessionId={info.id} live={info.state === 'connected'} />}
         {hasSession && entry?.info.state !== 'connected' && (
           <button className="icon-btn small" title={tr('pane.reconnect')} aria-label={tr('pane.reconnect')} onClick={() => void reconnect()}><RotateCw size={12} /></button>
         )}
@@ -303,6 +342,12 @@ function PaneView({ tab, pane, total }: { tab: Tab; pane: PaneNode; total: numbe
         )}
         {total >= 2 && hasSession && <div className="pane-watermark">{relabel(info?.title)}</div>}
       </div>
+      {fwdOpen && info && forwards.length > 0 && (
+        // 창 안의 클릭·우클릭이 칸으로 번지지 않게 막는다(칸 메뉴가 뜨거나 끌기가 시작되지 않게).
+        <div onMouseDown={(e) => e.stopPropagation()} onContextMenu={(e) => e.stopPropagation()}>
+          <ForwardsDialog sessionId={info.id} title={relabel(info.title) ?? ''} target={info.target} forwards={forwards} onClose={() => setFwdOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }

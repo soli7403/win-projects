@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatDuration } from "../lib/format";
 import { findPane } from '../lib/layout';
-import { Code, Link, Lock as LockIcon, LockOpen, PanelLeft, Settings, Unlink } from 'lucide-react';
+import { CircleHelp, Code, Link, Lock as LockIcon, LockOpen, PanelLeft, Settings, Unlink } from 'lucide-react';
 import { TabBar, TAB_MIME } from './TabBar';
 import { PaneTree } from './Panes';
 import { useWorkspace, isSplit } from '../state/workspace';
@@ -17,6 +17,7 @@ import { useSplitDropHint } from './splitDropHint';
 import { SnippetsPanel } from './SnippetsPanel';
 import { Sidebar, SidebarResizer, useSidebarWidth } from './Sidebar';
 import { UpdateBadge } from '../ui/UpdateBadge';
+import { toggleRecording, useMacros } from '../state/macros';
 // 이 파일은 t 를 지역 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
 import { relabel, t as tr, type MsgId } from '../i18n';
 import { usageShort, useUsageView } from './LicensePanel';
@@ -72,6 +73,10 @@ export function ToolRow({ vertical }: { vertical: boolean }) {
       <button className="icon-btn" title={tr('settings.title')} aria-label={tr('settings.title')} onClick={() => useUi.getState().openSettings()}>
         <Settings size={16} />
       </button>
+      {/* 도움말 (ui/help.md §1, D155) */}
+      <button className="icon-btn" title={tr('help.title')} aria-label={tr('help.title')} onClick={() => useUi.getState().openHelp()}>
+        <CircleHelp size={16} />
+      </button>
     </div>
   );
 }
@@ -124,6 +129,8 @@ export function StatusBar() {
     }
   };
   const info = entry?.info;
+  // 매크로 녹화 중이면 어느 화면에서든 보이고 멈출 수 있게 상태 표시줄에 둔다 (terminal.md §11).
+  const recording = useMacros((s) => s.recording);
   const elapsed = info?.connectedAt ? formatDuration(now - info.connectedAt) : null;
   return (
     <footer className="statusbar">
@@ -143,6 +150,11 @@ export function StatusBar() {
         <span className="faint">{tr('shell.noSession')}</span>
       )}
       <span className="grow" />
+      {recording && (
+        <button className="badge-rec" title={tr('macro.recordStop', { count: recording.count })} onClick={toggleRecording}>
+          ● {tr('macro.recordingBadge', { count: recording.count })}
+        </button>
+      )}
       <UpdateBadge />
       {imageHint && <span className="faint" title={imageTip}>{tr('shell.imageHint')}</span>}
       {savedHost && <span className="faint">{savedHost.encoding.toUpperCase()}</span>}

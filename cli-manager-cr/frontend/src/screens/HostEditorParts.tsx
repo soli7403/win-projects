@@ -252,7 +252,7 @@ export function ProxyCard({
   hasSaved,
   jumpInUse,
 }: {
-  type: ProxyType;
+  type: Exclude<ProxyType, 'command'>;
   host: string;
   onHost: (v: string) => void;
   port: string;

@@ -33,19 +33,22 @@ type Session struct {
 	iRows        int
 	timerRetry   *time.Timer
 	timerStartup *time.Timer
+	timerLogin   *time.Timer  // 로그인 스크립트의 단계 시한 (session.md §5.1)
+	login        *loginRunner // 지금 연결에서 진행 중인 로그인 스크립트 (없으면 nil)
 	decoder      *Decoder
 	batcher      *Batcher
 	credit       *Credit // 출력 흐름 제어 (session.md §8)
 	logger       *Logger
-	dialing      bool        // Dialer 를 부르는 중 (같은 세션에 접속이 두 번 겹치지 않게)
-	waitUnlock   bool        // 앱 잠금 해제를 기다리는 중 (ErrWaitUnlock, session.md §4)
-	tConnected   time.Time   // 지금 연결이 맺어진 시각 (서버 종료가 사용자 종료인지 가릴 때 쓴다)
-	tLastInput   time.Time   // 지금 연결에 사용자 입력을 마지막으로 보낸 시각 (없으면 zero)
-	iLogSyncSec  int         // 세션 로그 내려 쓰기 주기(초). 설정을 바꾸면 SetLogSyncSec 으로 갱신된다
-	bLogStamp    bool        // 세션 로그 줄 앞에 시각을 붙일지. 설정을 바꾸면 SetLogTimestamp 로 갱신된다
-	bLogAnsi     bool        // 세션 로그에 ANSI 시퀀스를 그대로 쓸지. 설정을 바꾸면 SetLogAnsi 로 갱신된다
-	zActive      atomic.Bool // ZMODEM 전송 중 (터미널 입력을 서버로 보내지 않는다)
-	zCancel      atomic.Bool // 사용자가 ZMODEM 전송을 취소했다
+	dialing      bool           // Dialer 를 부르는 중 (같은 세션에 접속이 두 번 겹치지 않게)
+	waitUnlock   bool           // 앱 잠금 해제를 기다리는 중 (ErrWaitUnlock, session.md §4)
+	tConnected   time.Time      // 지금 연결이 맺어진 시각 (서버 종료가 사용자 종료인지 가릴 때 쓴다)
+	tLastInput   time.Time      // 지금 연결에 사용자 입력을 마지막으로 보낸 시각 (없으면 zero)
+	iLogSyncSec  int            // 세션 로그 내려 쓰기 주기(초). 설정을 바꾸면 SetLogSyncSec 으로 갱신된다
+	bLogStamp    bool           // 세션 로그 줄 앞에 시각을 붙일지. 설정을 바꾸면 SetLogTimestamp 로 갱신된다
+	bLogAnsi     bool           // 세션 로그에 ANSI 시퀀스를 그대로 쓸지. 설정을 바꾸면 SetLogAnsi 로 갱신된다
+	zActive      atomic.Bool    // ZMODEM 전송 중 (터미널 입력을 서버로 보내지 않는다)
+	zCancel      atomic.Bool    // 사용자가 ZMODEM 전송을 취소했다
+	traffic      trafficCounter // 세션을 연 뒤 연결에서 읽은·쓴 바이트 (traffic.go, D160)
 }
 
 // G_cdurUserExitWindow 는 서버가 셸을 끝냈을 때 "사용자가 끝낸 것"으로 보는 시간 창이다 (session.md §4).
@@ -170,6 +173,10 @@ func (pSession *Session) connect() {
 	pSession.info.M_i64ConnectedAt = tNow.UnixMilli()
 	pSession.tConnected = tNow
 	pSession.tLastInput = time.Time{}
+	pSession.info.M_slForwards = nil
+	if reporter, bOk := conn.(ForwardReporter); bOk {
+		pSession.info.M_slForwards = reporter.Forwards()
+	}
 	iCols, iRows := pSession.iCols, pSession.iRows
 	pSession.mtxData.Unlock()
 
@@ -181,8 +188,9 @@ func (pSession *Session) connect() {
 		pSession.writeOutput(G_cszClearLine)
 	}
 	pSession.publishState()
+	// 읽기 루프보다 먼저 건다: 접속 직후 이미 와 있는 출력(첫 프롬프트)을 스크립트가 놓치지 않게.
+	pSession.startLogin(conn, iGen)
 	go pSession.readLoop(conn, iGen)
-	pSession.scheduleStartup(iGen)
 }
 
 // onConnectFailed 는 접속 실패를 처리한다: 자동 재접속 규칙이 맞으면 예약, 아니면 error 상태.
@@ -347,6 +355,7 @@ func (pSession *Session) readLoop(conn Transport, iGen int) {
 			nRead, errRead = copy(bBuf, ahead.bData), ahead.err
 		} else {
 			nRead, errRead = conn.Read(bBuf)
+			pSession.traffic.addIn(nRead) // 닫힌 뒤 읽힌 조각도 연결에서 받은 것이다
 		}
 		if nRead > 0 && pSession.isCurrent(iGen) { // 닫힌 뒤 읽힌 조각은 버린다
 			bScreen := bBuf[:nRead]
@@ -367,7 +376,9 @@ func (pSession *Session) readLoop(conn Transport, iGen int) {
 				}
 			}
 			if len(bScreen) > 0 {
-				pSession.writeOutput(pSession.decoder.Decode(bScreen))
+				szScreen := pSession.decoder.Decode(bScreen)
+				pSession.writeOutput(szScreen)
+				pSession.feedLogin(conn, szScreen, iGen)
 			}
 			if bMangled && time.Since(tmMangledNotice) >= G_durZmodemMangledNotice {
 				// 시작 표시가 깨져서 왔다(tmux·screen 안): 전송은 될 수 없으니 까닭과 끝내는 방법을 알린다.
@@ -412,6 +423,6 @@ func (pSession *Session) scheduleStartup(iGen int) {
 		if iGen != pSession.gen || pSession.transport == nil {
 			return
 		}
-		_ = pSession.transport.Write(Encode(pSession.cfg.Encoding, pSession.cfg.StartupInput))
+		_ = pSession.send(pSession.transport, Encode(pSession.cfg.Encoding, pSession.cfg.StartupInput))
 	})
 }

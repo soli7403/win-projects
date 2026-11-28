@@ -33,6 +33,8 @@ export const DEFAULT_SETTINGS: Settings = {
   guardDangerousOnProd: true,
   dangerousPatterns: [...DANGEROUS_PATTERNS],
   highlightRules: [],
+  triggerRules: [],
+  triggerOsNotify: true,
   autoReconnect: true,
   autoLockMinutes: 15,
   uploadDir: '~/.dariterm/uploads',

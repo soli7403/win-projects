@@ -84,6 +84,47 @@ func MsgTmuxMissing() string {
 	return notice(G_cszColorWarn, i18n.T("be.session.tmuxMissing"))
 }
 
+// MsgForwards 는 포트 포워딩 설정 결과를 여러 줄로 적는다 (protocols.md §2.5, D136).
+// 첫 줄은 개수(실패가 있으면 실패 수도), 그 아래에 포워딩마다 한 줄씩 들여 쓴다. 듣는 주소는 폭을 맞춘다.
+// 실패한 줄은 빨강이다. 포워딩이 없으면 빈 글자다.
+func MsgForwards(slForwards []ForwardInfo) string {
+	if len(slForwards) == 0 {
+		return ""
+	}
+	iWidth, iFailed := 0, 0
+	for _, fw := range slForwards {
+		if iLen := len([]rune(fw.M_szBind)); iLen > iWidth {
+			iWidth = iLen
+		}
+		if fw.M_szError != "" {
+			iFailed++
+		}
+	}
+	szHead := i18n.T("be.fwd.header", "count", len(slForwards))
+	szColor := G_cszColorInfo
+	if iFailed > 0 {
+		szHead = i18n.T("be.fwd.headerFailed", "count", len(slForwards), "failed", iFailed)
+		szColor = G_cszColorWarn
+	}
+	var sb strings.Builder
+	sb.WriteString(notice(szColor, szHead))
+	for _, fw := range slForwards {
+		szPad := strings.Repeat(" ", iWidth-len([]rune(fw.M_szBind)))
+		szLine := "    " + fw.M_szType + "  " + fw.M_szBind + szPad
+		switch {
+		case fw.M_szError != "":
+			sb.WriteString(G_cszColorError + szLine + "  ✕  " + i18n.T("be.fwd.failed", "error", fw.M_szError) + G_cszColorReset + "\r\n")
+			continue
+		case fw.M_szType == "D":
+			szLine += "  →  " + i18n.T("be.fwd.socks")
+		default:
+			szLine += "  →  " + fw.M_szDest
+		}
+		sb.WriteString(G_cszColorInfo + szLine + G_cszColorReset + "\r\n")
+	}
+	return sb.String()
+}
+
 // g_slErrorRules 는 오류 문구 번역표다 (session.md §3). 위에서 아래 순서로 첫 일치를 쓴다.
 // szOutput 은 문구 키(locales/*.json, D75)이고 {raw} 자리에 원문을 넣는다.
 var g_slErrorRules = []struct {

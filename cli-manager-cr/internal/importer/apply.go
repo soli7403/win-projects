@@ -101,6 +101,7 @@ func ApplyCandidates(slCands []Candidate, szFolderName string, slGroups []map[st
 	slNewIds := []string{}
 	slNewHosts := []map[string]any{}
 	mapJumpPending := map[string]string{}
+	mapChainPending := map[string][]string{}
 	for _, cand := range slCands {
 		szHostGroup, errPath := ensureFolderPath(&out.Groups, szGroupId, cand.M_slFolderPath)
 		if errPath != nil {
@@ -114,6 +115,9 @@ func ApplyCandidates(slCands []Candidate, szFolderName string, slGroups []map[st
 		slNewIds = append(slNewIds, szHostId)
 		if cand.M_szJumpVia != "" {
 			mapJumpPending[szHostId] = cand.M_szJumpVia
+		}
+		if len(cand.M_slJumpChain) > 1 {
+			mapChainPending[szHostId] = cand.M_slJumpChain
 		}
 		out.Result.M_iHosts++
 	}
@@ -135,6 +139,14 @@ func ApplyCandidates(slCands []Candidate, szFolderName string, slGroups []map[st
 			continue
 		}
 		slNewHosts[iIndex]["jumpHostId"] = szTarget
+	}
+
+	// 여러 단계(ProxyJump a,b): 각 단계 서버가 바로 앞 단계를 경유 서버로 삼게 잇는다 (D153).
+	for _, mapHost := range slNewHosts {
+		szSelf, _ := mapHost["id"].(string)
+		if slChain, bChain := mapChainPending[szSelf]; bChain {
+			linkJumpChain(slChain, slNewHosts, out.Hosts, szSelf, &out.Result)
+		}
 	}
 
 	out.Hosts = append(out.Hosts, slNewHosts...)
@@ -183,6 +195,50 @@ func ensureFolderPath(pGroups *[]map[string]any, szBaseId string, slPath []strin
 		szCurrent = szNewId
 	}
 	return szCurrent, nil
+}
+
+// linkJumpChain 은 경유 서버 체인(바깥부터의 주소)의 각 단계를 바로 앞 단계로 잇는다 (D153).
+// 이번에 새로 만든 서버만 바꾼다: 이미 있던 서버는 건드리지 않고, 다른 경유 서버가 정해져 있으면 그대로 둔다.
+// 잇지 못한 단계는 건너뛰기 목록에 남긴다.
+func linkJumpChain(slChain []string, slNewHosts []map[string]any, slOldHosts []map[string]any, szSelf string, pResult *ApplyResult) {
+	// findAny 는 새 서버 → 기존 서버 순으로 주소가 같은 서버(체인을 가진 서버 자신 제외)를 찾는다.
+	findAny := func(szAddr string) (mapFound map[string]any, bFound bool, bNew bool) {
+		for _, mapHost := range slNewHosts {
+			szId, _ := mapHost["id"].(string)
+			if szHost, _ := mapHost["host"].(string); szHost == szAddr && szId != szSelf {
+				return mapHost, true, true
+			}
+		}
+		for _, mapHost := range slOldHosts {
+			szId, _ := mapHost["id"].(string)
+			if szHost, _ := mapHost["host"].(string); szHost == szAddr && szId != szSelf {
+				return mapHost, true, false
+			}
+		}
+		return nil, false, false
+	}
+	for iHop := len(slChain) - 1; iHop >= 1; iHop-- {
+		mapHop, bHop, bHopNew := findAny(slChain[iHop])
+		if !bHop {
+			continue // 대상 서버를 이을 때 이미 "찾지 못함"을 남겼거나, 중간 단계가 목록에 없다
+		}
+		szName, _ := mapHop["alias"].(string)
+		mapPrev, bPrev, _ := findAny(slChain[iHop-1])
+		if !bPrev {
+			pResult.M_slSkipped = append(pResult.M_slSkipped, i18n.T("be.imp.jumpMissing", "name", szName, "jump", slChain[iHop-1]))
+			continue
+		}
+		szPrevId, _ := mapPrev["id"].(string)
+		szCur, _ := mapHop["jumpHostId"].(string)
+		switch {
+		case szCur == szPrevId:
+			// 이미 앞 단계로 이어져 있다
+		case !bHopNew || szCur != "":
+			pResult.M_slSkipped = append(pResult.M_slSkipped, i18n.T("be.imp.jumpChainKept", "name", szName, "jump", slChain[iHop-1]))
+		default:
+			mapHop["jumpHostId"] = szPrevId
+		}
+	}
 }
 
 // findHostByAddress 는 주소가 같은 서버 id 를 찾는다 (자기 자신 제외).
@@ -295,6 +351,22 @@ func buildHost(cand Candidate, szGroupId string, iSort int, keys KeyStore, pResu
 	}
 	if host.M_szNotes != "" {
 		mapHost["notes"] = host.M_szNotes
+	}
+	// 프록시 명령 (D152, ssh config 의 ProxyCommand): SSH 만. 주소·계정 없이 명령 줄만.
+	if host.M_pProxy != nil && host.M_pProxy.M_szType == "command" && host.M_pProxy.M_szCommand != "" && szProtocol == "ssh" {
+		mapHost["proxy"] = map[string]any{"type": "command", "command": host.M_pProxy.M_szCommand, "host": "", "port": 0, "username": "", "credentialId": nil}
+	}
+	// 로그인 스크립트 (D150): 단계마다 새 id. 로컬 터미널에는 두지 않는다.
+	if len(host.M_slLoginScript) > 0 && szProtocol != "local" {
+		slSteps := []map[string]any{}
+		for _, step := range host.M_slLoginScript {
+			szStepId, errStep := uid.New()
+			if errStep != nil {
+				return nil, "", errStep
+			}
+			slSteps = append(slSteps, map[string]any{"id": szStepId, "expect": step.M_szExpect, "send": step.M_szSend})
+		}
+		mapHost["loginScript"] = slSteps
 	}
 	if host.M_pSerial != nil {
 		mapHost["serial"] = map[string]any{

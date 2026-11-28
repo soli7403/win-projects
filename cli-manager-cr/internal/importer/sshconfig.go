@@ -121,14 +121,32 @@ func buildSSHCandidate(szName string, pBlock *sshBlock, mapHostNames map[string]
 		}
 	}
 	if szProxy := pBlock.mapOpts["proxyjump"]; szProxy != "" && !strings.EqualFold(szProxy, "none") {
-		szFirst := strings.TrimSpace(strings.Split(szProxy, ",")[0])
+		// 쉼표로 이은 여러 단계는 앞(이 PC 가 먼저 연결하는 서버)부터 차례로 거친다 (D153).
+		// 대상 서버는 마지막 단계를 경유 서버로 삼고, 각 단계는 바로 앞 단계를 경유 서버로 삼는다.
+		slChain := []string{}
+		for _, szHop := range strings.Split(szProxy, ",") {
+			if szHop = strings.TrimSpace(szHop); szHop == "" {
+				continue
+			}
+			if szResolved, bSame := mapHostNames[szHop]; bSame {
+				slChain = append(slChain, szResolved)
+			} else {
+				slChain = append(slChain, bareHost(szHop))
+			}
+		}
 		cand.M_szNote = "ProxyJump " + szProxy
 		host.M_szNotes = cand.M_szNote
-		if szResolved, bSame := mapHostNames[szFirst]; bSame {
-			cand.M_szJumpVia = szResolved
-		} else {
-			cand.M_szJumpVia = bareHost(szFirst)
+		if len(slChain) > 0 {
+			cand.M_szJumpVia = slChain[len(slChain)-1]
 		}
+		if len(slChain) > 1 {
+			cand.M_slJumpChain = slChain
+		}
+	} else if szCommand := pBlock.mapOpts["proxycommand"]; szCommand != "" && !strings.EqualFold(szCommand, "none") {
+		// ProxyCommand 는 서버의 프록시 명령으로 옮긴다 (D152). ProxyJump 가 있으면 그것이 이긴다 (OpenSSH 와 같음).
+		host.M_pProxy = &ProxyDraft{M_szType: "command", M_szCommand: szCommand}
+		cand.M_szNote = "ProxyCommand " + szCommand
+		host.M_szNotes = cand.M_szNote
 	}
 	cand.M_host = host
 	return cand

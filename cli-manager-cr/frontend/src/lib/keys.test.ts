@@ -65,12 +65,23 @@ describe('기본 단축키 (shortcuts.md §2)', () => {
     expect(comboOf(key({ code: 'KeyK', ctrlKey: true, altKey: true, shiftKey: true }))).toBe('Ctrl+Alt+Shift+KeyK');
   });
 
-  it('기본 키는 서로 겹치지 않고 모두 고를 수 있는 조합이다', () => {
-    const keys = SHORTCUT_COMMANDS.map((c) => c.keys);
+  it('기본 키는 서로 겹치지 않고 모두 고를 수 있는 조합이다 (매크로 명령 3개는 기본 키가 없다)', () => {
+    const blank = SHORTCUT_COMMANDS.filter((c) => c.keys === '').map((c) => c.id);
+    expect(blank).toEqual(['macroRecord', 'macroReplay', 'macroStop']);
+    const keyed = SHORTCUT_COMMANDS.filter((c) => c.keys !== '');
+    const keys = keyed.map((c) => c.keys);
     expect(new Set(keys).size).toBe(keys.length);
     expect(new Set(SHORTCUT_COMMANDS.map((c) => c.id)).size).toBe(SHORTCUT_COMMANDS.length);
-    for (const c of SHORTCUT_COMMANDS) expect(comboProblem(c.keys), c.id).toBeNull();
-    expect(SHORTCUT_COMMANDS).toHaveLength(34);
+    for (const c of keyed) expect(comboProblem(c.keys), c.id).toBeNull();
+    expect(SHORTCUT_COMMANDS).toHaveLength(37);
+  });
+
+  it('기본 키가 없는 명령도 설정에서 키를 주면 동작하고, 빈 키는 어떤 조합에도 걸리지 않는다', () => {
+    const map = buildKeyMap(true, { macroReplay: 'Ctrl+Alt+KeyM' });
+    expect(shortcutFor(key({ code: 'KeyM', ctrlKey: true, altKey: true }), map)?.action).toBe('macroReplay');
+    expect([...map.keys()].every((k) => k !== '')).toBe(true);
+    const plain = buildKeyMap(true, {});
+    expect([...plain.values()].some((c) => c.id === 'macroRecord' || c.id === 'macroReplay' || c.id === 'macroStop')).toBe(false);
   });
 });
 
@@ -158,6 +169,7 @@ describe('전체 끄기 (shortcuts.md §5)', () => {
     const off = buildKeyMap(false, { find: 'Ctrl+Alt+KeyF' });
     expect(off.size).toBe(0);
     for (const c of SHORTCUT_COMMANDS) {
+      if (c.keys === '') continue; // 기본 키가 없는 명령(매크로, D147)
       const parts = c.keys.split('+');
       const code = parts.pop()!;
       const e = key({ code, ctrlKey: parts.includes('Ctrl'), altKey: parts.includes('Alt'), shiftKey: parts.includes('Shift') });

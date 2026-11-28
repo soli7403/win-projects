@@ -50,7 +50,7 @@ func (pSession *Session) cancelZmodem(conn Transport) {
 	if pSession.zCancel.Swap(true) {
 		return // 이미 취소했다
 	}
-	_ = conn.Write(zmodem.AbortSequence())
+	_ = pSession.send(conn, zmodem.AbortSequence())
 }
 
 // runZmodem 은 전송 하나를 끝까지 돌린다. 읽기 루프 고루틴에서 부른다.
@@ -66,7 +66,7 @@ func (pSession *Session) runZmodem(conn Transport, kind zmodem.Kind, bEngine []b
 	pView := &zmodemView{pSession: pSession, bSending: bSending}
 	opts := zmodem.Options{Cancelled: pSession.zCancel.Load, Progress: pView.onProgress}
 	// 엔진은 연결을 바로 읽지 않고 zmodemLink 를 거친다: 서버가 응답 없이 멈춰도 시한이 지나면 끝나고, Ctrl+C 가 곧바로 듣는다.
-	pLink := &zmodemLink{conn: conn, fnCancel: pSession.zCancel.Load}
+	pLink := &zmodemLink{conn: conn, fnCancel: pSession.zCancel.Load, pTraffic: &pSession.traffic}
 
 	var result zmodem.Result
 	var errRun error
@@ -97,7 +97,7 @@ func (pSession *Session) runZmodem(conn Transport, kind zmodem.Kind, bEngine []b
 	}
 	if errors.Is(errRun, errZmodemStalled) {
 		// 서버가 시한 동안 아무것도 보내지 않았다: 연결은 살아 있으므로 끊김으로 보지 않고, 중단을 알린 뒤 전송만 끝낸다.
-		_ = conn.Write(zmodem.AbortSequence())
+		_ = pSession.send(conn, zmodem.AbortSequence())
 		errRun = errZmodemStalled
 	}
 	var errStream *zmodem.StreamError
@@ -173,18 +173,28 @@ type zmodemLink struct {
 	fnCancel  func() bool
 	chPending chan readResult // 걸어 둔 읽기. 없으면 nil
 	bRest     []byte          // 읽었지만 아직 넘기지 않은 바이트
+	pTraffic  *trafficCounter // 세션 전송량 (D160). nil 이면 세지 않는다
 }
 
-func (pLink *zmodemLink) Write(bData []byte) error { return pLink.conn.Write(bData) }
+func (pLink *zmodemLink) Write(bData []byte) error {
+	errWrite := pLink.conn.Write(bData)
+	if errWrite == nil && pLink.pTraffic != nil {
+		pLink.pTraffic.addOut(len(bData))
+	}
+	return errWrite
+}
 
 // wait 는 읽기 하나의 결과를 durWait 동안 기다린다. 시간 안에 오지 않으면 false 이고 읽기는 걸린 채 남는다.
 func (pLink *zmodemLink) wait(durWait time.Duration) (readResult, bool) {
 	if pLink.chPending == nil {
 		chRead := make(chan readResult, 1)
-		conn := pLink.conn
+		conn, pTraffic := pLink.conn, pLink.pTraffic
 		go func() {
 			bBuf := make([]byte, 32*1024)
 			nRead, errRead := conn.Read(bBuf)
+			if pTraffic != nil {
+				pTraffic.addIn(nRead)
+			}
 			chRead <- readResult{bData: bBuf[:nRead], err: errRead}
 		}()
 		pLink.chPending = chRead

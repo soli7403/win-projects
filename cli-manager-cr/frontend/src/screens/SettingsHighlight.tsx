@@ -1,4 +1,4 @@
-// 설정 1 · 화면의 "키워드 강조" 부분. 근거: spec/ui/settings.md §1 키워드 강조, spec/behavior/terminal.md §9 (D113).
+// 설정 · 출력 규칙의 "키워드 강조" 부분(D140 에서 "화면" 구역에서 옮김). 근거: spec/ui/settings.md §2b, spec/behavior/terminal.md §9 (D113).
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { HighlightRule } from '../ipc/types';

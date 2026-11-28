@@ -7,6 +7,7 @@ import {
   sessionsIn, splitPane, swapSessions, type Dir, type LayoutNode, type PaneNode,
 } from '../lib/layout';
 import { useApp } from './app';
+import { useTraffic } from './traffic';
 import { relabel, t } from '../i18n';
 import { ackOutput } from '../lib/outputAck';
 
@@ -271,6 +272,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
 
   removeSession(sessionId) {
     dropDeferred(sessionId);
+    useTraffic.getState().remove(sessionId);
     set((s) => {
       const sessions = { ...s.sessions };
       delete sessions[sessionId];

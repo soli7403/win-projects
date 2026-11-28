@@ -7,6 +7,8 @@ import { useUi } from './state/ui';
 import { useRequests, type UiRequest } from './state/requests';
 import { useWorkspace } from './state/workspace';
 import { subscribeSessionEvents, runShortcut } from './state/actions';
+import { startTriggers } from './state/triggers';
+import { startMacros } from './state/macros';
 import { keyCapture } from './lib/keys';
 import { activeShortcut } from './state/shortcuts';
 import { ContextMenuHost } from './ui/ContextMenu';
@@ -23,6 +25,7 @@ import { startImportSuggestion } from "./state/importSuggest";
 import { subscribeUpdateEvents, useUpdate } from './state/update';
 import { Settings } from './screens/Settings';
 import { ImportDialog } from './screens/ImportDialog';
+import { HelpDialog } from './screens/HelpDialog';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { isLang, useLang, useT } from './i18n';
 import { setOsLanguage, startLanguageSync } from './state/language';
@@ -46,6 +49,7 @@ export function App() {
   const recoveryPending = useApp((s) => s.recoveryPending);
   const theme = useApp((s) => s.store?.settings.theme ?? 'dark');
   const editor = useUi((s) => s.editor);
+  const help = useUi((s) => s.help);
   const tabCount = useWorkspace((s) => s.tabs.length);
 
   useEffect(() => {
@@ -58,6 +62,8 @@ export function App() {
       offs = [
         subscribeAppEvents(),
         subscribeSessionEvents(),
+        startTriggers(),
+        startMacros(),
         subscribeUpdateEvents(),
         b.on('ui.request', (r: UiRequest) => useRequests.getState().push(r)),
       ];
@@ -122,6 +128,7 @@ export function App() {
       {!locked && <RequestDialogs />}
       {!locked && <ErrorBoundary variant="dialog" label={t('settings.title')} onDismiss={() => useUi.getState().closeSettings()}><Settings /></ErrorBoundary>}
       {!locked && <ErrorBoundary variant="dialog" label={t('import.title')} onDismiss={() => useUi.getState().closeImportDialog()}><ImportDialog /></ErrorBoundary>}
+      {!locked && help.open && <ErrorBoundary variant="dialog" label={t('help.title')} onDismiss={() => useUi.getState().closeHelp()}><HelpDialog key={help.topic ?? ''} /></ErrorBoundary>}
       <DialogHost />
       <ContextMenuHost />
       <Toasts />

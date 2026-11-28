@@ -1,5 +1,6 @@
 // 공통 동작: 서버 열기(새 탭·칸), 단축키 실행, 세션 이벤트 연결. 근거: spec/behavior/shortcuts.md, spec/ui/panes.md §4·§9, spec/ipc.md §4.
 import { getBackend, errorMessage } from '../ipc/backend';
+import { emitOutput } from '../lib/outputHub';
 import type { SessionInfo } from '../ipc/types';
 import { useApp } from './app';
 import { useUi } from './ui';
@@ -8,6 +9,8 @@ import { findPane, paneIds, type Dir, type LayoutNode } from '../lib/layout';
 import { sameTargetRequest } from '../lib/sameTarget';
 import type { ShortcutAction } from '../lib/keys';
 import { focusActiveTerminal } from '../screens/TerminalView';
+import { replayLastMacro, stopMacrosOnTargets, toggleRecording } from './macros';
+import { useTraffic } from './traffic';
 import { t } from '../i18n';
 
 /** 포커스 그룹(나뉘지 않았으면 전체)의 탭 목록. */
@@ -202,6 +205,15 @@ export function runShortcut(action: ShortcutAction, arg?: number | 'last' | 'up'
       // 창 최대화 ↔ 복원 토글은 백엔드 채널이 담당한다.
       void getBackend().invoke('app.toggleFullScreen').catch(() => undefined);
       return;
+    case 'macroRecord':
+      toggleRecording();
+      return;
+    case 'macroReplay':
+      replayLastMacro();
+      return;
+    case 'macroStop':
+      stopMacrosOnTargets();
+      return;
     default:
       return;
   }
@@ -216,7 +228,15 @@ export function subscribeSessionEvents(): () => void {
       ws.upsertSession(info);
       if (info.state === 'error' && info.message) useApp.getState().pushToast({ kind: 'error', text: info.message });
     }),
-    b.on('session.data', (id: string, text: string) => useWorkspace.getState().writeOutput(id, text)),
+    // 창 머리글의 세션별 전송량: 백엔드가 1초마다 바뀐 세션만 보낸다 (D160).
+    b.on('session.traffic', (changed: Record<string, { in: number; out: number }>) => {
+      useTraffic.getState().apply(changed);
+    }),
+    b.on('session.data', (id: string, text: string) => {
+      useWorkspace.getState().writeOutput(id, text);
+      // 출력을 지켜보는 쪽(출력 트리거·매크로)에도 알린다 (terminal.md §10.1).
+      emitOutput(id, text);
+    }),
   ];
   return () => offs.forEach((off) => off());
 }

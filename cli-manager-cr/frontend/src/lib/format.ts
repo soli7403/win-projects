@@ -40,3 +40,21 @@ export function formatDuration(ms: number): string {
   const s = total % 60;
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
+
+const COMPACT_UNITS = ['K', 'M', 'G', 'T', 'P'];
+
+/**
+ * 좁은 자리(창 머리글)용 바이트 표기: **늘 5글자 이하**라 값이 바뀌어도 폭이 거의 그대로다 (spec/ui/panes.md §2.7, D160).
+ * 1000 미만 `n B`, 그 위로는 1024 단위로 나눠 10 미만이면 소수 한 자리(`9.9 K`), 아니면 정수(`512 M`).
+ * 정수로 반올림해 1000 이 되면 다음 단위로 올린다(`1000 K` 대신 `1.0 M`).
+ */
+export function formatBytesCompact(n: number): string {
+  if (!Number.isFinite(n) || n < 1000) return `${Math.max(0, Math.floor(Number.isFinite(n) ? n : 0))} B`;
+  let v = n;
+  for (const unit of COMPACT_UNITS) {
+    v /= 1024;
+    if (v < 9.95) return `${v.toFixed(1)} ${unit}`;
+    if (Math.round(v) < 1000) return `${Math.round(v)} ${unit}`;
+  }
+  return `${Math.round(v)} ${COMPACT_UNITS[COMPACT_UNITS.length - 1]}`;
+}

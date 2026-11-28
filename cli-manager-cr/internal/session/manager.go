@@ -12,6 +12,7 @@ type Manager struct {
 	mtxData     sync.Mutex
 	mapSessions map[string]*Session
 	emit        EmitFunc
+	traffic     trafficLoop // 세션 전송량 주기 보고 (traffic.go, D160)
 }
 
 // NewManager 는 빈 세션 관리자를 만든다.

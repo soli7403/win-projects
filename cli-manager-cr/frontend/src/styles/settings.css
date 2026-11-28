@@ -36,6 +36,8 @@
 .cred-row + .cred-row { border-top: 1px solid var(--border); }
 .cred-row .cred-main { flex: 1; min-width: 0; }
 .cred-row .cred-sub { font-size: 11.5px; color: var(--fg-3); }
+/* 출력 트리거 규칙 한 건(두 줄: 찾을 글자 / 할 일). 근거: spec/ui/settings.md §2b. */
+.trig-row { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
 .pill-soft { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 10px; background: var(--panel-2); color: var(--fg-2); margin-left: 6px; }
 .iconlike { display: inline-flex; align-items: center; gap: 6px; }
 .set-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
@@ -67,3 +69,64 @@
 .import-wrap { border: 1px solid var(--border); border-radius: 8px; max-height: 240px; overflow: auto; }
 .import-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); }
 .update-badge { border: none; background: transparent; color: var(--accent); cursor: pointer; font: inherit; font-size: 12px; padding: 0 8px; }
+
+/* 설정 왼쪽 열: 구역 목록(nav) + 그 아래 '이 구역 도움말' 버튼 (D155) */
+.set-side { display: flex; flex-direction: column; flex: none; border-right: 1px solid var(--border); }
+.set-side .set-nav { border-right: 0; flex: 1; }
+.set-nav-help { margin: auto 10px 10px; color: var(--fg-2); }
+
+/* 도움말 창 (D155): 왼쪽 검색·항목 목록, 오른쪽 설명 */
+/* 도움말 카드: 크기 조절(D159). 기본 820 × 80vh, 손잡이로 바꾼 크기는 인라인 width/height. 본문 높이는 카드를 따른다. */
+.modal.help-modal { position: relative; width: 820px; height: 80vh; min-width: 600px; min-height: 380px; max-width: calc(100vw - 40px); max-height: calc(92vh - 16px); }
+.modal.help-modal .modal-body { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.help-wrap { display: flex; min-height: 0; flex: 1; margin: -4px -18px -16px; }
+.help-resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize; border-bottom-right-radius: 12px; touch-action: none;
+  background: linear-gradient(135deg, transparent 0 50%, var(--fg-3) 50% 56%, transparent 56% 68%, var(--fg-3) 68% 74%, transparent 74%); opacity: 0.7; }
+.help-resize:hover, .help-resize:focus-visible { opacity: 1; outline: none; background-color: var(--hover); }
+.help-side { width: 250px; flex: none; padding: 10px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.help-list { display: flex; flex-direction: column; gap: 2px; overflow: auto; min-height: 0; }
+.help-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 6px 9px; border: 0; border-radius: 6px; background: none; color: var(--fg-2); cursor: pointer; font: inherit; }
+.help-item:hover { background: var(--hover); color: var(--fg); }
+.help-item.on { background: var(--active); color: var(--fg); font-weight: 600; }
+.help-item-title { font-size: 13px; }
+.help-item-snip { font-weight: 400; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.help-main { flex: 1; min-width: 0; min-height: 0; overflow: auto; padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 10px; }
+.help-body { font-size: 13px; line-height: 1.65; }
+.help-body h2 { font-size: 17px; margin: 0 0 12px; }
+.help-body h3 { font-size: 14px; margin: 16px 0 8px; }
+.help-body p { margin: 0 0 10px; }
+.help-body ul, .help-body ol { margin: 0 0 10px; padding-left: 22px; }
+.help-body li { margin: 2px 0; }
+.help-body code { font-family: var(--mono, ui-monospace, monospace); font-size: 12px; padding: 1px 5px; border-radius: 4px; background: var(--hover); }
+.help-body pre { margin: 0 0 10px; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+.help-body .notice { margin: 0 0 10px; }
+.help-table { width: 100%; border-collapse: collapse; margin: 0 0 12px; font-size: 12.5px; }
+.help-table th, .help-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.help-table th { color: var(--fg-2); font-weight: 600; }
+.help-wrap mark { background: var(--warn); color: #000; border-radius: 2px; padding: 0 1px; }
+/* 목록 정렬(기능 순서 / 이름순), D156 */
+.help-sort { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--border); border-radius: 6px; }
+.help-sort-btn { flex: 1; height: 24px; border: 0; border-radius: 4px; background: none; color: var(--fg-2); font: inherit; font-size: 12px; cursor: pointer; }
+.help-sort-btn:hover { color: var(--fg); background: var(--hover); }
+.help-sort-btn.on { background: var(--active); color: var(--fg); font-weight: 600; }
+/* 자주 묻는 질문: 질문마다 카드 하나, D157 */
+.help-qa { margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--hover); }
+.help-q { display: flex; gap: 8px; align-items: baseline; font-weight: 600; }
+.help-a { display: flex; gap: 8px; align-items: baseline; margin-top: 6px; color: var(--fg-2); }
+.help-q-mark { flex: none; width: 18px; height: 18px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; background: var(--accent); color: #fff; }
+.help-q-mark.a { background: var(--border); color: var(--fg); }
+.help-qa code { background: var(--active); } /* 카드 바탕(--hover)과 같은 색이면 코드가 안 보인다 */
+/* 그림, D158: 본문 안에서는 본문 폭·높이 360px 안에. 누르면 그림 보기(D159) */
+.help-fig { margin: 0 0 12px; }
+.help-fig-btn { display: block; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: none; cursor: zoom-in; max-width: 100%; overflow: hidden; }
+.help-fig-btn img { display: block; max-width: 100%; max-height: 360px; object-fit: contain; }
+.help-fig figcaption { margin-top: 4px; }
+/* 그림 보기(D159): 앱 창 전체를 덮는다. 기본은 그림 전체가 보이게 맞추고, .actual 이면 원래 크기 + 스크롤 */
+.help-viewer { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.82); animation: fade 0.12s ease-out; }
+.help-viewer-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: #fff; flex: none; }
+.help-viewer-bar .icon-btn { color: #fff; }
+.help-viewer-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.help-viewer-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 16px 16px; }
+.help-viewer-stage img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5); cursor: zoom-in; background: var(--panel); }
+.help-viewer-stage.actual { display: block; overflow: auto; text-align: center; }
+.help-viewer-stage.actual img { max-width: none; max-height: none; cursor: zoom-out; display: inline-block; }

@@ -6,7 +6,6 @@ import { getBackend, errorMessage } from '../ipc/backend';
 import { useApp } from '../state/app';
 import { saveSettings } from '../state/settings';
 import { NumberField, useSetting, Group } from './Settings';
-import { SettingsHighlight } from './SettingsHighlight';
 import { LANGS, isLang, t, useLang } from '../i18n';
 
 export function SettingsAppearance() {
@@ -151,7 +150,6 @@ export function SettingsAppearance() {
         <ToggleRow title={t('appearance.cursorBlink')} checked={cursorBlink} onChange={setCursorBlink} />
         <ToggleRow title={t('appearance.bell')} checked={bell} onChange={setBell} />
       </Group>
-      <SettingsHighlight />
     </>
   );
 }

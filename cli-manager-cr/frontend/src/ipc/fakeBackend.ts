@@ -115,7 +115,18 @@ export function createFakeBackend(): Backend {
 
   const emit = (event: EventName, ...args: unknown[]) => {
     listeners.get(event)?.forEach((h) => h(...args));
+    // 세션 전송량 흉내(D160): 실제 백엔드는 1초마다 묶어 보내지만 가짜는 출력·입력 때마다 곧바로 보낸다.
+    if (event === 'session.data') countTraffic(String(args[0]), String(args[1] ?? ''), '');
   };
+  const traffic = new Map<string, { in: number; out: number }>();
+  const byteLength = (s: string) => new TextEncoder().encode(s).length;
+  function countTraffic(id: string, received: string, sent: string) {
+    if (!sessions.has(id)) return;
+    const cur = traffic.get(id) ?? { in: 0, out: 0 };
+    const next = { in: cur.in + byteLength(received), out: cur.out + byteLength(sent) };
+    traffic.set(id, next);
+    listeners.get('session.traffic')?.forEach((h) => h({ [id]: next }));
+  }
 
   const vaultStatus = (): VaultStatus => ({
     initialized: vault.initialized,
@@ -240,10 +251,12 @@ export function createFakeBackend(): Backend {
     },
     'session.close': ([id]) => {
       sessions.delete(String(id));
+      traffic.delete(String(id));
       return undefined;
     },
     'session.reconnect': () => undefined,
     'session.ack': () => undefined,
+    'session.forwards': () => [],
     'clip.writeText': () => undefined,
     'clip.readText': () => '',
     'clip.info': () => ({ type: 'empty' }),
@@ -287,6 +300,7 @@ export function createFakeBackend(): Backend {
       return (await h(args)) as any;
     },
     termInput(sessionId, text) {
+      countTraffic(sessionId, '', text);
       // 가짜 백엔드는 입력을 그대로 되돌려 준다(에코). Enter 면 몇몇 명령에 흉내 출력을 내고 프롬프트를 다시 보인다(스크린샷용).
       for (const ch of text) {
         if (ch !== '\r') {

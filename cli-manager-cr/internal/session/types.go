@@ -40,6 +40,25 @@ type Info struct {
 	M_szMessage      string  `json:"message,omitempty"`
 	M_bCanSftp       bool    `json:"canSftp"`
 	M_bKeepSession   bool    `json:"keepSession,omitempty"`
+	// M_slForwards 는 지금 연결에 설정한 포트 포워딩과 그 결과다 (session.md §1, D136). 없으면 싣지 않는다.
+	M_slForwards []ForwardInfo `json:"forwards,omitempty"`
+}
+
+// ForwardInfo 는 포트 포워딩 하나의 설정 결과다 (session.md §1 forwards).
+type ForwardInfo struct {
+	M_szType  string `json:"type"`            // L | R | D
+	M_szBind  string `json:"bind"`            // 듣는 주소 "호스트:포트"
+	M_szDest  string `json:"dest,omitempty"`  // 대상 "호스트:포트" (D 는 없음)
+	M_szError string `json:"error,omitempty"` // 실패했으면 그 까닭, 성공이면 없음
+	M_iConns  int    `json:"conns"`           // 이 포워딩으로 지금 이어져 있는 연결 수 (D142)
+	M_i64Up   int64  `json:"up"`              // 접속한 뒤 받아들인 쪽 프로그램이 보낸 바이트 (D151)
+	M_i64Down int64  `json:"down"`            // 접속한 뒤 받아들인 쪽 프로그램이 받은 바이트 (D151)
+}
+
+// ForwardReporter 는 포트 포워딩 결과를 알려 줄 수 있는 Transport 다 (SSH).
+// 세션은 접속에 성공하면 이것으로 Info 의 forwards 를 채운다.
+type ForwardReporter interface {
+	Forwards() []ForwardInfo
 }
 
 // OpenConfig 는 세션 하나를 여는 설정이다.
@@ -62,6 +81,11 @@ type OpenConfig struct {
 	Zmodem *ZmodemHooks
 	// StartupInput 은 접속 직후 셸에 보낼 입력이다 (tmux 한 줄 또는 자동 실행 명령). 비면 보내지 않는다.
 	StartupInput string
+	// LoginScript 는 접속 직후 실행하는 로그인 스크립트다 (session.md §5.1, D139). 비면 쓰지 않는다.
+	// 있으면 StartupInput 은 스크립트가 끝까지 실행된 뒤에 보낸다.
+	LoginScript []LoginStep
+	// ResolveSecret 은 로그인 스크립트의 보관함 값(LoginStep.SecretId)을 읽는다 (D148). nil 이면 그 단계에서 멈춘다.
+	ResolveSecret SecretResolver
 	// StartupDelay 는 접속 후 StartupInput 을 보내기까지의 대기다 (tmux 500ms, 자동 실행 명령 400ms).
 	StartupDelay time.Duration
 	// OpenDelay 는 열기 후 접속을 시작하기까지의 대기다 (기본 30ms, 프런트가 터미널을 등록할 시간).

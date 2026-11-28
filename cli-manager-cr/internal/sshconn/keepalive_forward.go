@@ -1,7 +1,6 @@
 package sshconn
 
 import (
-	"dariterm/internal/i18n"
 	"io"
 	"net"
 	"strconv"
@@ -67,9 +66,38 @@ func keepaliveOnce(fnSend func() error, durTimeout time.Duration, chClosed <-cha
 	}
 }
 
-// StartForwards 는 포워딩을 설정한다. 성공과 실패는 notice 로 알린다 (protocols.md §2.5). 세션이 끝나면 Close 로 정리된다.
-func (pConn *Conn) StartForwards(slForwards []Forward, notice func(string)) []io.Closer {
+// ForwardResult 는 포워딩 하나를 설정한 결과다. Err 가 nil 이면 대기 중이다.
+type ForwardResult struct {
+	Type string // L | R | D
+	Bind string // 듣는 주소 "호스트:포트" (L·D 는 이 PC, R 은 서버)
+	Dest string // 대상 "호스트:포트" (D 는 빈 값)
+	Err  error
+	// pStats 는 이 포워딩의 연결 수·전송량 집계다 (실패한 항목은 nil).
+	pStats *forwardStats
+}
+
+// Active 는 이 포워딩으로 지금 이어져 있는 연결 수다. 실패한 포워딩은 0 이다.
+func (result ForwardResult) Active() int {
+	if result.pStats == nil {
+		return 0
+	}
+	return int(result.pStats.active.Load())
+}
+
+// Traffic 은 접속한 뒤 이 포워딩으로 오간 바이트 수다 (D151). Up 은 받아들인 쪽 프로그램이 보낸 것, Down 은 받은 것.
+func (result ForwardResult) Traffic() (i64Up int64, i64Down int64) {
+	if result.pStats == nil {
+		return 0, 0
+	}
+	return result.pStats.up.Load(), result.pStats.down.Load()
+}
+
+// StartForwards 는 포워딩을 설정하고, 설정마다 결과를 돌려준다 (protocols.md §2.5).
+// 실패한 항목이 있어도 다음 항목으로 계속한다. 터미널 안내와 화면 표시는 부른 쪽이 결과로 만든다.
+// 세션이 끝나면 돌려준 Closer 들을 닫아 정리한다.
+func (pConn *Conn) StartForwards(slForwards []Forward) ([]io.Closer, []ForwardResult) {
 	var slClosers []io.Closer
+	slResults := make([]ForwardResult, 0, len(slForwards))
 	for _, fw := range slForwards {
 		szBind := fw.BindHost
 		if szBind == "" {
@@ -77,40 +105,44 @@ func (pConn *Conn) StartForwards(slForwards []Forward, notice func(string)) []io
 		}
 		szBindAddr := net.JoinHostPort(szBind, strconv.Itoa(fw.BindPort))
 		szDest := net.JoinHostPort(fw.DestHost, strconv.Itoa(fw.DestPort))
-		if fw.Type == "D" {
+		result := ForwardResult{Type: "L", Bind: szBindAddr, Dest: szDest}
+		var ln net.Listener
+		switch fw.Type {
+		case "D":
 			// 동적 포워딩: 이 PC 의 포트가 SOCKS 프록시가 되고, 요청마다 대상을 SSH 연결로 잇는다 (D109).
-			ln, errListen := net.Listen("tcp", szBindAddr)
-			if errListen != nil {
-				notice(i18n.T("be.fwd.dynamicFailed", "port", fw.BindPort, "error", errListen))
-				continue
+			result.Type, result.Dest = "D", ""
+			ln, result.Err = net.Listen("tcp", szBindAddr)
+			if result.Err == nil {
+				ln, result.pStats = counted(ln)
+				go serveSocks(ln, pConn.Client.Dial)
 			}
-			notice(i18n.T("be.fwd.dynamicActive", "from", szBindAddr))
-			slClosers = append(slClosers, ln)
-			go serveSocks(ln, pConn.Client.Dial)
-			continue
-		}
-		if fw.Type == "R" {
-			ln, errListen := pConn.Client.Listen("tcp", szBindAddr)
-			if errListen != nil {
-				notice(i18n.T("be.fwd.remoteFailed", "port", fw.BindPort, "error", errListen))
-				continue
+		case "R":
+			result.Type = "R"
+			ln, result.Err = pConn.Client.Listen("tcp", szBindAddr)
+			if result.Err == nil {
+				ln, result.pStats = counted(ln)
+				go acceptLoop(ln, func() (net.Conn, error) { return net.Dial("tcp", szDest) })
 			}
-			notice(i18n.T("be.fwd.active", "from", szBindAddr, "to", szDest))
+		default:
+			ln, result.Err = net.Listen("tcp", szBindAddr)
+			if result.Err == nil {
+				ln, result.pStats = counted(ln)
+				client := pConn.Client
+				go acceptLoop(ln, func() (net.Conn, error) { return client.Dial("tcp", szDest) })
+			}
+		}
+		if result.Err == nil {
 			slClosers = append(slClosers, ln)
-			go acceptLoop(ln, func() (net.Conn, error) { return net.Dial("tcp", szDest) })
-			continue
 		}
-		ln, errListen := net.Listen("tcp", szBindAddr)
-		if errListen != nil {
-			notice(i18n.T("be.fwd.localFailed", "port", fw.BindPort, "error", errListen))
-			continue
-		}
-		notice(i18n.T("be.fwd.active", "from", szBindAddr, "to", szDest))
-		slClosers = append(slClosers, ln)
-		client := pConn.Client
-		go acceptLoop(ln, func() (net.Conn, error) { return client.Dial("tcp", szDest) })
+		slResults = append(slResults, result)
 	}
-	return slClosers
+	return slClosers, slResults
+}
+
+// counted 는 대기 소켓을 연결 수·전송량을 세는 것으로 감싼다. 닫을 때는 돌려준 소켓을 닫으면 된다.
+func counted(ln net.Listener) (net.Listener, *forwardStats) {
+	pStats := &forwardStats{}
+	return &countingListener{Listener: ln, pStats: pStats}, pStats
 }
 
 // acceptLoop 는 들어오는 연결마다 대상에 이어 양방향으로 복사한다.

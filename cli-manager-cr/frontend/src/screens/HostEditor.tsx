@@ -11,13 +11,15 @@ import { groupPath, sortGroups } from '../lib/tree';
 import { ENV_INFO } from '../lib/defaults';
 import {
   fallbackAlias, isWslShell, JUMP_DIRECT, portAfterProtocolChange, serialDefaultsFor,
-  SERIAL_DEFAULTS, splitBastionInput, splitHostInput, tmuxPlaceholder, validateHostForm, type ProxyConf, type ProxyType, type SerialOpts,
+  SERIAL_DEFAULTS, splitBastionInput, splitHostInput, tmuxPlaceholder, validateHostForm, proxyTypeOf, type ProxyConf, type ProxyType, type SerialOpts,
 } from '../lib/hostForm';
 import { applyHost, buildHostFromForm } from '../lib/hostSave';
 import { ForwardsTable, JumpDirectCard, ProxyCard, SerialFields } from './HostEditorParts';
+import { LoginScriptTable } from './LoginScriptTable';
+import { TriggerRuleList } from './SettingsRules';
 import { t } from '../i18n';
 
-type Tab = 'basic' | 'auth' | 'adv' | 'fwd';
+type Tab = 'basic' | 'auth' | 'adv' | 'fwd' | 'auto';
 
 // 선택 목록은 그릴 때 언어에 맞춰 만든다(D75).
 const PROTOCOLS = (): { value: Protocol; label: string }[] => [
@@ -106,6 +108,10 @@ export function HostEditor({ hostId, groupId }: Props) {
   const [termType, setTermType] = useState(original?.termType ?? 'xterm-256color');
   const [keepalive, setKeepalive] = useState(String(original?.keepaliveSec ?? 30));
   const [startup, setStartup] = useState(original?.startupCommand ?? '');
+  // 자동화(§1.4a): 로그인 스크립트
+  const [loginScript, setLoginScript] = useState(original?.loginScript ?? []);
+  // 이 서버의 출력 트리거 규칙(D149). 서버를 저장할 때 함께 저장한다.
+  const [hostTriggers, setHostTriggers] = useState(original?.triggerRules ?? []);
   const [keepSession, setKeepSession] = useState<boolean | undefined>(original?.keepSession);
   const [tmuxName, setTmuxName] = useState(original?.tmuxName ?? '');
   const [tmuxAvail, setTmuxAvail] = useState(false);
@@ -128,7 +134,8 @@ export function HostEditor({ hostId, groupId }: Props) {
   const [proxy, setProxy] = useState(() => {
     const p = original?.proxy as Partial<ProxyConf> | undefined;
     return {
-      type: (p?.type === 'http' || p?.type === 'socks5' ? p.type : '') as ProxyType | '',
+      type: proxyTypeOf(p?.type),
+      command: p?.command ?? '',
       host: p?.host ?? '',
       port: p?.port ? String(p.port) : '',
       username: p?.username ?? '',
@@ -193,6 +200,7 @@ export function HostEditor({ hostId, groupId }: Props) {
     }
     if (next !== 'ssh' && tab === 'auth') setTab('basic');
     if (next !== 'ssh' && tab === 'fwd') setTab('basic');
+    if (next === 'local' && tab === 'auto') setTab('basic');
   };
 
   // 호스트 칸 입력 나누기(§1.1).
@@ -250,6 +258,7 @@ export function HostEditor({ hostId, groupId }: Props) {
       jumpHasSecret: (jump.authType === 'password' && !!jump.password) || (jump.authType === 'key' && !!jump.keyText.trim()),
       proxyOn: isSsh && !!proxy.type,
       proxyHost: proxy.host,
+      proxyCommand: proxy.type === 'command' ? proxy.command : undefined,
       proxyHasSecret: !!proxy.username.trim() && !!proxy.password,
     });
     if (bad) return fail(bad.message, bad.tab);
@@ -281,6 +290,8 @@ export function HostEditor({ hostId, groupId }: Props) {
         termType,
         keepaliveSec: Number(keepalive) || 0,
         startupCommand: startup,
+        loginScript,
+        triggerRules: hostTriggers,
         keepSession: !!tmuxOn,
         tmuxName,
         forwards,
@@ -297,7 +308,7 @@ export function HostEditor({ hostId, groupId }: Props) {
           keyText: jump.keyText,
           passphrase: jump.passphrase,
         },
-        proxy: { type: proxy.type, host: proxy.host, port: Number(proxy.port) || 0, username: proxy.username, password: proxy.password },
+        proxy: { type: proxy.type, host: proxy.host, port: Number(proxy.port) || 0, username: proxy.username, password: proxy.password, command: proxy.command },
         agentForward,
       });
       await patchStore({ hosts: applyHost(hosts, next, !!hostId) });
@@ -317,6 +328,7 @@ export function HostEditor({ hostId, groupId }: Props) {
     ...(isSsh ? [{ id: 'auth' as Tab, label: t('host.tabAuth') }] : []),
     { id: 'adv', label: t('host.tabAdv') },
     ...(isSsh ? [{ id: 'fwd' as Tab, label: t('host.tabFwd') }] : []),
+    { id: 'auto' as Tab, label: t('host.tabAuto') }, // 모든 프로토콜(로컬은 서버별 트리거만, D149)
   ];
   const curTab = tabs.some((t) => t.id === tab) ? tab : 'basic';
   const shellOptions = [
@@ -344,6 +356,7 @@ export function HostEditor({ hostId, groupId }: Props) {
           <button
             key={t.id}
             role="tab"
+            data-tab={t.id}
             aria-selected={curTab === t.id}
             onClick={() => setTab(t.id)}
             className="btn link"
@@ -520,10 +533,24 @@ export function HostEditor({ hostId, groupId }: Props) {
                   <option value="">{t('host.none')}</option>
                   <option value="http">{t('proxy.http')}</option>
                   <option value="socks5">{t('proxy.socks5')}</option>
+                  <option value="command">{t('proxy.command')}</option>
                 </select>
               </Field>
             )}
-            {isSsh && !!proxy.type && (
+            {isSsh && proxy.type === 'command' && (
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 12, border: '1px solid var(--border)', borderRadius: 8 }}>
+                {!!jumpChoice && <div className="notice info">{t('proxy.jumpNote')}</div>}
+                <Field label={t('proxy.commandLine')} help={t('proxy.commandHelp')}>
+                  <input
+                    className="input mono"
+                    placeholder="ssh -W %h:%p bastion"
+                    value={proxy.command}
+                    onChange={(e) => setProxy((p) => ({ ...p, command: e.target.value }))}
+                  />
+                </Field>
+              </div>
+            )}
+            {isSsh && !!proxy.type && proxy.type !== 'command' && (
               <ProxyCard
                 type={proxy.type}
                 host={proxy.host}
@@ -595,6 +622,15 @@ export function HostEditor({ hostId, groupId }: Props) {
         )}
 
         {curTab === 'fwd' && isSsh && <ForwardsTable rows={forwards} onChange={setForwards} />}
+
+        {curTab === 'auto' && (
+          <>
+            {!isLocal && <LoginScriptTable rows={loginScript} onChange={setLoginScript} isSsh={isSsh} secrets={creds} vaultOpen={vaultOpen} />}
+            <Field label={t('trig.hostTitle')} help={t('trig.hostHelp')}>
+              <TriggerRuleList rows={hostTriggers} onRows={(next) => setHostTriggers(next)} />
+            </Field>
+          </>
+        )}
       </div>
     </Modal>
   );

@@ -79,6 +79,8 @@
 .snip-main { flex: 1; min-width: 0; }
 .snip-name { font-weight: 600; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .snip-body { font-family: var(--mono); font-size: 11.5px; color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px; }
+.snip-badge { margin-left: 6px; font-size: 10px; font-weight: 700; padding: 0 5px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); vertical-align: 1px; }
+.snip-badge.cmd { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
 .snip-actions { display: flex; gap: 2px; flex: none; }
 .snip-empty { padding: 32px 20px; text-align: center; color: var(--fg-2); font-size: 12.5px; line-height: 1.7; }
 .snip-empty .faint { color: var(--fg-3); }

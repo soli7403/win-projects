@@ -1,6 +1,7 @@
 // 포커스된 칸(동시 입력 규칙 포함)으로 텍스트를 보낸다. 근거: spec/behavior/terminal.md §7, spec/ui/panes.md §5(동시 입력).
 // TerminalView 안의 입력 대상 규칙과 같은 내용을 여기서 직접 구현한다(그 함수는 칸 안에 갇혀 있어 호출하지 않는다).
 import { getBackend } from '../ipc/backend';
+import { emitAppInput } from './outputHub';
 import { useApp } from '../state/app';
 import { useWorkspace } from '../state/workspace';
 import { findPane, sessionsIn } from './layout';
@@ -29,7 +30,10 @@ export function sendSnippet(body: string, sendEnter: boolean): boolean {
   const sid = focusedSessionId();
   if (!sid) return false;
   const text = body.replace(/\r?\n/g, '\r') + (sendEnter ? '\r' : '');
-  for (const target of inputTargets()) getBackend().termInput(target, text);
+  for (const target of inputTargets()) {
+    getBackend().termInput(target, text);
+    emitAppInput(target, text);
+  }
   focusTerminal();
   return true;
 }

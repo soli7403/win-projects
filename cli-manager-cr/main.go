@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"embed"
+	"errors"
+	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -130,9 +133,34 @@ func (pEmitter *Emitter) context() context.Context {
 	return pEmitter.ctxApp
 }
 
-// wailsWindow 는 창 동작(최대화 토글, 원래 크기)을 Wails 런타임으로 한다.
+// wailsWindow 는 창 동작(최대화 토글, 원래 크기, OS 알림)을 Wails 런타임으로 한다.
 type wailsWindow struct {
 	em *Emitter
+	// 알림 준비는 처음 알림을 띄울 때 한 번만 한다 (트리거를 쓰지 않는 사용자에게는 레지스트리를 쓰지 않는다).
+	onceNotify sync.Once
+	errNotify  error
+}
+
+// Notify 는 OS 알림을 띄운다 (출력 트리거, D145). Windows 는 알림 센터의 토스트다.
+func (pWin *wailsWindow) Notify(szTitle string, szBody string) error {
+	ctxApp := pWin.em.context()
+	if ctxApp == nil {
+		return errors.New("app not started")
+	}
+	pWin.onceNotify.Do(func() {
+		pWin.errNotify = runtime.InitializeNotifications(ctxApp)
+	})
+	if pWin.errNotify != nil {
+		return pWin.errNotify
+	}
+	if !runtime.IsNotificationAvailable(ctxApp) {
+		return errors.New("notifications unavailable")
+	}
+	return runtime.SendNotification(ctxApp, runtime.NotificationOptions{
+		ID:    fmt.Sprintf("dariterm-%d", time.Now().UnixNano()),
+		Title: szTitle,
+		Body:  szBody,
+	})
 }
 
 // ToggleMaximise 는 최대화 ↔ 복원을 바꾼다 (진짜 전체 화면 아님, spec/ipc.md §2).

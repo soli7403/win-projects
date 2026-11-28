@@ -83,7 +83,9 @@ func Connect(tgt *Target, store HostKeyStore, prompt Prompter, notice func(strin
 			return nil, errJump
 		}
 	} else {
-		if tgt.Proxy != nil {
+		if tgt.Proxy != nil && tgt.Proxy.Type == G_cszProxyCommand {
+			notice(i18n.T("be.proxy.viaCommand", "program", commandProgram(tgt.Proxy.Command)))
+		} else if tgt.Proxy != nil {
 			notice(i18n.T("be.proxy.via", "addr", net.JoinHostPort(tgt.Proxy.Host, strconv.Itoa(tgt.Proxy.Port))))
 		}
 		var errDial error

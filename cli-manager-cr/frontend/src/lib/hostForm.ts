@@ -41,7 +41,7 @@ export interface JumpDirect {
   credentialId?: string | null;
 }
 
-export type ProxyType = 'http' | 'socks5';
+export type ProxyType = 'http' | 'socks5' | 'command';
 
 /** 프록시 경유 설정(store.md §3 proxy). */
 export interface ProxyConf {
@@ -50,10 +50,17 @@ export interface ProxyConf {
   port: number;
   username: string;
   credentialId?: string | null;
+  /** type 이 command 일 때 실행할 명령 줄(%h %p %r, D152). */
+  command?: string;
 }
 
-/** 프록시 종류별 기본 포트. */
-export const PROXY_DEFAULT_PORT: Record<ProxyType, number> = { http: 8080, socks5: 1080 };
+/** 프록시 종류별 기본 포트(주소로 가는 종류만). */
+export const PROXY_DEFAULT_PORT: Record<Exclude<ProxyType, 'command'>, number> = { http: 8080, socks5: 1080 };
+
+/** 저장값의 프록시 종류. 모르는 값은 빈 글자(사용 안 함). */
+export function proxyTypeOf(v: unknown): ProxyType | '' {
+  return v === 'http' || v === 'socks5' || v === 'command' ? v : '';
+}
 
 /** 직접 입력 베스천을 가리키는 jumpHostId 값. */
 export const JUMP_DIRECT = 'direct';
@@ -121,6 +128,8 @@ export function validateHostForm(input: {
   /** 프록시 경유를 켰는지, 그 주소, 새로 넣은 비밀번호가 있는지 (없으면 검사하지 않는다). */
   proxyOn?: boolean;
   proxyHost?: string;
+  /** 프록시 명령(D152)이면 그 명령 줄. 있으면 주소 대신 이것을 본다. */
+  proxyCommand?: string;
   proxyHasSecret?: boolean;
 }): { tab: 'basic' | 'auth' | 'adv'; message: string } | null {
   const isNet = input.protocol === 'ssh' || input.protocol === 'telnet';
@@ -136,6 +145,10 @@ export function validateHostForm(input: {
     }
   }
   if (input.protocol === 'ssh' && input.proxyOn) {
+    if (input.proxyCommand !== undefined) {
+      if (!input.proxyCommand.trim()) return { tab: 'adv', message: t('hostForm.needProxyCommand') };
+      return null;
+    }
     if (!(input.proxyHost ?? '').trim()) return { tab: 'adv', message: t('hostForm.needProxy') };
     if (input.proxyHasSecret && !input.vaultOpen) return { tab: 'adv', message: t('hostForm.lockedProxy') };
   }

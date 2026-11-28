@@ -10,6 +10,7 @@ import { rankHosts, isLocalPrefix, parseDirect } from '../lib/quick';
 import { effectiveColor, recentHosts } from '../lib/hosts';
 import { sidebarSubtitle } from '../lib/tree';
 import { getBackend, errorMessage } from '../ipc/backend';
+import { toggleRecording, useMacros } from '../state/macros';
 import { t } from '../i18n';
 
 type Row =
@@ -41,6 +42,7 @@ export function QuickPalette() {
         { kind: 'cmd', key: 'c-import', label: t('quick.import'), run: () => useUi.getState().openImportDialog() },
         { kind: 'cmd', key: 'c-settings', label: t('quick.openSettings'), run: () => useUi.getState().openSettings() },
         { kind: 'cmd', key: 'c-theme', label: t('quick.toggleTheme', { theme: store?.settings.theme === 'dark' ? t('appearance.light') : t('appearance.dark') }), run: () => toggleTheme() },
+        { kind: 'cmd', key: 'c-macro-rec', label: useMacros.getState().recording ? t('quick.macroStop') : t('quick.macroRecord'), run: () => toggleRecording() },
         { kind: 'cmd', key: 'c-lock', label: t('quick.lock'), run: () => void getBackend().invoke('vault.lock').catch((e) => useApp.getState().pushToast({ kind: 'error', text: errorMessage(e) })) },
       ];
       return cmds.filter((c) => c.kind === 'cmd' && c.label.toLowerCase().includes(word));

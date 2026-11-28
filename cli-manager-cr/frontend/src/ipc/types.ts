@@ -25,6 +25,17 @@ export interface Forward {
   destPort: number;
 }
 
+/** 로그인 스크립트의 한 단계(behavior/session.md §5.1, D139). */
+export interface LoginStep {
+  id: string;
+  /** 서버 출력에서 기다릴 글자. 비면 기다리지 않고 바로 보낸다. */
+  expect: string;
+  /** 보낼 글자(뒤에 Enter 가 붙는다). `{{password}}` 는 로그인 비밀번호로 바뀐다. */
+  send: string;
+  /** 있으면 send 대신 이 보관함 항목(비밀번호 종류)의 비밀번호를 보낸다(D148). 파일에는 id 만 남는다. */
+  secretId?: string;
+}
+
 export interface Host {
   id: string;
   groupId: string | null;
@@ -47,6 +58,10 @@ export interface Host {
   encoding: 'utf-8' | 'euc-kr' | 'cp949' | 'shift_jis' | 'euc-jp' | 'gbk' | 'big5' | 'latin1';
   termType: string;
   startupCommand?: string;
+  /** 접속 직후 실행하는 로그인 스크립트(store.md §3 loginScript). 로컬 터미널에는 없다. */
+  loginScript?: LoginStep[];
+  /** 이 서버에 연결한 창에서만 쓰는 출력 트리거 규칙(D149). 설정의 규칙과 함께 동작한다. */
+  triggerRules?: TriggerRule[];
   keepSession?: boolean;
   tmuxName?: string;
   keepaliveSec: number;
@@ -64,6 +79,8 @@ export interface Snippet {
   name: string;
   body: string;
   sendEnter: boolean;
+  /** 있으면 이 항목은 매크로다: 단계를 순서대로, 출력을 기다려 가며 실행한다 (store.md §7). */
+  steps?: MacroStep[];
 }
 
 /** 키워드 강조 규칙 하나(behavior/terminal.md §9). */
@@ -78,6 +95,37 @@ export interface HighlightRule {
   /** true 면 글자색 대신 바탕을 칠한다(글자는 흰색). */
   background: boolean;
   enabled: boolean;
+}
+
+/** 출력 트리거 규칙 하나(behavior/terminal.md §10, D140). */
+export interface TriggerRule {
+  id: string;
+  /** 찾을 글자(regex 가 true 면 정규식). 출력의 한 줄에 대해 찾는다. */
+  pattern: string;
+  regex: boolean;
+  caseSensitive: boolean;
+  /** 알림(화면 구석의 안내)을 띄운다. */
+  notify: boolean;
+  /** 짧은 소리를 낸다. */
+  sound: boolean;
+  /** 자동 응답을 보낸다. */
+  replyOn: boolean;
+  /** 자동 응답으로 입력할 글자. */
+  reply: string;
+  /** 자동 응답 뒤에 Enter 를 붙인다. */
+  replyEnter: boolean;
+  enabled: boolean;
+}
+
+/** 매크로의 한 단계(behavior/terminal.md §11, D141). */
+export interface MacroStep {
+  id: string;
+  /** 보내기 전에 출력에서 기다릴 글자. 비면 출력이 잠잠해질 때까지 기다린다. */
+  expect: string;
+  /** 보낼 글자. 제어 문자는 `\x03` 처럼 적는다. `{{이름}}` 변수를 쓸 수 있다. */
+  send: string;
+  /** 보낸 뒤 Enter 를 붙인다. */
+  enter: boolean;
 }
 
 export interface KnownHost {
@@ -106,6 +154,10 @@ export interface Settings {
   dangerousPatterns: string[];
   /** 터미널 출력의 키워드 강조 규칙. 앞에 있는 규칙이 우선이다 (behavior/terminal.md §9). */
   highlightRules: HighlightRule[];
+  /** 출력 트리거 규칙 (behavior/terminal.md §10). */
+  triggerRules: TriggerRule[];
+  /** 알림을 켠 트리거가 맞았을 때 앱 창에 포커스가 없으면 Windows 알림도 띄운다 (D145). */
+  triggerOsNotify: boolean;
   autoReconnect: boolean;
   autoLockMinutes: number;
   uploadDir: string;
@@ -197,6 +249,25 @@ export interface SessionInfo {
   message?: string;
   canSftp: boolean;
   keepSession?: boolean;
+  /** 지금 연결에 설정한 포트 포워딩과 그 결과(session.md §1). 없으면 필드가 없다. */
+  forwards?: ForwardInfo[];
+}
+
+/** 포트 포워딩 하나의 설정 결과(session.md §1 forwards, D136). */
+export interface ForwardInfo {
+  type: 'L' | 'R' | 'D';
+  /** 듣는 주소 `호스트:포트` (L·D 는 이 PC, R 은 서버). */
+  bind: string;
+  /** 대상 `호스트:포트`. D 는 없다. */
+  dest?: string;
+  /** 실패했으면 그 까닭. */
+  error?: string;
+  /** 이 포워딩으로 지금 이어져 있는 연결 수(session.forwards 로 물었을 때의 값, D142). */
+  conns?: number;
+  /** 접속한 뒤 받아들인 쪽 프로그램이 보낸 바이트(D151). */
+  up?: number;
+  /** 접속한 뒤 받아들인 쪽 프로그램이 받은 바이트(D151). */
+  down?: number;
 }
 
 export interface SyncStatus {

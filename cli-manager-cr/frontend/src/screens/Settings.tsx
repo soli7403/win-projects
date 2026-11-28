@@ -1,6 +1,6 @@
-// 설정 화면: 크게 보기 모달, 왼쪽 구역 내비 10개 + 오른쪽 본문. 모든 변경은 즉시 저장. 근거: spec/ui/settings.md.
+// 설정 화면: 크게 보기 모달, 왼쪽 구역 내비 11개 + 오른쪽 본문. 모든 변경은 즉시 저장. 근거: spec/ui/settings.md.
 import { useState, type ReactNode, type KeyboardEvent } from 'react';
-import { Palette, Keyboard, Command, ImageUp, Plug, ScrollText, RefreshCw, Shield, Archive, Info } from 'lucide-react';
+import { Palette, Keyboard, Command, ImageUp, Plug, ScrollText, RefreshCw, Shield, Archive, Info, Zap, CircleHelp } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { useUi, type SettingsSection } from '../state/ui';
 import { useApp } from '../state/app';
@@ -9,6 +9,7 @@ import type { Settings as SettingsT } from '../ipc/types';
 import { SettingsAppearance } from './SettingsAppearance';
 import { SettingsInput } from './SettingsInput';
 import { SettingsShortcuts } from './SettingsShortcuts';
+import { SettingsRules } from './SettingsRules';
 import { SettingsFiles } from './SettingsFiles';
 import { SettingsConnection } from './SettingsConnection';
 import { SettingsLog } from './SettingsLog';
@@ -16,6 +17,7 @@ import { SettingsSync } from './SettingsSync';
 import { SettingsSecurity } from './SettingsSecurity';
 import { SettingsBackup } from './SettingsBackup';
 import { SettingsAbout } from './SettingsAbout';
+import { SETTINGS_HELP_TOPIC } from '../lib/help';
 import '../styles/settings.css';
 import { t, type MsgId } from '../i18n';
 
@@ -23,6 +25,7 @@ const SECTIONS: { id: SettingsSection; label: MsgId; icon: typeof Palette }[] = 
   { id: 'appearance', label: 'settings.sec.appearance', icon: Palette },
   { id: 'input', label: 'settings.sec.input', icon: Keyboard },
   { id: 'shortcuts', label: 'settings.sec.shortcuts', icon: Command },
+  { id: 'rules', label: 'settings.sec.rules', icon: Zap },
   { id: 'files', label: 'settings.sec.files', icon: ImageUp },
   { id: 'connection', label: 'settings.sec.connection', icon: Plug },
   { id: 'log', label: 'settings.sec.log', icon: ScrollText },
@@ -101,6 +104,7 @@ export function Settings() {
     appearance: <SettingsAppearance />,
     input: <SettingsInput />,
     shortcuts: <SettingsShortcuts />,
+    rules: <SettingsRules />,
     files: <SettingsFiles />,
     connection: <SettingsConnection />,
     log: <SettingsLog />,
@@ -112,6 +116,7 @@ export function Settings() {
   return (
     <Modal title={t('settings.title')} size="lg" onClose={close} hideClose={false}>
       <div className="set-wrap">
+        <div className="set-side">
         <nav className="set-nav" aria-label={t('settings.nav')}>
           {SECTIONS.map((s) => {
             const Icon = s.icon;
@@ -129,6 +134,12 @@ export function Settings() {
             );
           })}
         </nav>
+          {/* 구역 목록 밖(아래)에 둔다: 구역 목록은 구역 버튼만 (ui/help.md §3, D155) */}
+          <button type="button" className="set-nav-item set-nav-help" onClick={() => useUi.getState().openHelp(SETTINGS_HELP_TOPIC[section] ?? null, section)}>
+            <CircleHelp size={15} />
+            {t('help.thisSection')}
+          </button>
+        </div>
         <div className="set-body">{body[section]}</div>
       </div>
     </Modal>

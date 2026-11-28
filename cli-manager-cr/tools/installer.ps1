@@ -30,7 +30,8 @@ New-Item -ItemType Directory -Force $res | Out-Null
 $text = [System.IO.File]::ReadAllText((Join-Path $root 'LICENSE'), [System.Text.Encoding]::UTF8)
 [System.IO.File]::WriteAllText((Join-Path $res 'license.txt'), $text, (New-Object System.Text.UTF8Encoding($true)))
 
-wails build -clean -nsis
+. (Join-Path $PSScriptRoot 'build-config.ps1')   # $DariTermLdflags: 업데이트를 묻는 릴리스 저장소 (D135)
+wails build -clean -nsis -ldflags $DariTermLdflags
 if ($LASTEXITCODE -ne 0) { throw "wails build 실패 ($LASTEXITCODE)" }
 
 $ver = ([IO.File]::ReadAllText((Join-Path $root 'wails.json'), [Text.Encoding]::UTF8) | ConvertFrom-Json).info.productVersion

@@ -23,6 +23,8 @@ import { DANGEROUS_PATTERNS } from '../lib/defaults';
 import { clipboardKind, forceImagePaste, insertPaths, uploadAndInsert } from '../state/paste';
 // 이 파일은 t 를 터미널 변수 이름으로 쓰므로 번역 함수는 tr 로 가져온다(D75).
 import { relabel, t as tr } from '../i18n';
+import { beep } from '../lib/beep';
+import { emitUserInput } from '../lib/outputHub';
 
 interface Props {
   paneId: string;
@@ -87,20 +89,6 @@ export function visibleSessionIds(self: string): string[] {
 
 function paneHas(root: LayoutNode, paneId: string): boolean {
   return !!findPane(root, paneId);
-}
-
-function beep(): void {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    osc.frequency.value = 880;
-    osc.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.08);
-    osc.onended = () => void ctx.close();
-  } catch {
-    /* 소리를 낼 수 없으면 무시 */
-  }
 }
 
 async function copySelection(term: Terminal): Promise<void> {
@@ -378,7 +366,11 @@ function createKeptTerm(sessionId: string, paneId: string, host: HTMLElement): K
       }
     }
     tracker.feed(data);
-    for (const sid of targetsFor(k.paneId, sessionId)) getBackend().termInput(sid, data);
+    for (const sid of targetsFor(k.paneId, sessionId)) {
+      getBackend().termInput(sid, data);
+      // 사용자가 친 입력을 알린다(출력 트리거가 에코에 반응하지 않게, 매크로 녹화).
+      emitUserInput(sid, data);
+    }
   });
 
   // 선택하면 자동 복사: 마우스로 선택을 끝냈을 때만(찾기가 바꾼 선택은 복사하지 않는다, KI-011).

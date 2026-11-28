@@ -6,7 +6,8 @@ import type { MsgId, Vars } from '../i18n';
 export type ShortcutAction =
   | 'quickToggle' | 'quickOpen' | 'newLocal' | 'closePane' | 'splitRight' | 'splitDown' | 'zoom'
   | 'find' | 'sftp' | 'broadcast' | 'sidebar' | 'tabLeft' | 'tabRight' | 'tabNext' | 'tabPrev'
-  | 'tabIndex' | 'focusMove' | 'fontUp' | 'fontDown' | 'fontReset' | 'fullscreen';
+  | 'tabIndex' | 'focusMove' | 'fontUp' | 'fontDown' | 'fontReset' | 'fullscreen'
+  | 'macroRecord' | 'macroReplay' | 'macroStop';
 
 export type ShortcutArg = number | 'last' | 'up' | 'down' | 'left' | 'right';
 
@@ -64,6 +65,10 @@ export const SHORTCUT_COMMANDS: ShortcutCommand[] = [
   { id: 'fontDown', action: 'fontDown', keys: 'Ctrl+Minus', label: 'sc.fontDown' },
   { id: 'fontReset', action: 'fontReset', keys: 'Ctrl+Digit0', label: 'sc.fontReset' },
   { id: 'fullscreen', action: 'fullscreen', keys: 'F11', label: 'sc.fullscreen' },
+  // 매크로(D147): 기본 키는 없다 — vi·tmux 와 겹치지 않게. 쓰려면 설정 > 단축키에서 키를 준다.
+  { id: 'macroRecord', action: 'macroRecord', keys: '', label: 'sc.macroRecord' },
+  { id: 'macroReplay', action: 'macroReplay', keys: '', label: 'sc.macroReplay' },
+  { id: 'macroStop', action: 'macroStop', keys: '', label: 'sc.macroStop' },
 ];
 
 /** 터미널 안에서 쓰는 고정 키(복사·붙여넣기). 앱 단축키로 고를 수 없다 (shortcuts.md §5). */

@@ -24,6 +24,7 @@ func (pSession *Session) Input(szText string) {
 	}
 	pSession.mtxData.Unlock()
 	if transport != nil {
+		pSession.cancelLoginOnInput(szText) // 사용자가 직접 입력하면 로그인 스크립트는 멈춘다 (session.md §5.1)
 		if pSession.zActive.Load() {
 			// ZMODEM 전송 중: 입력이 전송 데이터에 섞이면 안 되므로 보내지 않는다. Ctrl+C 는 전송 취소다 (zmodem.md).
 			if strings.Contains(szText, "\x03") {
@@ -31,7 +32,7 @@ func (pSession *Session) Input(szText string) {
 			}
 			return
 		}
-		_ = transport.Write(Encode(pSession.cfg.Encoding, szText))
+		_ = pSession.send(transport, Encode(pSession.cfg.Encoding, szText))
 		return
 	}
 	if strings.Contains(szText, "\r") && szState != G_cszStateConnecting {
@@ -88,6 +89,11 @@ func (pSession *Session) Close() {
 		pSession.timerStartup.Stop()
 		pSession.timerStartup = nil
 	}
+	if pSession.timerLogin != nil {
+		pSession.timerLogin.Stop()
+		pSession.timerLogin = nil
+	}
+	pSession.login = nil
 	transport := pSession.transport
 	pSession.transport = nil
 	pSession.info.M_szState = G_cszStateClosed
@@ -196,6 +202,17 @@ func (pSession *Session) AckOutput(iCount int) {
 		return
 	}
 	pSession.credit.Ack(iCount)
+}
+
+// Forwards 는 지금 연결의 포트 포워딩과 그 순간의 연결 수를 돌려준다 (spec/ipc.md session.forwards, D142).
+// 연결이 없거나 포워딩을 알려 주지 않는 프로토콜이면 빈 목록이다.
+func (pSession *Session) Forwards() []ForwardInfo {
+	if reporter, bOk := pSession.Transport().(ForwardReporter); bOk {
+		if slForwards := reporter.Forwards(); slForwards != nil {
+			return slForwards
+		}
+	}
+	return []ForwardInfo{}
 }
 
 // Transport 는 현재 연결된 전송을 돌려준다 (연결이 없으면 nil). SFTP 처럼 프로토콜 기능을 찾을 때 쓴다.

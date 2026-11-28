@@ -142,6 +142,11 @@ func ParseCrtSession(session CrtSession, szGlobalKey string, szConfigDir string)
 	if szNotes := strings.TrimSpace(strings.Join(values.lines("Description"), "\n")); szNotes != "" {
 		host.M_szNotes = szNotes
 	}
+	// 로그온 동작(Logon Actions)의 Expect/Send 는 저장 형식을 확인하지 못해 옮기지 않는다 — 켜져 있으면 알린다 (D150).
+	// 형식(Z:"Login Script V4" 의 줄)을 표본으로 확인하면 host.M_slLoginScript 로 옮긴다.
+	if crtHasLoginScript(values) {
+		cand.M_szNote = joinNote(cand.M_szNote, i18n.T("be.imp.loginScriptSkipped"))
+	}
 
 	if szProtocol == "serial" {
 		host.M_pSerial = parseCrtSerial(values)
@@ -233,7 +238,7 @@ func ResolveCrtJumps(slCands []Candidate, slSessions []CrtSession) {
 				continue
 			}
 		}
-		slCands[iIndex].M_szNote = i18n.T("be.crt.firewall", "name", szFirewall)
+		slCands[iIndex].M_szNote = joinNote(slCands[iIndex].M_szNote, i18n.T("be.crt.firewall", "name", szFirewall))
 	}
 }
 
@@ -244,4 +249,29 @@ func ResolveCrtDirs(szPicked string) (string, string) {
 		return szSessions, szPicked
 	}
 	return szPicked, filepath.Dir(szPicked)
+}
+
+// crtHasLoginScript 는 세션의 로그온 동작(Expect/Send)이 켜져 있고 내용이 있는지 본다 (D150).
+// 꺼진 세션은 D:"Use Login Script"=00000000 과 빈 Z:"Login Script V4"=00000000 이다.
+func crtHasLoginScript(values crtValues) bool {
+	iUse, _ := values.num("Use Login Script")
+	if iUse == 0 {
+		return false
+	}
+	for _, szKey := range []string{"Login Script V4", "Login Script V3", "Login Script V2"} {
+		for _, szLine := range values.lines(szKey) {
+			if strings.TrimSpace(szLine) != "" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// joinNote 는 후보 메모에 한 줄을 덧붙인다.
+func joinNote(szNote string, szAdd string) string {
+	if szNote == "" {
+		return szAdd
+	}
+	return szNote + " · " + szAdd
 }

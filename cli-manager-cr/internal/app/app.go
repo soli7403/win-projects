@@ -73,6 +73,8 @@ func NewService(szDataDir string, emitter ipc.Emitter) (*Service, error) {
 	pService.pSessions = session.NewManager(func(szEvent string, anyData ...any) {
 		pService.pRouter.Emit(szEvent, anyData...)
 	})
+	// 창 머리글의 세션별 전송량: 1초마다 바뀐 세션만 묶어 session.traffic 으로 보낸다 (D160).
+	pService.pSessions.StartTraffic(session.G_cdurTrafficInterval)
 	pService.applyLanguage()
 	pService.registerStore()
 	pService.registerVault()
@@ -126,6 +128,7 @@ func (pService *Service) Close() error {
 	pService.stopAutoLock()
 	pService.stopUpdate()
 	pService.pLogClean.Stop()
+	pService.pSessions.StopTraffic()
 	chDone := make(chan struct{})
 	go func() {
 		pService.pSessions.CloseAll()

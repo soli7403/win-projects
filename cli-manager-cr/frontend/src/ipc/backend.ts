@@ -9,6 +9,7 @@ import { createInputQueue } from './inputQueue';
 export type EventName =
   | 'session.data'
   | 'session.state'
+  | 'session.traffic'
   | 'ui.request'
   | 'transfer.update'
   | 'copyjob.update'

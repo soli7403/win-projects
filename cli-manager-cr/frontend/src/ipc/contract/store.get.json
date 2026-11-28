@@ -56,6 +56,8 @@
     "terminalTheme": "DariTerm Dark",
     "theme": "dark",
     "transferTempDir": "",
+    "triggerOsNotify": true,
+    "triggerRules": [],
     "updateCheck": true,
     "uploadCleanupDays": 7,
     "uploadDir": "~/.dariterm/uploads",

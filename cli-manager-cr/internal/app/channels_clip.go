@@ -19,12 +19,18 @@ type WindowControl interface {
 // g_pWindowControl 은 main.go 가 시작 때 등록하는 창 동작 구현이다. 없으면 창 동작은 무시한다.
 var g_pWindowControl WindowControl
 
+// Notifier 는 OS 알림(Windows 알림 센터)을 띄울 수 있는 창 동작 구현이다 (출력 트리거, D145).
+// main.go 의 Wails 구현이 갖는다. 없거나 실패하면 앱 안 알림만 보인다.
+type Notifier interface {
+	Notify(szTitle string, szBody string) error
+}
+
 // SetWindowControl 은 창 동작 구현을 등록한다.
 func SetWindowControl(wc WindowControl) {
 	g_pWindowControl = wc
 }
 
-// registerClipboard 는 clip.*, dialog.*, app.resetWindow·toggleFullScreen·titlebar 를 등록한다.
+// registerClipboard 는 clip.*, dialog.*, app.resetWindow·toggleFullScreen·notify·titlebar 를 등록한다.
 func (pService *Service) registerClipboard() {
 	pRouter := pService.pRouter
 	pRouter.Handle("clip.writeText", func(slArgs []json.RawMessage) (any, error) {
@@ -74,6 +80,22 @@ func (pService *Service) registerClipboard() {
 			g_pWindowControl.ToggleMaximise()
 		}
 		return nil, nil
+	})
+	// app.notify: OS 알림을 띄운다 (출력 트리거가 앱이 뒤에 있을 때 쓴다, D145). 띄웠으면 true.
+	pRouter.Handle("app.notify", func(slArgs []json.RawMessage) (any, error) {
+		szTitle, errTitle := argString(slArgs, 0)
+		if errTitle != nil {
+			return nil, errTitle
+		}
+		szBody, _ := argString(slArgs, 1)
+		notifier, bOk := g_pWindowControl.(Notifier)
+		if !bOk {
+			return false, nil
+		}
+		if errNotify := notifier.Notify(szTitle, szBody); errNotify != nil {
+			return false, errNotify
+		}
+		return true, nil
 	})
 	pRouter.Handle("app.titlebar", func(slArgs []json.RawMessage) (any, error) {
 		// 제목 표시줄 색 지정은 현재 동작이 없다 (spec/ipc.md §2).

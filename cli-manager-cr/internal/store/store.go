@@ -42,6 +42,8 @@ var g_mapSettingsDefault = map[string]any{
 		`systemctl\s+(stop|restart)`,
 	},
 	"highlightRules":      []any{}, // 키워드 강조 규칙 (behavior/terminal.md §9, D113)
+	"triggerRules":        []any{}, // 출력 트리거 규칙 (behavior/terminal.md §10, D140)
+	"triggerOsNotify":     true,    // 앱이 뒤에 있으면 트리거 알림을 Windows 알림으로도 (D145)
 	"autoReconnect":       true,
 	"autoLockMinutes":     15,
 	"uploadDir":           "~/.dariterm/uploads",

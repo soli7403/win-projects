@@ -40,11 +40,32 @@ type hostRecord struct {
 	M_slForwards       []forwardRecord   `json:"forwards"`
 	M_pProxy           *proxyRecord      `json:"proxy"`
 	M_bAgentForward    bool              `json:"agentForward"` // SSH 에이전트 전달 (D111)
+	M_slLoginScript    []loginStepRecord `json:"loginScript"`  // 로그인 스크립트 (D139)
+}
+
+// loginStepRecord 는 로그인 스크립트의 한 단계다 (data/store.md §3 loginScript).
+type loginStepRecord struct {
+	M_szExpect   string `json:"expect"`
+	M_szSend     string `json:"send"`
+	M_szSecretId string `json:"secretId"` // 있으면 send 대신 이 보관함 항목의 비밀번호를 보낸다 (D148)
+}
+
+// loginScriptOf 는 서버의 로그인 스크립트를 세션 쪽 형식으로 바꾼다. 로컬 터미널에는 쓰지 않는다.
+func loginScriptOf(record hostRecord) []session.LoginStep {
+	if record.M_szProtocol == "local" {
+		return nil
+	}
+	slSteps := make([]session.LoginStep, 0, len(record.M_slLoginScript))
+	for _, step := range record.M_slLoginScript {
+		slSteps = append(slSteps, session.LoginStep{Expect: step.M_szExpect, Send: step.M_szSend, SecretId: step.M_szSecretId})
+	}
+	return session.TrimLoginSteps(slSteps)
 }
 
 // proxyRecord 는 서버의 프록시 경유 설정이다 (data/store.md §3 proxy, D110).
 type proxyRecord struct {
-	M_szType         string `json:"type"` // http | socks5 (그 밖·빈 값은 사용 안 함)
+	M_szType         string `json:"type"`    // http | socks5 | command (그 밖·빈 값은 사용 안 함)
+	M_szCommand      string `json:"command"` // type 이 command 일 때 실행할 명령 줄 (D152)
 	M_szHost         string `json:"host"`
 	M_iPort          int    `json:"port"`
 	M_szUsername     string `json:"username"`
@@ -156,6 +177,18 @@ func (pService *Service) registerSession() {
 		pSession.AckOutput(iCount)
 		return nil, nil
 	})
+	// session.forwards: 포트 포워딩 정보 창을 열 때(와 [새로고침]을 누를 때) 묻는다 (지금 이어져 있는 연결 수, D142).
+	pRouter.Handle("session.forwards", func(slArgs []json.RawMessage) (any, error) {
+		szId, errArg := argString(slArgs, 0)
+		if errArg != nil {
+			return nil, errArg
+		}
+		pSession, errGet := pService.pSessions.Get(szId)
+		if errGet != nil {
+			return []session.ForwardInfo{}, nil // 이미 닫힌 세션: 빈 목록 (창은 곧 닫힌다)
+		}
+		return pSession.Forwards(), nil
+	})
 	pRouter.Handle("local.tmuxAvailable", func(slArgs []json.RawMessage) (any, error) {
 		return session.TmuxAvailable(), nil
 	})
@@ -180,7 +213,15 @@ func (pService *Service) openSession(args sessionOpenArgs) (session.Info, error)
 		}
 		record = adhocRecord(*args.M_pAdhoc)
 	}
-	dialer, onClose := pService.dialerFor(record)
+	dialer, onCloseDialer := pService.dialerFor(record)
+	// 로그인 스크립트의 보관함 값 (D148): 세션마다 사본을 두고, 세션을 닫을 때 다이얼러 사본과 함께 지운다.
+	resolveSecret, clearSecrets := pService.loginSecretResolver()
+	onClose := func() {
+		if onCloseDialer != nil {
+			onCloseDialer()
+		}
+		clearSecrets()
+	}
 	cfg := session.OpenConfig{
 		Info: session.Info{
 			M_szTitle:      record.M_szAlias,
@@ -213,6 +254,8 @@ func (pService *Service) openSession(args sessionOpenArgs) (session.Info, error)
 	}
 	cfg.Info.M_szTarget = targetOf(record)
 	cfg.StartupInput, cfg.StartupDelay = startupInputOf(record)
+	cfg.LoginScript = loginScriptOf(record)
+	cfg.ResolveSecret = resolveSecret
 	info, errOpen := pService.pSessions.Open(cfg)
 	if errOpen == nil && args.M_iCols > 0 && args.M_iRows > 0 {
 		// 열 때 지정한 크기는 접속 직후 프로토콜에 알린다 (session.md §8).

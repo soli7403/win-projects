@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -21,8 +22,20 @@ const g_ciSshDefaultPort = 22
 // sshSession 은 SSH 셸과 그 연결·포워딩을 함께 닫는 전송이다.
 type sshSession struct {
 	*sshconn.Shell
-	conn    *sshconn.Conn
-	closers []io.Closer
+	conn     *sshconn.Conn
+	closers  []io.Closer
+	forwards []sshconn.ForwardResult
+	password string // 로그인에 쓴 비밀번호 (로그인 스크립트의 {{password}} 용, 세션 사본과 같은 수명)
+}
+
+// LoginSecret 은 이 서버에 로그인할 때 쓴 비밀번호다 (session.SecretProvider). 키·에이전트로 로그인했으면 빈 글자다.
+func (pSess *sshSession) LoginSecret() string {
+	return pSess.password
+}
+
+// Forwards 는 이 연결에 설정한 포트 포워딩과 그 결과, 지금 이어져 있는 연결 수다 (session.ForwardReporter).
+func (pSess *sshSession) Forwards() []session.ForwardInfo {
+	return forwardInfos(pSess.forwards)
 }
 
 // Close 는 셸, 포워딩 소켓, 연결을 모두 닫는다.
@@ -72,8 +85,12 @@ func (pService *Service) sshDialer(record hostRecord) (session.Dialer, func()) {
 			_ = conn.Close()
 			return nil, errShell
 		}
-		sess := &sshSession{Shell: shell, conn: conn}
-		sess.closers = conn.StartForwards(forwardsOf(record), notify)
+		sess := &sshSession{Shell: shell, conn: conn, password: tgt.Password}
+		sess.closers, sess.forwards = conn.StartForwards(forwardsOf(record))
+		// 결과는 들여 쓴 여러 줄로 한 번에 알린다 (protocols.md §2.5, D136).
+		if szBlock := session.MsgForwards(sess.Forwards()); szBlock != "" {
+			notify(szBlock)
+		}
 		conn.StartKeepalive(record.M_iKeepaliveSec, func() { _ = sess.Close() })
 		if allowSave {
 			pService.afterSshLogin(record, conn, notify)
@@ -201,6 +218,13 @@ var g_mProxyDefaultPort = map[string]int{sshconn.G_cszProxyHttp: 8080, sshconn.G
 // 비밀번호는 볼트의 연결된 계정에서 읽고, 볼트가 잠겨 있으면 세션 사본으로 채운다.
 // 사본도 없으면 *pbNeedUnlock 을 true 로 둔다 (protocols.md §2.7, D110).
 func (pService *Service) buildProxy(pRecord *proxyRecord, tgt *sshconn.Target, creds *sessionCreds, pbNeedUnlock *bool) *sshconn.Proxy {
+	if pRecord != nil && pRecord.M_szType == sshconn.G_cszProxyCommand {
+		// 프록시 명령(D152): 주소·계정 없이 명령 줄만 쓴다. 비어 있으면 바로 연결한다.
+		if strings.TrimSpace(pRecord.M_szCommand) == "" {
+			return nil
+		}
+		return &sshconn.Proxy{Type: sshconn.G_cszProxyCommand, Command: pRecord.M_szCommand}
+	}
 	if pRecord == nil || pRecord.M_szHost == "" {
 		return nil
 	}
@@ -234,6 +258,20 @@ func (pService *Service) buildProxy(pRecord *proxyRecord, tgt *sshconn.Target, c
 		}
 	}
 	return pProxy
+}
+
+// forwardInfos 는 포워딩 설정 결과를 세션 정보에 싣는 모양으로 바꾼다.
+func forwardInfos(slResults []sshconn.ForwardResult) []session.ForwardInfo {
+	slInfos := make([]session.ForwardInfo, 0, len(slResults))
+	for _, result := range slResults {
+		info := session.ForwardInfo{M_szType: result.Type, M_szBind: result.Bind, M_szDest: result.Dest, M_iConns: result.Active()}
+		info.M_i64Up, info.M_i64Down = result.Traffic()
+		if result.Err != nil {
+			info.M_szError = result.Err.Error()
+		}
+		slInfos = append(slInfos, info)
+	}
+	return slInfos
 }
 
 // forwardsOf 는 서버의 포워딩 설정을 연결 쪽 형식으로 바꾼다.
